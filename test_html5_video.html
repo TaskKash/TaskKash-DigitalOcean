@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML5 Video Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .video-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        video {
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            border-radius: 8px;
+        }
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        button {
+            padding: 10px 20px;
+            background: #6200ea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #7c4dff;
+        }
+        .info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .progress {
+            margin-top: 10px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .time {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>HTML5 Video Player Test</h1>
+    <p>Testing direct MP4 video playback (no external embeds)</p>
+    
+    <div class="video-container">
+        <h2>Test Video: Big Buck Bunny (Sample)</h2>
+        <video id="videoPlayer" controls>
+            <source src="sample_video.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        
+        <div class="progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="time" id="timeDisplay">0:00 / 0:00</div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="playVideo()">▶ Play</button>
+            <button onclick="pauseVideo()">⏸ Pause</button>
+            <button onclick="restartVideo()">↻ Restart</button>
+        </div>
+        
+        <div class="info" id="info">
+            Status: Ready to play
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoPlayer');
+        const progressFill = document.getElementById('progressFill');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const info = document.getElementById('info');
+
+        function playVideo() {
+            video.play();
+            info.textContent = 'Status: Playing';
+        }
+
+        function pauseVideo() {
+            video.pause();
+            info.textContent = 'Status: Paused';
+        }
+
+        function restartVideo() {
+            video.currentTime = 0;
+            video.play();
+            info.textContent = 'Status: Restarted';
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        video.addEventListener('timeupdate', () => {
+            const progress = (video.currentTime / video.duration) * 100;
+            progressFill.style.width = progress + '%';
+            timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+        });
+
+        video.addEventListener('play', () => {
+            info.textContent = 'Status: Playing';
+        });
+
+        video.addEventListener('pause', () => {
+            info.textContent = 'Status: Paused';
+        });
+
+        video.addEventListener('ended', () => {
+            info.textContent = 'Status: Video completed!';
+        });
+
+        video.addEventListener('loadedmetadata', () => {
+            info.textContent = `Status: Video loaded (${formatTime(video.duration)} duration)`;
+        });
+    </script>
+</body>
+</html>

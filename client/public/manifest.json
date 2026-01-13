@@ -1,0 +1,76 @@
+{
+  "name": "TASKKASH - اربح المال من هاتفك",
+  "short_name": "TASKKASH",
+  "description": "منصة رقمية تربط المعلنين بالمستخدمين لإكمال مهام صغيرة مقابل مكافآت مالية",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#2E8B57",
+  "theme_color": "#2E8B57",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "business"],
+  "shortcuts": [
+    {
+      "name": "المهام - Tasks",
+      "short_name": "Tasks",
+      "description": "عرض المهام المتاحة - View available tasks",
+      "url": "/tasks",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "المحفظة - Wallet",
+      "short_name": "Wallet",
+      "description": "عرض رصيدك - View your balance",
+      "url": "/wallet",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "الملف الشخصي - Profile",
+      "short_name": "Profile",
+      "description": "عرض ملفك الشخصي - View your profile",
+      "url": "/profile",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot1.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    }
+  ]
+}
+

@@ -1,0 +1,20 @@
+# TaskKash Cron Jobs
+# 
+# Installation:
+# 1. Make sure Node.js and tsx are installed
+# 2. Update the paths below to match your installation
+# 3. Add to crontab: crontab crontab.txt
+#
+# Note: Adjust paths according to your deployment
+
+# Process scheduled payments every hour
+0 * * * * cd /path/to/taskkash-v2 && /usr/bin/tsx server/cron/process-scheduled-payments.ts >> /var/log/taskkash/payments.log 2>&1
+
+# Update tiers daily at 2 AM
+0 2 * * * cd /path/to/taskkash-v2 && /usr/bin/tsx server/cron/update-tiers.ts >> /var/log/taskkash/tiers.log 2>&1
+
+# Optional: Clean up old logs weekly (Sunday at 3 AM)
+0 3 * * 0 find /var/log/taskkash -name "*.log" -mtime +30 -delete
+
+# Optional: Database backup daily at 4 AM
+0 4 * * * /usr/bin/mysqldump -u root taskkash > /backup/taskkash_$(date +\%Y\%m\%d).sql 2>&1

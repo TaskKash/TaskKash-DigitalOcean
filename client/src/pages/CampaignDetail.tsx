@@ -1,0 +1,496 @@
+import { useState, useEffect } from 'react';
+import { useRoute, useLocation } from 'wouter';
+import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { 
+  ArrowRight, 
+  ArrowLeft,
+  Target, 
+  Gift, 
+  Clock, 
+  CheckCircle2, 
+  Circle,
+  Lock,
+  Play,
+  Video,
+  FileQuestion,
+  ClipboardList,
+  MapPin,
+  Trophy,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  Users
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import MobileLayout from '@/components/layout/MobileLayout';
+
+import { toast } from 'sonner';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+interface CampaignTask {
+  campaignTaskId: number;
+  sequence: number;
+  gatingRules: any;
+  isRequired: boolean;
+  id: number;
+  titleEn: string;
+  titleAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  type: string;
+  reward: number;
+}
+
+interface Campaign {
+  id: number;
+  titleEn: string;
+  titleAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  reward: number;
+  currency: string;
+  coverImage: string;
+  advertiserName: string;
+  advertiserNameAr: string;
+  advertiserLogo: string;
+  advertiserDescription: string;
+  advertiserDescriptionAr: string;
+  tasks: CampaignTask[];
+  personas: any[];
+  qualifications: any[];
+  userProgress?: {
+    status: string;
+    tasksCompleted: number;
+    totalTasks: number;
+    currentSequence: number;
+    currentTaskId: number;
+    personaId: number;
+  } | null;
+}
+
+export default function CampaignDetail() {
+  const [match, params] = useRoute('/campaigns/:id');
+  const id = params?.id;
+  const { t, i18n } = useTranslation();
+  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const isRTL = i18n.language === 'ar';
+  const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
+
+  // Fetch campaign details
+  const { data: campaign, isLoading, error } = useQuery<Campaign>({
+    queryKey: ['campaign', id],
+    queryFn: async () => {
+      const response = await fetch(`/api/campaigns/${id}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaign');
+      }
+      return response.json();
+    },
+    enabled: !!id
+  });
+
+  // Start campaign mutation
+  const startCampaignMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/campaigns/${id}/start`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to start campaign');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast.success(t('campaigns.started', 'Campaign Started!'));
+      queryClient.invalidateQueries({ queryKey: ['campaign', id] });
+      // Navigate to the first task
+      if (data.currentTask) {
+        navigateToTask(data.currentTask);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('campaigns.startError', 'Cannot Start Campaign'));
+    }
+  });
+
+  const getLocalizedText = (en: string, ar: string) => {
+    return i18n.language === 'ar' ? ar : en;
+  };
+
+  const getTaskIcon = (type: string) => {
+    switch (type) {
+      case 'video':
+        return <Video className="w-5 h-5" />;
+      case 'survey':
+        return <ClipboardList className="w-5 h-5" />;
+      case 'quiz':
+        return <FileQuestion className="w-5 h-5" />;
+      case 'visit':
+        return <MapPin className="w-5 h-5" />;
+      default:
+        return <Target className="w-5 h-5" />;
+    }
+  };
+
+  const getTaskStatus = (task: CampaignTask) => {
+    if (!campaign?.userProgress) return 'locked';
+    
+    const currentSequence = campaign.userProgress.currentSequence;
+    
+    if (task.sequence < currentSequence) return 'completed';
+    if (task.sequence === currentSequence) return 'current';
+    return 'locked';
+  };
+
+  const navigateToTask = (task: CampaignTask) => {
+    // Navigate to the appropriate task completion page based on task type
+    switch (task.type) {
+      case 'video':
+        setLocation(`/tasks/${task.id}/complete?campaignId=${id}`);
+        break;
+      case 'survey':
+        setLocation(`/tasks/${task.id}/complete?campaignId=${id}`);
+        break;
+      case 'quiz':
+        setLocation(`/tasks/${task.id}/complete?campaignId=${id}`);
+        break;
+      case 'visit':
+        setLocation(`/tasks/${task.id}/complete?campaignId=${id}`);
+        break;
+      default:
+        setLocation(`/tasks/${task.id}/complete?campaignId=${id}`);
+    }
+  };
+
+  const handleStartOrContinue = () => {
+    if (!campaign) return;
+
+    if (!campaign.userProgress) {
+      // Start the campaign
+      startCampaignMutation.mutate();
+    } else if (campaign.userProgress.status === 'in_progress') {
+      // Continue to current task
+      const currentTask = campaign.tasks.find(t => t.sequence === campaign.userProgress!.currentSequence);
+      if (currentTask) {
+        navigateToTask(currentTask);
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <MobileLayout title={t('campaigns.loading', 'Loading...')} showBack>
+        <div className="p-4 space-y-4">
+          <Skeleton className="h-48 w-full rounded-lg" />
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-32 w-full rounded-lg" />
+        </div>
+      </MobileLayout>
+    );
+  }
+
+  if (error || !campaign) {
+    return (
+      <MobileLayout title={t('campaigns.error', 'Error')} showBack>
+        <div className="p-4 text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <p className="text-red-500 mb-4">{t('campaigns.loadError', 'Failed to load campaign')}</p>
+          <Button onClick={() => setLocation('/campaigns')}>
+            {t('campaigns.backToList', 'Back to Campaigns')}
+          </Button>
+        </div>
+      </MobileLayout>
+    );
+  }
+
+  const progressPercentage = campaign.userProgress 
+    ? Math.round((campaign.userProgress.tasksCompleted / campaign.userProgress.totalTasks) * 100)
+    : 0;
+
+  return (
+    <MobileLayout 
+      title={getLocalizedText(campaign.titleEn, campaign.titleAr)} 
+      showBack
+    >
+      <div className="pb-24">
+
+      {/* Campaign Cover */}
+      <div className="relative h-48 bg-gradient-to-br from-purple-600 to-indigo-700">
+        {campaign.coverImage ? (
+          <img 
+            src={campaign.coverImage} 
+            alt={getLocalizedText(campaign.titleEn, campaign.titleAr)}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Target className="w-20 h-20 text-white/30" />
+          </div>
+        )}
+        
+        {/* Overlay with gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        
+        {/* Advertiser Logo */}
+        {campaign.advertiserLogo && (
+          <div className="absolute top-4 left-4 bg-white rounded-lg p-2 shadow-lg">
+            <img 
+              src={campaign.advertiserLogo} 
+              alt={getLocalizedText(campaign.advertiserName, campaign.advertiserNameAr)}
+              className="w-12 h-12 object-contain"
+            />
+          </div>
+        )}
+        
+        {/* Reward Badge */}
+        <div className="absolute bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-full font-bold shadow-lg flex items-center gap-2">
+          <Gift className="w-5 h-5" />
+          {campaign.reward} {campaign.currency}
+        </div>
+        
+        {/* Status Badge */}
+        {campaign.userProgress?.status === 'completed' && (
+          <div className="absolute top-4 right-4">
+            <Badge className="bg-purple-500 text-white px-3 py-1">
+              <Trophy className="w-4 h-4 mr-1" />
+              {t('campaigns.completed', 'Completed')}
+            </Badge>
+          </div>
+        )}
+      </div>
+
+      <div className="p-4 space-y-4">
+        {/* Campaign Info */}
+        <Card>
+          <CardContent className="p-4">
+            <h1 className="text-xl font-bold mb-2">
+              {getLocalizedText(campaign.titleEn, campaign.titleAr)}
+            </h1>
+            <p className="text-sm text-gray-500 mb-3">
+              {t('campaigns.by', 'By')} {getLocalizedText(campaign.advertiserName, campaign.advertiserNameAr)}
+            </p>
+            <p className="text-gray-600 mb-4">
+              {getLocalizedText(campaign.descriptionEn, campaign.descriptionAr)}
+            </p>
+            
+            {/* Stats */}
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1 text-gray-500">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{campaign.tasks.length} {t('campaigns.tasks', 'Tasks')}</span>
+              </div>
+              <div className="flex items-center gap-1 text-green-600">
+                <Gift className="w-4 h-4" />
+                <span>{campaign.reward} {campaign.currency}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Progress Card (if started) */}
+        {campaign.userProgress && campaign.userProgress.status === 'in_progress' && (
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-blue-800">{t('campaigns.yourProgress', 'Your Progress')}</span>
+                <span className="text-blue-600 font-bold">{progressPercentage}%</span>
+              </div>
+              <Progress value={progressPercentage} className="h-3 mb-2" />
+              <p className="text-sm text-blue-600">
+                {campaign.userProgress.tasksCompleted} / {campaign.userProgress.totalTasks} {t('campaigns.tasksCompleted', 'tasks completed')}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Campaign Journey / Tasks */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Target className="w-5 h-5 text-purple-600" />
+              {t('campaigns.journey', 'Campaign Journey')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="space-y-3">
+              {campaign.tasks.map((task, index) => {
+                const status = getTaskStatus(task);
+                const isLast = index === campaign.tasks.length - 1;
+                
+                return (
+                  <div key={task.campaignTaskId} className="relative">
+                    {/* Connector Line */}
+                    {!isLast && (
+                      <div 
+                        className={`absolute left-5 top-12 w-0.5 h-8 ${
+                          status === 'completed' ? 'bg-green-400' : 'bg-gray-200'
+                        }`}
+                      />
+                    )}
+                    
+                    <div 
+                      className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
+                        status === 'current' 
+                          ? 'bg-blue-50 border border-blue-200' 
+                          : status === 'completed'
+                          ? 'bg-green-50 border border-green-200'
+                          : 'bg-gray-50 border border-gray-200 opacity-60'
+                      }`}
+                    >
+                      {/* Status Icon */}
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                        status === 'completed' 
+                          ? 'bg-green-500 text-white' 
+                          : status === 'current'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-300 text-gray-500'
+                      }`}>
+                        {status === 'completed' ? (
+                          <CheckCircle2 className="w-5 h-5" />
+                        ) : status === 'current' ? (
+                          <Play className="w-5 h-5" />
+                        ) : (
+                          <Lock className="w-4 h-4" />
+                        )}
+                      </div>
+                      
+                      {/* Task Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-medium text-gray-500">
+                            {t('campaigns.step', 'Step')} {task.sequence}
+                          </span>
+                          <Badge variant="outline" className="text-xs">
+                            {getTaskIcon(task.type)}
+                            <span className="ml-1 capitalize">{task.type}</span>
+                          </Badge>
+                        </div>
+                        <h4 className="font-medium text-sm">
+                          {getLocalizedText(task.titleEn, task.titleAr)}
+                        </h4>
+                        <p className="text-xs text-gray-500 line-clamp-1">
+                          {getLocalizedText(task.descriptionEn, task.descriptionAr)}
+                        </p>
+                      </div>
+                      
+                      {/* Action */}
+                      {status === 'current' && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => navigateToTask(task)}
+                          className="flex-shrink-0"
+                        >
+                          {t('campaigns.start', 'Start')}
+                          <ArrowIcon className="w-4 h-4 ml-1" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* About the Advertiser */}
+        {(campaign.advertiserDescription || campaign.advertiserDescriptionAr) && (
+          <Accordion type="single" collapsible>
+            <AccordionItem value="advertiser">
+              <AccordionTrigger className="px-4">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-gray-500" />
+                  {t('campaigns.aboutAdvertiser', 'About the Advertiser')}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="flex items-start gap-3">
+                  {campaign.advertiserLogo && (
+                    <img 
+                      src={campaign.advertiserLogo} 
+                      alt={getLocalizedText(campaign.advertiserName, campaign.advertiserNameAr)}
+                      className="w-16 h-16 object-contain rounded-lg border"
+                    />
+                  )}
+                  <div>
+                    <h4 className="font-medium mb-1">
+                      {getLocalizedText(campaign.advertiserName, campaign.advertiserNameAr)}
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {getLocalizedText(campaign.advertiserDescription, campaign.advertiserDescriptionAr)}
+                    </p>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        )}
+      </div>
+
+      {/* Fixed Bottom Action Button */}
+      {campaign.userProgress?.status !== 'completed' && campaign.userProgress?.status !== 'disqualified' && (
+        <div className="fixed bottom-16 left-0 right-0 p-4 bg-white border-t shadow-lg">
+          <Button 
+            className="w-full h-12 text-lg"
+            onClick={handleStartOrContinue}
+            disabled={startCampaignMutation.isPending}
+          >
+            {startCampaignMutation.isPending ? (
+              t('campaigns.starting', 'Starting...')
+            ) : campaign.userProgress ? (
+              <>
+                {t('campaigns.continueCampaign', 'Continue Campaign')}
+                <ArrowIcon className="w-5 h-5 ml-2" />
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5 mr-2" />
+                {t('campaigns.startCampaign', 'Start Campaign')}
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Completed State */}
+      {campaign.userProgress?.status === 'completed' && (
+        <div className="fixed bottom-16 left-0 right-0 p-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Trophy className="w-8 h-8" />
+              <div>
+                <p className="font-bold">{t('campaigns.congratulations', 'Congratulations!')}</p>
+                <p className="text-sm text-purple-100">{t('campaigns.earnedReward', 'You earned')} {campaign.reward} {campaign.currency}</p>
+              </div>
+            </div>
+            <Button variant="secondary" onClick={() => setLocation('/wallet')}>
+              {t('campaigns.viewWallet', 'View Wallet')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      </div>
+    </MobileLayout>
+  );
+}

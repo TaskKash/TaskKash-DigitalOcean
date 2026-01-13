@@ -1,0 +1,594 @@
+import { Router } from "express";
+import bcrypt from "bcryptjs";
+import { getUserByEmail, getUserByOpenId } from "../db";
+import { sdk } from "./sdk";
+import { COOKIE_NAME } from "../../shared/const";
+import { getPool, query } from "./mysql-pool";
+
+export const authRouter = Router();
+
+// Login endpoint
+authRouter.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Email and password are required",
+      });
+    }
+
+    // Get user from database
+    console.log('[Auth] Looking up user:', email);
+    const user = await getUserByEmail(email);
+    console.log('[Auth] User found:', user ? 'YES' : 'NO');
+    if (user) {
+      console.log('[Auth] User has password:', user.password ? 'YES' : 'NO');
+    }
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid email or password",
+      });
+    }
+
+    // Check if user has a password set
+    if (!user.password) {
+      return res.status(401).json({
+        success: false,
+        error: "Password not set for this account. Please use social login or reset your password.",
+      });
+    }
+
+    // Verify password
+    console.log('[Auth] Comparing passwords...');
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    console.log('[Auth] Password valid:', isValidPassword);
+
+    if (!isValidPassword) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid email or password",
+      });
+    }
+
+    // Create session token
+    const token = await sdk.signSession({
+      openId: user.openId,
+      appId: 'taskkash-app',
+      name: user.name || user.email || 'User',
+    });
+
+    // Set cookie
+    res.cookie(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+      sameSite: req.secure || req.headers["x-forwarded-proto"] === "https" ? "none" : "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    });
+
+    // Return user data (without password)
+    const { password: _, ...userWithoutPassword } = user;
+
+    return res.json({
+      success: true,
+      user: userWithoutPassword,
+    });
+  } catch (error) {
+    console.error("[Auth] Login error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
+// Logout endpoint
+authRouter.post("/logout", (req, res) => {
+  try {
+    // Clear session cookie
+    res.clearCookie(COOKIE_NAME, {
+      httpOnly: true,
+      secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+      sameSite: req.secure || req.headers["x-forwarded-proto"] === "https" ? "none" : "lax",
+      path: "/",
+    });
+
+    return res.json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.error("[Auth] Logout error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
+// Get current user endpoint
+authRouter.get("/me", async (req, res) => {
+  try {
+    console.log('[Auth /me] Cookies:', req.headers.cookie);
+    
+    // Get session token from cookie
+    const cookies = req.headers.cookie?.split(';').reduce((acc: any, cookie: string) => {
+      const [key, value] = cookie.trim().split('=');
+      acc[key] = value;
+      return acc;
+    }, {}) || {};
+    
+    const sessionToken = cookies[COOKIE_NAME];
+    console.log('[Auth /me] Session token:', sessionToken ? 'exists' : 'missing');
+    
+    if (!sessionToken) {
+      return res.status(401).json({
+        success: false,
+        error: "Not authenticated",
+      });
+    }
+    
+    // Verify session and get openId
+    const session = await sdk.verifySession(sessionToken);
+    console.log('[Auth /me] Session:', session);
+    
+    if (!session || !session.openId) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid session",
+      });
+    }
+    
+    // Get user from database using openId
+    const user = await getUserByOpenId(session.openId);
+    console.log('[Auth /me] User from DB:', user ? user.name : 'null');
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    // Return user data (without password)
+    const { password: _, ...userWithoutPassword } = user;
+
+    return res.json({
+      success: true,
+      user: userWithoutPassword,
+    });
+  } catch (error) {
+    console.error("[Auth] Get user error:", error);
+    return res.status(401).json({
+      success: false,
+      error: "Not authenticated",
+    });
+  }
+});
+
+// Register endpoint
+authRouter.post("/register", async (req, res) => {
+  try {
+    const { name, email, password, phone } = req.body;
+    
+    console.log('[Auth] Registration attempt:', { name, email, phone });
+    
+    if (!email || !password || !name) {
+      return res.status(400).json({
+        success: false,
+        error: "Name, email, and password are required",
+      });
+    }
+    
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: "Password must be at least 6 characters",
+      });
+    }
+    
+    // Hash password with bcrypt (same as login verification)
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const openId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log('[Auth] Creating user with openId:', openId);
+    
+    const pool = getPool();
+    
+    try {
+      // Check if email already exists
+      const [existing] = await pool.execute(
+        "SELECT id FROM users WHERE email = ?",
+        [email]
+      );
+      
+      if (Array.isArray(existing) && existing.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Email already exists",
+        });
+      }
+      
+      // Insert new user
+      const [result] = await pool.execute(
+        `INSERT INTO users (openId, name, email, password, phone, role, balance, tier, isVerified, profileStrength, completedTasks, totalEarnings, createdAt, updatedAt) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [
+          openId,
+          name,
+          email,
+          hashedPassword,
+          phone || null,
+          'user',
+          0,
+          'tier1',
+          0,
+          0,
+          0,
+          0
+        ]
+      );
+      
+      console.log('[Auth] User created successfully:', result);
+      
+      // Create session token for auto-login
+      const token = await sdk.signSession({
+        openId: openId,
+        appId: 'taskkash-app',
+        name: name,
+      });
+
+      // Set cookie
+      res.cookie(COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+        sameSite: req.secure || req.headers["x-forwarded-proto"] === "https" ? "none" : "lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        path: "/",
+      });
+      
+      return res.json({
+        success: true,
+        message: "Registration successful",
+        user: {
+          openId,
+          name,
+          email,
+          phone,
+          role: 'user',
+          balance: 0,
+          tier: 'tier1'
+        }
+      });
+    } catch (dbError) {
+      throw dbError;
+    }
+  } catch (error) {
+    console.error("[Auth] Register error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
+// Advertiser Registration endpoint
+authRouter.post("/advertiser/register", async (req, res) => {
+  try {
+    const { companyName, contactPerson, email, phone, industry, companySize, password, tier = "basic" } = req.body;
+    if (!companyName || !contactPerson || !email || !password) {
+      return res.status(400).json({ success: false, error: "Company name, contact person, email, and password are required" });
+    }
+    
+    const pool = getPool();
+    const [existingAdvertisers] = await pool.execute("SELECT id FROM advertisers WHERE email = ?", [email]);
+    
+    if (Array.isArray(existingAdvertisers) && existingAdvertisers.length > 0) {
+      return res.status(400).json({ success: false, error: "An account with this email already exists" });
+    }
+    
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const openId = `adv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    
+    const [result] = await pool.execute(
+      `INSERT INTO advertisers (openId, email, password, nameEn, nameAr, slug, tier, isActive, balance, totalSpent, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, NOW(), NOW())`,
+      [openId, email, hashedPassword, companyName, companyName, slug, tier]
+    );
+    
+    const insertId = (result as any).insertId;
+    const [advertisers] = await pool.execute("SELECT * FROM advertisers WHERE id = ?", [insertId]);
+    
+    if (!Array.isArray(advertisers) || advertisers.length === 0) {
+      return res.status(500).json({ success: false, error: "Failed to create advertiser account" });
+    }
+    
+    const advertiser = (advertisers as any[])[0];
+    const token = await sdk.createSessionToken(`advertiser_${advertiser.id}`, { name: advertiser.nameEn || advertiser.email });
+    
+    res.cookie(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+      sameSite: req.secure || req.headers["x-forwarded-proto"] === "https" ? "none" : "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: "/",
+    });
+    
+    const { password: _, ...advertiserWithoutPassword } = advertiser;
+    return res.json({ success: true, advertiser: advertiserWithoutPassword });
+  } catch (error) {
+    console.error("[Auth] Advertiser registration error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
+// Advertiser Login endpoint
+authRouter.post("/advertiser/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Email and password are required",
+      });
+    }
+
+    // Get advertiser from database using pool
+    const pool = getPool();
+    const [advertisers] = await pool.execute(
+      "SELECT * FROM advertisers WHERE email = ? AND isActive = 1",
+      [email]
+    );
+
+    if (!Array.isArray(advertisers) || advertisers.length === 0) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid email or password",
+      });
+    }
+
+    const advertiser = (advertisers as any[])[0];
+
+    // Check if advertiser has a password set
+    if (!advertiser.password) {
+      return res.status(401).json({
+        success: false,
+        error: "Password not set for this account",
+      });
+    }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, advertiser.password);
+
+    if (!isValidPassword) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid email or password",
+      });
+    }
+
+    // Create session token (using advertiser slug as openId)
+    const token = await sdk.createSessionToken(`advertiser_${advertiser.id}`, {
+      name: advertiser.nameEn || advertiser.email,
+    });
+
+    // Set cookie
+    res.cookie(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+      sameSite: req.secure || req.headers["x-forwarded-proto"] === "https" ? "none" : "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    });
+
+    // Return advertiser data (without password)
+    const { password: _, ...advertiserWithoutPassword } = advertiser;
+
+    return res.json({
+      success: true,
+      advertiser: advertiserWithoutPassword,
+    });
+  } catch (error) {
+    console.error("[Auth] Advertiser login error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
+// Get current advertiser endpoint
+authRouter.get("/advertiser/me", async (req, res) => {
+  try {
+    console.log('[Advertiser /me] Cookies:', req.headers.cookie);
+    console.log('[Advertiser /me] COOKIE_NAME:', COOKIE_NAME);
+    // Get session token from cookie
+    const token = req.cookies[COOKIE_NAME];
+    console.log('[Advertiser /me] Token:', token ? 'exists' : 'missing');
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: "Not authenticated",
+      });
+    }
+
+    // Verify token
+    const payload = await sdk.verifySession(token);
+    
+    if (!payload || !payload.openId) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid session",
+      });
+    }
+
+    // Extract advertiser ID from openId (format: "advertiser_10")
+    if (!payload.openId.startsWith('advertiser_')) {
+      return res.status(403).json({
+        success: false,
+        error: "Not an advertiser account",
+      });
+    }
+
+    const advertiserId = payload.openId.replace('advertiser_', '');
+
+    // Get advertiser from database using pool
+    const pool = getPool();
+    const [advertisers] = await pool.execute(
+      "SELECT * FROM advertisers WHERE id = ? AND isActive = 1",
+      [advertiserId]
+    );
+
+    if (!Array.isArray(advertisers) || advertisers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Advertiser not found",
+      });
+    }
+
+    const advertiser = (advertisers as any[])[0];
+
+    // Return advertiser data (without password)
+    const { password: _, ...advertiserWithoutPassword } = advertiser;
+
+    return res.json({
+      success: true,
+      advertiser: advertiserWithoutPassword,
+    });
+  } catch (error) {
+    console.error("[Auth] Get advertiser error:", error);
+    return res.status(401).json({
+      success: false,
+      error: "Not authenticated",
+    });
+  }
+});
+
+// Admin Login endpoint
+authRouter.post("/admin/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Email and password are required",
+      });
+    }
+
+    // Hardcoded admin credentials for now
+    const ADMIN_EMAIL = "admin@taskkash.com";
+    const ADMIN_PASSWORD = "password123"; // Changed to match seed data
+    
+    if (email !== ADMIN_EMAIL) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid email or password",
+      });
+    }
+
+    // Verify password
+    const isValidPassword = password === ADMIN_PASSWORD;
+
+    if (!isValidPassword) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid email or password",
+      });
+    }
+
+    // Create session token
+    const token = await sdk.createSessionToken("admin_001", {
+      name: "Admin User",
+    });
+
+    // Set cookie
+    res.cookie(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+      sameSite: req.secure || req.headers["x-forwarded-proto"] === "https" ? "none" : "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    });
+
+    // Return admin data
+    return res.json({
+      success: true,
+      admin: {
+        id: 1,
+        openId: "admin_001",
+        email: ADMIN_EMAIL,
+        name: "Admin User",
+        role: "admin",
+      },
+    });
+  } catch (error) {
+    console.error("[Auth] Admin login error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
+// Get current admin endpoint
+authRouter.get("/admin/me", async (req, res) => {
+  try {
+    console.log('[Admin /me] Cookies:', req.headers.cookie);
+    // Get session token from cookie
+    const token = req.cookies[COOKIE_NAME];
+    console.log('[Admin /me] Token:', token ? 'exists' : 'missing');
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: "Not authenticated",
+      });
+    }
+
+    // Verify token
+    const payload = await sdk.verifySession(token);
+    
+    if (!payload || !payload.openId) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid session",
+      });
+    }
+
+    // Check if admin
+    if (!payload.openId.startsWith('admin_')) {
+      return res.status(403).json({
+        success: false,
+        error: "Not an admin account",
+      });
+    }
+
+    // Return admin data
+    return res.json({
+      success: true,
+      admin: {
+        id: 1,
+        openId: payload.openId,
+        email: "admin@taskkash.com",
+        name: payload.name || "Admin User",
+        role: "admin",
+      },
+    });
+  } catch (error) {
+    console.error("[Auth] Get admin error:", error);
+    return res.status(401).json({
+      success: false,
+      error: "Not authenticated",
+    });
+  }
+});
