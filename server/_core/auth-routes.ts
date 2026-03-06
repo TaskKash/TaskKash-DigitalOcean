@@ -114,39 +114,39 @@ authRouter.post("/logout", (req, res) => {
 authRouter.get("/me", async (req, res) => {
   try {
     console.log('[Auth /me] Cookies:', req.headers.cookie);
-    
+
     // Get session token from cookie
     const cookies = req.headers.cookie?.split(';').reduce((acc: any, cookie: string) => {
       const [key, value] = cookie.trim().split('=');
       acc[key] = value;
       return acc;
     }, {}) || {};
-    
+
     const sessionToken = cookies[COOKIE_NAME];
     console.log('[Auth /me] Session token:', sessionToken ? 'exists' : 'missing');
-    
+
     if (!sessionToken) {
       return res.status(401).json({
         success: false,
         error: "Not authenticated",
       });
     }
-    
+
     // Verify session and get openId
     const session = await sdk.verifySession(sessionToken);
     console.log('[Auth /me] Session:', session);
-    
+
     if (!session || !session.openId) {
       return res.status(401).json({
         success: false,
         error: "Invalid session",
       });
     }
-    
+
     // Get user from database using openId
     const user = await getUserByOpenId(session.openId);
     console.log('[Auth /me] User from DB:', user ? user.name : 'null');
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -174,45 +174,45 @@ authRouter.get("/me", async (req, res) => {
 authRouter.post("/register", async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
-    
+
     console.log('[Auth] Registration attempt:', { name, email, phone });
-    
+
     if (!email || !password || !name) {
       return res.status(400).json({
         success: false,
         error: "Name, email, and password are required",
       });
     }
-    
+
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
         error: "Password must be at least 6 characters",
       });
     }
-    
+
     // Hash password with bcrypt (same as login verification)
     const hashedPassword = await bcrypt.hash(password, 10);
     const openId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     console.log('[Auth] Creating user with openId:', openId);
-    
+
     const pool = getPool();
-    
+
     try {
       // Check if email already exists
       const [existing] = await pool.execute(
         "SELECT id FROM users WHERE email = ?",
         [email]
       );
-      
+
       if (Array.isArray(existing) && existing.length > 0) {
         return res.status(400).json({
           success: false,
           error: "Email already exists",
         });
       }
-      
+
       // Insert new user
       const [result] = await pool.execute(
         `INSERT INTO users (openId, name, email, password, phone, role, balance, tier, isVerified, profileStrength, completedTasks, totalEarnings, createdAt, updatedAt) 
@@ -225,16 +225,16 @@ authRouter.post("/register", async (req, res) => {
           phone || null,
           'user',
           0,
-          'tier1',
+          'bronze',
           0,
           0,
           0,
           0
         ]
       );
-      
+
       console.log('[Auth] User created successfully:', result);
-      
+
       // Create session token for auto-login
       const token = await sdk.signSession({
         openId: openId,
@@ -250,8 +250,8 @@ authRouter.post("/register", async (req, res) => {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         path: "/",
       });
-      
-      return res.json({
+
+      return res.status(201).json({
         success: true,
         message: "Registration successful",
         user: {
@@ -261,7 +261,7 @@ authRouter.post("/register", async (req, res) => {
           phone,
           role: 'user',
           balance: 0,
-          tier: 'tier1'
+          tier: 'bronze'
         }
       });
     } catch (dbError) {
@@ -283,33 +283,33 @@ authRouter.post("/advertiser/register", async (req, res) => {
     if (!companyName || !contactPerson || !email || !password) {
       return res.status(400).json({ success: false, error: "Company name, contact person, email, and password are required" });
     }
-    
+
     const pool = getPool();
     const [existingAdvertisers] = await pool.execute("SELECT id FROM advertisers WHERE email = ?", [email]);
-    
+
     if (Array.isArray(existingAdvertisers) && existingAdvertisers.length > 0) {
       return res.status(400).json({ success: false, error: "An account with this email already exists" });
     }
-    
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const openId = `adv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    
+
     const [result] = await pool.execute(
       `INSERT INTO advertisers (openId, email, password, nameEn, nameAr, slug, tier, isActive, balance, totalSpent, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, NOW(), NOW())`,
       [openId, email, hashedPassword, companyName, companyName, slug, tier]
     );
-    
+
     const insertId = (result as any).insertId;
     const [advertisers] = await pool.execute("SELECT * FROM advertisers WHERE id = ?", [insertId]);
-    
+
     if (!Array.isArray(advertisers) || advertisers.length === 0) {
       return res.status(500).json({ success: false, error: "Failed to create advertiser account" });
     }
-    
+
     const advertiser = (advertisers as any[])[0];
     const token = await sdk.createSessionToken(`advertiser_${advertiser.id}`, { name: advertiser.nameEn || advertiser.email });
-    
+
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       secure: req.secure || req.headers["x-forwarded-proto"] === "https",
@@ -317,7 +317,7 @@ authRouter.post("/advertiser/register", async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000,
       path: "/",
     });
-    
+
     const { password: _, ...advertiserWithoutPassword } = advertiser;
     return res.json({ success: true, advertiser: advertiserWithoutPassword });
   } catch (error) {
@@ -413,7 +413,7 @@ authRouter.get("/advertiser/me", async (req, res) => {
     // Get session token from cookie
     const token = req.cookies[COOKIE_NAME];
     console.log('[Advertiser /me] Token:', token ? 'exists' : 'missing');
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -423,7 +423,7 @@ authRouter.get("/advertiser/me", async (req, res) => {
 
     // Verify token
     const payload = await sdk.verifySession(token);
-    
+
     if (!payload || !payload.openId) {
       return res.status(401).json({
         success: false,
@@ -488,7 +488,7 @@ authRouter.post("/admin/login", async (req, res) => {
     // Hardcoded admin credentials for now
     const ADMIN_EMAIL = "admin@taskkash.com";
     const ADMIN_PASSWORD = "password123"; // Changed to match seed data
-    
+
     if (email !== ADMIN_EMAIL) {
       return res.status(401).json({
         success: false,
@@ -547,7 +547,7 @@ authRouter.get("/admin/me", async (req, res) => {
     // Get session token from cookie
     const token = req.cookies[COOKIE_NAME];
     console.log('[Admin /me] Token:', token ? 'exists' : 'missing');
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -557,7 +557,7 @@ authRouter.get("/admin/me", async (req, res) => {
 
     // Verify token
     const payload = await sdk.verifySession(token);
-    
+
     if (!payload || !payload.openId) {
       return res.status(401).json({
         success: false,

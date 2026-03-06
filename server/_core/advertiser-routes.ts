@@ -9,7 +9,7 @@ const router = Router();
 router.get('/advertisers', async (req: Request, res: Response) => {
   try {
     const advertisers = await query(
-      `SELECT id, nameEn, nameAr, slug, logoUrl, websiteUrl, descriptionEn, descriptionAr, isActive
+      `SELECT id, nameEn, nameAr, slug, logo, descriptionEn, descriptionAr, isActive
        FROM advertisers
        WHERE isActive = 1
        ORDER BY nameEn`
@@ -31,15 +31,15 @@ router.get("/advertisers/with-active-tasks", async (req: Request, res: Response)
         a.id, 
         a.nameEn, 
         a.nameAr,
-        a.logoUrl,
+        a.logo,
         COUNT(t.id) as activeTaskCount
       FROM advertisers a
       INNER JOIN tasks t ON a.id = t.advertiserId
       WHERE t.status = "active"
-      GROUP BY a.id, a.nameEn, a.nameAr, a.logoUrl
+      GROUP BY a.id, a.nameEn, a.nameAr, a.logo
       ORDER BY activeTaskCount DESC
     `);
-    
+
     res.json({ advertisers });
   } catch (error: any) {
     console.error("[Advertisers] Error fetching advertisers with active tasks:", error);
@@ -53,32 +53,32 @@ router.get("/advertisers/with-active-tasks", async (req: Request, res: Response)
 router.get('/advertisers/:slug', async (req: Request, res: Response) => {
   try {
     const { slug } = req.params;
-    
+
     const advertisers = await query(
       `SELECT * FROM advertisers WHERE slug = ? LIMIT 1`,
       [slug]
     );
-    
+
     if (!advertisers || advertisers.length === 0) {
       return res.status(404).json({ error: 'Advertiser not found' });
     }
-    
+
     const advertiser = advertisers[0];
-    
+
     const tasks = await query(
       `SELECT id, titleEn, titleAr, descriptionEn, descriptionAr, type, reward, duration, 
-              difficulty, status, completionsCount, completionsNeeded, taskData
+              difficulty, status, currentCompletions as completionsCount, maxCompletions as completionsNeeded, taskData
        FROM tasks
        WHERE advertiserId = ?
        ORDER BY createdAt DESC`,
       [advertiser.id]
     );
-    
+
     const totalTasks = tasks.length;
     const activeTasks = tasks.filter((t: any) => t.status === 'active').length;
-    const totalCompletions = tasks.reduce((sum: number, t: any) => sum + (t.completionsCount || 0), 0);
-    const totalPaid = tasks.reduce((sum: number, t: any) => sum + (Number(t.reward) * (t.completionsCount || 0)), 0);
-    
+    const totalCompletions = tasks.reduce((sum: number, t: any) => sum + (t.currentCompletions || 0), 0);
+    const totalPaid = tasks.reduce((sum: number, t: any) => sum + (Number(t.reward) * (t.currentCompletions || 0)), 0);
+
     const uniqueUsersResult = await query(
       `SELECT COUNT(DISTINCT userId) as userCount
        FROM userTasks
@@ -86,13 +86,13 @@ router.get('/advertisers/:slug', async (req: Request, res: Response) => {
       [advertiser.id]
     );
     const totalUsers = uniqueUsersResult[0]?.userCount || 0;
-    
+
     const avgRating = 4.8;
     const reviewsCount = totalCompletions > 0 ? Math.floor(totalCompletions * 0.3) : 0;
-    
-    const totalNeeded = tasks.reduce((sum: number, t: any) => sum + t.completionsNeeded, 0);
+
+    const totalNeeded = tasks.reduce((sum: number, t: any) => sum + t.maxCompletions, 0);
     const completionRate = totalNeeded > 0 ? (totalCompletions / totalNeeded) * 100 : 0;
-    
+
     const response = {
       ...advertiser,
       stats: {
@@ -109,12 +109,12 @@ router.get('/advertisers/:slug', async (req: Request, res: Response) => {
       tasks: tasks.map((task: any) => ({
         ...task,
         reward: Number(task.reward),
-        completionRate: task.completionsNeeded > 0 
-          ? Number(((task.completionsCount || 0) / task.completionsNeeded * 100).toFixed(1))
+        completionRate: task.maxCompletions > 0
+          ? Number(((task.currentCompletions || 0) / task.maxCompletions * 100).toFixed(1))
           : 0,
       })),
     };
-    
+
     res.json(response);
   } catch (error) {
     console.error('Error fetching advertiser:', error);
@@ -128,13 +128,13 @@ router.get('/advertisers/:slug', async (req: Request, res: Response) => {
 router.get('/advertiser/dashboard', async (req: Request, res: Response) => {
   try {
     const advertiserId = (req as any).user?.advertiserId || 1;
-    
+
     const advertiserResult = await query(
       `SELECT * FROM advertisers WHERE id = ?`,
       [advertiserId]
     );
     const advertiser = advertiserResult[0];
-    
+
     const campaignStats = await query(`
       SELECT 
         COUNT(*) as totalCampaigns,
@@ -147,17 +147,17 @@ router.get('/advertiser/dashboard', async (req: Request, res: Response) => {
       FROM campaigns
       WHERE advertiserId = ?
     `, [advertiserId]);
-    
+
     const taskStats = await query(`
       SELECT 
         COUNT(*) as totalTasks,
         SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as activeTasks,
-        SUM(completionsCount) as totalCompletions,
-        SUM(reward * completionsCount) as totalPaid
+        SUM(currentCompletions) as totalCompletions,
+        SUM(reward * currentCompletions) as totalPaid
       FROM tasks
       WHERE advertiserId = ?
     `, [advertiserId]);
-    
+
     const recentActivity = await query(`
       SELECT 
         'task_completion' as type,
@@ -171,7 +171,7 @@ router.get('/advertiser/dashboard', async (req: Request, res: Response) => {
       ORDER BY ut.completedAt DESC
       LIMIT 10
     `, [advertiserId]);
-    
+
     const weeklyData = await query(`
       SELECT 
         DATE(ut.completedAt) as date,
@@ -185,7 +185,7 @@ router.get('/advertiser/dashboard', async (req: Request, res: Response) => {
       GROUP BY DATE(ut.completedAt)
       ORDER BY date ASC
     `, [advertiserId]);
-    
+
     res.json({
       advertiser,
       campaignStats: campaignStats[0],
@@ -205,7 +205,7 @@ router.get('/advertiser/dashboard', async (req: Request, res: Response) => {
 router.get('/advertiser/campaigns', async (req: Request, res: Response) => {
   try {
     const advertiserId = (req as any).user?.advertiserId || 1;
-    
+
     const campaigns = await query(`
       SELECT 
         c.*,
@@ -216,7 +216,7 @@ router.get('/advertiser/campaigns', async (req: Request, res: Response) => {
       WHERE c.advertiserId = ?
       ORDER BY c.createdAt DESC
     `, [advertiserId]);
-    
+
     res.json(campaigns);
   } catch (error) {
     console.error('Error fetching advertiser campaigns:', error);
@@ -231,18 +231,18 @@ router.get('/advertiser/campaigns/:id/analytics', async (req: Request, res: Resp
   try {
     const campaignId = parseInt(req.params.id);
     const advertiserId = (req as any).user?.advertiserId || 1;
-    
+
     const campaignResult = await query(
       `SELECT * FROM campaigns WHERE id = ? AND advertiserId = ?`,
       [campaignId, advertiserId]
     );
-    
+
     if (campaignResult.length === 0) {
       return res.status(404).json({ error: 'Campaign not found' });
     }
-    
+
     const campaign = campaignResult[0];
-    
+
     const funnelData = await query(`
       SELECT 
         ct.sequence,
@@ -257,7 +257,7 @@ router.get('/advertiser/campaigns/:id/analytics', async (req: Request, res: Resp
       GROUP BY ct.sequence, t.titleEn, t.type
       ORDER BY ct.sequence ASC
     `, [campaignId]);
-    
+
     const demographics = await query(`
       SELECT 
         CASE 
@@ -274,7 +274,7 @@ router.get('/advertiser/campaigns/:id/analytics', async (req: Request, res: Resp
       WHERE ucp.campaignId = ?
       GROUP BY ageGroup, u.gender
     `, [campaignId]);
-    
+
     const dailyPerformance = await query(`
       SELECT 
         DATE(ujl.timestamp) as date,
@@ -287,7 +287,7 @@ router.get('/advertiser/campaigns/:id/analytics', async (req: Request, res: Resp
       GROUP BY DATE(ujl.timestamp)
       ORDER BY date ASC
     `, [campaignId]);
-    
+
     const totalStarted = campaign.totalParticipants || 0;
     const totalCompleted = campaign.completedParticipants || 0;
     const totalDisqualified = campaign.disqualifiedParticipants || 0;
@@ -295,7 +295,7 @@ router.get('/advertiser/campaigns/:id/analytics', async (req: Request, res: Resp
     const costPerCompletion = totalCompleted > 0 ? (campaign.reward * totalCompleted / totalCompleted).toFixed(2) : 0;
     const totalSpent = campaign.reward * totalCompleted;
     const budgetUtilization = campaign.budget > 0 ? (totalSpent / campaign.budget * 100).toFixed(2) : 0;
-    
+
     res.json({
       campaign,
       kpis: {
@@ -323,7 +323,7 @@ router.get('/advertiser/campaigns/:id/analytics', async (req: Request, res: Resp
 router.post('/advertiser/campaigns', async (req: Request, res: Response) => {
   try {
     const advertiserId = (req as any).user?.advertiserId || 1;
-    
+
     const {
       nameEn,
       nameAr,
@@ -346,7 +346,7 @@ router.post('/advertiser/campaigns', async (req: Request, res: Response) => {
       personas,
       qualifications
     } = req.body;
-    
+
     const campaignResult = await query(`
       INSERT INTO campaigns (
         advertiserId, nameEn, nameAr, descriptionEn, descriptionAr, image,
@@ -360,34 +360,34 @@ router.post('/advertiser/campaigns', async (req: Request, res: Response) => {
       countryId || 1, targetAgeMin, targetAgeMax, targetGender, JSON.stringify(targetLocations),
       targetIncomeLevel, launchDate, expiryDate
     ]);
-    
+
     const campaignId = (campaignResult as any).insertId;
-    
+
     if (tasks && tasks.length > 0) {
       for (let i = 0; i < tasks.length; i++) {
         const task = tasks[i];
-        
+
         const taskResult = await query(`
           INSERT INTO tasks (
             advertiserId, type, titleEn, titleAr, descriptionEn, descriptionAr,
-            reward, totalBudget, completionsNeeded, difficulty, duration, status
+            reward, totalBudget, maxCompletions as completionsNeeded, difficulty, duration, status
           ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'active')
         `, [
           advertiserId, task.type, task.titleEn, task.titleAr,
           task.descriptionEn, task.descriptionAr, budget / tasks.length,
-          task.completionsNeeded || 1000, task.difficulty || 'medium',
+          task.maxCompletions || 1000, task.difficulty || 'medium',
           task.duration || 5
         ]);
-        
+
         const taskId = (taskResult as any).insertId;
-        
+
         await query(`
           INSERT INTO campaignTasks (campaignId, taskId, sequence, gatingRules, isRequired)
           VALUES (?, ?, ?, ?, 1)
         `, [campaignId, taskId, i + 1, JSON.stringify(task.gatingRules || {})]);
       }
     }
-    
+
     if (personas && personas.length > 0) {
       for (const persona of personas) {
         await query(`
@@ -403,7 +403,7 @@ router.post('/advertiser/campaigns', async (req: Request, res: Response) => {
         ]);
       }
     }
-    
+
     if (qualifications && qualifications.length > 0) {
       for (const qual of qualifications) {
         await query(`
@@ -412,10 +412,10 @@ router.post('/advertiser/campaigns', async (req: Request, res: Response) => {
         `, [campaignId, qual.criteriaType, qual.criteriaKey, qual.operator, qual.value]);
       }
     }
-    
-    res.json({ 
-      message: 'Campaign created successfully', 
-      campaignId 
+
+    res.json({
+      message: 'Campaign created successfully',
+      campaignId
     });
   } catch (error) {
     console.error('Error creating campaign:', error);
@@ -430,30 +430,30 @@ router.post('/advertiser/campaigns/:id/launch', async (req: Request, res: Respon
   try {
     const campaignId = parseInt(req.params.id);
     const advertiserId = (req as any).user?.advertiserId || 1;
-    
+
     const campaignResult = await query(
       `SELECT * FROM campaigns WHERE id = ? AND advertiserId = ?`,
       [campaignId, advertiserId]
     );
-    
+
     if (campaignResult.length === 0) {
       return res.status(404).json({ error: 'Campaign not found' });
     }
-    
+
     const campaign = campaignResult[0];
     if (campaign.status !== 'draft') {
       return res.status(400).json({ error: 'Campaign is not in draft status' });
     }
-    
+
     const tasksResult = await query(
       `SELECT COUNT(*) as count FROM campaignTasks WHERE campaignId = ?`,
       [campaignId]
     );
-    
+
     if (tasksResult[0].count === 0) {
       return res.status(400).json({ error: 'Campaign must have at least one task' });
     }
-    
+
     await query(`
       UPDATE campaigns SET
         status = 'active',
@@ -461,7 +461,7 @@ router.post('/advertiser/campaigns/:id/launch', async (req: Request, res: Respon
         updatedAt = NOW()
       WHERE id = ?
     `, [campaignId]);
-    
+
     res.json({ message: 'Campaign launched successfully' });
   } catch (error) {
     console.error('Error launching campaign:', error);
@@ -482,9 +482,9 @@ router.post('/advertiser/targeting/audience-estimate', async (req: Request, res:
       locations,
       incomeLevel
     } = req.body;
-    
+
     let conditions = ['1=1'];
-    
+
     if (countryId) {
       conditions.push(`countryId = ${countryId}`);
     }
@@ -497,17 +497,17 @@ router.post('/advertiser/targeting/audience-estimate', async (req: Request, res:
     if (gender) {
       conditions.push(`gender = '${gender}'`);
     }
-    
+
     const result = await query(`
       SELECT COUNT(*) as estimatedAudience
       FROM users
       WHERE ${conditions.join(' AND ')}
         AND isActive = 1
     `);
-    
+
     const estimatedAudience = result[0].estimatedAudience;
-    
-    res.json({ 
+
+    res.json({
       estimatedAudience,
       criteria: { countryId, ageMin, ageMax, gender, locations, incomeLevel }
     });
@@ -523,7 +523,7 @@ router.post('/advertiser/targeting/audience-estimate', async (req: Request, res:
 router.get('/advertiser/tasks', async (req: Request, res: Response) => {
   try {
     const advertiserId = (req as any).user?.advertiserId || 1;
-    
+
     const tasks = await query(`
       SELECT 
         t.*,
@@ -534,7 +534,7 @@ router.get('/advertiser/tasks', async (req: Request, res: Response) => {
       WHERE t.advertiserId = ?
       ORDER BY t.createdAt DESC
     `, [advertiserId]);
-    
+
     res.json(tasks);
   } catch (error) {
     console.error('Error fetching advertiser tasks:', error);
@@ -548,7 +548,7 @@ router.get('/advertiser/tasks', async (req: Request, res: Response) => {
 router.post('/advertiser/tasks', async (req: Request, res: Response) => {
   try {
     const advertiserId = (req as any).user?.advertiserId || 1;
-    
+
     const {
       type,
       titleEn,
@@ -557,7 +557,7 @@ router.post('/advertiser/tasks', async (req: Request, res: Response) => {
       descriptionAr,
       reward,
       totalBudget,
-      completionsNeeded,
+      maxCompletions,
       difficulty,
       duration,
       targetAgeMin,
@@ -566,24 +566,24 @@ router.post('/advertiser/tasks', async (req: Request, res: Response) => {
       targetLocations,
       taskData
     } = req.body;
-    
+
     const result = await query(`
       INSERT INTO tasks (
         advertiserId, type, titleEn, titleAr, descriptionEn, descriptionAr,
-        reward, totalBudget, completionsNeeded, difficulty, duration,
+        reward, totalBudget, maxCompletions as completionsNeeded, difficulty, duration,
         targetAgeMin, targetAgeMax, targetGender, targetLocations,
         taskData, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
     `, [
       advertiserId, type, titleEn, titleAr, descriptionEn, descriptionAr,
-      reward, totalBudget, completionsNeeded, difficulty || 'medium', duration || 5,
+      reward, totalBudget, maxCompletions, difficulty || 'medium', duration || 5,
       targetAgeMin, targetAgeMax, targetGender, JSON.stringify(targetLocations),
       JSON.stringify(taskData)
     ]);
-    
-    res.json({ 
-      message: 'Task created successfully', 
-      taskId: (result as any).insertId 
+
+    res.json({
+      message: 'Task created successfully',
+      taskId: (result as any).insertId
     });
   } catch (error) {
     console.error('Error creating task:', error);
@@ -682,7 +682,7 @@ router.get('/advertiser/templates', async (req: Request, res: Response) => {
         }
       }
     ];
-    
+
     res.json(templates);
   } catch (error) {
     console.error('Error fetching templates:', error);

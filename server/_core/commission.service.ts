@@ -53,7 +53,7 @@ export function calculateAdvertiserCommission(reward: number, advertiserTier: st
   const commissionRate = getAdvertiserCommissionRate(advertiserTier);
   const commissionAmount = reward * commissionRate;
   const totalCost = reward + commissionAmount;
-  
+
   return {
     reward,
     commissionRate: commissionRate * 100, // Return as percentage
@@ -77,7 +77,7 @@ export function calculateUserWithdrawalCommission(amount: number, userTier: stri
   const commissionRate = getUserWithdrawalCommissionRate(userTier);
   const commissionAmount = amount * commissionRate;
   const netAmount = amount - commissionAmount;
-  
+
   return {
     requestedAmount: amount,
     commissionRate: commissionRate * 100, // Return as percentage
@@ -89,13 +89,13 @@ export function calculateUserWithdrawalCommission(amount: number, userTier: stri
 /**
  * Calculate total campaign cost for advertiser including commission
  * @param reward - Reward per task completion
- * @param completionsNeeded - Number of completions needed
+ * @param maxCompletions - Number of completions needed
  * @param advertiserTier - The advertiser's tier level
  * @returns Object with campaign cost details
  */
 export function calculateCampaignCost(
-  reward: number, 
-  completionsNeeded: number, 
+  reward: number,
+  maxCompletions: number,
   advertiserTier: string
 ): {
   rewardPerCompletion: number;
@@ -106,11 +106,11 @@ export function calculateCampaignCost(
   minimumBudget: number;
 } {
   const commissionRate = getAdvertiserCommissionRate(advertiserTier);
-  const totalRewards = reward * completionsNeeded;
+  const totalRewards = reward * maxCompletions;
   const totalCommission = totalRewards * commissionRate;
   const totalCampaignCost = totalRewards + totalCommission;
   const minimumBudget = totalCampaignCost * 0.2; // 20% minimum budget
-  
+
   return {
     rewardPerCompletion: reward,
     totalRewards: Math.round(totalRewards * 100) / 100,

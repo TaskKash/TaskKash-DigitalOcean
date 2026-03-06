@@ -2,7 +2,6 @@ import React from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card } from '@/components/ui/card';
 import { Users, Briefcase, Building2, DollarSign, TrendingUp, Activity } from 'lucide-react';
-import { webdev_execute_sql } from '@/_core/trpc';
 
 export default function AdminDashboard() {
   const [stats, setStats] = React.useState({

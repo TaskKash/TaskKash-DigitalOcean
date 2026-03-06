@@ -4,14 +4,15 @@ import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "path";
 import { defineConfig } from "vite";
-import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime()];
+
+const plugins = [react(), tailwindcss(), jsxLocPlugin()];
 
 export default defineConfig({
   plugins,
   resolve: {
+    dedupe: ['react', 'react-dom'],
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
       "@shared": path.resolve(import.meta.dirname, "shared"),
@@ -48,7 +49,7 @@ export default defineConfig({
       "localhost",
       "127.0.0.1",
     ],
-    hmr: {
+    hmr: process.env.IS_LOCAL_DEV ? true : {
       clientPort: 443,
       protocol: 'wss',
     },

@@ -55,7 +55,7 @@ export const securityHeaders = helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Note: unsafe-eval needed for Vite in dev
       imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https:"],
+      connectSrc: ["'self'", "https:", "ws:", "wss:"],
     },
   },
   crossOriginEmbedderPolicy: false,
@@ -76,16 +76,16 @@ export const corsOptions = {
 export const addSecurityHeaders = (req: Request, res: Response, next: NextFunction) => {
   // Prevent clickjacking
   res.setHeader('X-Frame-Options', 'DENY');
-  
+
   // Prevent MIME type sniffing
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  
+
   // Enable XSS protection
   res.setHeader('X-XSS-Protection', '1; mode=block');
-  
+
   // Referrer policy
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  
+
   next();
 };
 
@@ -94,7 +94,7 @@ export const addSecurityHeaders = (req: Request, res: Response, next: NextFuncti
  */
 export const sanitizeInput = (input: string): string => {
   if (typeof input !== 'string') return input;
-  
+
   return input
     .replace(/[<>]/g, '') // Remove angle brackets
     .trim();
@@ -106,14 +106,14 @@ export const sanitizeInput = (input: string): string => {
 export const validateBodySize = (req: Request, res: Response, next: NextFunction) => {
   const contentLength = req.headers['content-length'];
   const maxSize = 10 * 1024 * 1024; // 10MB
-  
+
   if (contentLength && parseInt(contentLength) > maxSize) {
     return res.status(413).json({
       success: false,
       error: 'Request body too large'
     });
   }
-  
+
   next();
 };
 

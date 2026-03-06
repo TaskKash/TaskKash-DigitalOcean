@@ -34,11 +34,11 @@ async function isAdvertiser(req: any, res: any, next: any) {
   try {
     const { default: sdk } = await import('@manus/sdk');
     const session = await sdk.getSession(req);
-    
+
     if (!session || !session.openId || !session.openId.startsWith('advertiser_')) {
       return res.status(403).json({ error: 'Advertiser access required' });
     }
-    
+
     // Extract advertiser ID from openId (format: advertiser_26)
     const advertiserId = parseInt(session.openId.replace('advertiser_', ''));
     req.advertiserId = advertiserId;
@@ -74,7 +74,7 @@ async function isUser(req: any, res: any, next: any) {
  */
 router.post('/tasks', isAdvertiser, (req, res) => {
   const db = getDb();
-  
+
   try {
     const {
       type, // 'video' or 'quiz'
@@ -83,7 +83,7 @@ router.post('/tasks', isAdvertiser, (req, res) => {
       descriptionEn,
       descriptionAr,
       reward,
-      completionsNeeded,
+      maxCompletions,
       difficulty,
       duration,
       targetAgeMin,
@@ -102,19 +102,19 @@ router.post('/tasks', isAdvertiser, (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!type || !titleEn || !descriptionEn || !reward || !completionsNeeded || !duration) {
+    if (!type || !titleEn || !descriptionEn || !reward || !maxCompletions || !duration) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     // Calculate minimum budget (20% of total cost)
-    const totalBudget = reward * completionsNeeded;
+    const totalBudget = reward * maxCompletions;
     const minimumBudget = totalBudget * 0.2;
 
     // Insert task
     const insertTask = db.prepare(`
       INSERT INTO tasks (
         advertiserId, type, titleEn, titleAr, descriptionEn, descriptionAr,
-        reward, totalBudget, minimumBudget, completionsNeeded,
+        reward, totalBudget, minimumBudget, maxCompletions,
         difficulty, duration, status,
         targetAgeMin, targetAgeMax, targetGender, targetLocations, targetTiers,
         allowMultipleCompletions, dailyLimitPerUser, requiresMinimumTier,
@@ -141,7 +141,7 @@ router.post('/tasks', isAdvertiser, (req, res) => {
       reward,
       totalBudget,
       minimumBudget,
-      completionsNeeded,
+      maxCompletions,
       difficulty || 'medium',
       duration,
       targetAgeMin || null,
@@ -209,7 +209,7 @@ router.post('/tasks', isAdvertiser, (req, res) => {
  */
 router.get('/tasks/my-tasks', isAdvertiser, (req, res) => {
   const db = getDb();
-  
+
   try {
     const tasks = db.prepare(`
       SELECT * FROM tasks 
@@ -242,7 +242,7 @@ router.get('/tasks/my-tasks', isAdvertiser, (req, res) => {
 router.post('/tasks/:id/publish', isAdvertiser, (req, res) => {
   const db = getDb();
   const taskId = parseInt(req.params.id);
-  
+
   try {
     // Verify task belongs to advertiser
     const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND advertiserId = ?')
@@ -276,7 +276,7 @@ router.post('/tasks/:id/publish', isAdvertiser, (req, res) => {
 router.get('/tasks/:id/submissions', isAdvertiser, (req, res) => {
   const db = getDb();
   const taskId = parseInt(req.params.id);
-  
+
   try {
     // Verify task belongs to advertiser
     const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND advertiserId = ?')
@@ -326,7 +326,7 @@ router.post('/tasks/:id/submissions/:submissionId/review', isAdvertiser, (req, r
   const taskId = parseInt(req.params.id);
   const submissionId = parseInt(req.params.submissionId);
   const { action, notes } = req.body; // action: 'approve' or 'reject'
-  
+
   try {
     // Verify task belongs to advertiser
     const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND advertiserId = ?')
@@ -361,9 +361,9 @@ router.post('/tasks/:id/submissions/:submissionId/review', isAdvertiser, (req, r
       // The balance update should be handled by the main app's wallet service
 
       // Update task completions count
-      db.prepare('UPDATE tasks SET completionsCount = completionsCount + 1 WHERE id = ?')
+      db.prepare('UPDATE tasks SET currentCompletions = currentCompletions + 1 WHERE id = ?')
         .run(taskId);
-      
+
       // Record transaction
       const task = db.prepare('SELECT titleEn FROM tasks WHERE id = ?').get(taskId) as any;
       db.prepare(`
@@ -376,7 +376,7 @@ router.post('/tasks/:id/submissions/:submissionId/review', isAdvertiser, (req, r
         taskId
       );
 
-    res.json({ success: true, message: 'Submission approved and reward credited' });
+      res.json({ success: true, message: 'Submission approved and reward credited' });
 
     } else if (action === 'reject') {
       // Reject submission
@@ -389,7 +389,7 @@ router.post('/tasks/:id/submissions/:submissionId/review', isAdvertiser, (req, r
         WHERE id = ?
       `).run(req.advertiserId, notes || 'Did not meet requirements', submissionId);
 
-    res.json({ success: true, message: 'Submission rejected' });
+      res.json({ success: true, message: 'Submission rejected' });
 
     } else {
       res.status(400).json({ error: 'Invalid action' });
@@ -410,7 +410,7 @@ router.post('/tasks/:id/submissions/:submissionId/review', isAdvertiser, (req, r
 router.get('/tasks/:id/export', isAdvertiser, (req, res) => {
   const db = getDb();
   const taskId = parseInt(req.params.id);
-  
+
   try {
     // Verify task belongs to advertiser
     const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND advertiserId = ?')
@@ -481,17 +481,17 @@ router.get('/tasks', async (req, res) => {
   } catch (error) {
     // User not logged in, that's okay for browsing tasks
   }
-  
+
   try {
     const { type, difficulty, minReward, maxReward, advertiserId } = req.query;
 
     let query = `
       SELECT t.*, a.nameEn as advertiserName, a.nameAr as advertiserNameAr, 
-             a.logoUrl as advertiserLogo, a.id as advertiserDbId
+             a.logo as advertiserLogo, a.id as advertiserDbId
       FROM tasks t
       LEFT JOIN advertisers a ON t.advertiserId = a.id
       WHERE t.status IN ('active', 'published')
-      AND t.completionsCount < t.completionsNeeded
+      AND t.currentCompletions < t.maxCompletions
     `;
 
     const params: any[] = [];
@@ -538,7 +538,7 @@ router.get('/tasks', async (req, res) => {
     // Parse JSON and add completion status
     const tasksWithData = tasks.map((task: any) => {
       const parsedTaskData = task.taskData ? JSON.parse(task.taskData) : null;
-      
+
       // Helper function to extract string from requirements/steps
       // Handles both simple strings and objects with instructionEn/instructionAr
       const extractStrings = (items: any[]): string[] => {
@@ -551,7 +551,7 @@ router.get('/tasks', async (req, res) => {
           return String(item);
         });
       };
-      
+
       return {
         ...task,
         targetLocations: task.targetLocations ? JSON.parse(task.targetLocations) : null,
@@ -565,17 +565,17 @@ router.get('/tasks', async (req, res) => {
     });
 
     // Get user tier if logged in
-    let userTier = null;    if (userId) {
+    let userTier = null; if (userId) {
       const userResult = await mysqlQuery('SELECT tier FROM users WHERE id = ?', [userId]) as any[];
-     if (userResult && userResult.length > 0) {
+      if (userResult && userResult.length > 0) {
         userTier = userResult[0].tier;
-     }
+      }
     }
     // Filter by targetTiers and completion status
     const availableTasks = tasksWithData.filter((task: any) => {
       // Filter out completed tasks (unless they allow multiple completions)
       if (task.isCompleted && !task.allowMultipleCompletions) {
-       return false;
+        return false;
       }
 
       // Filter by targetTiers if user is logged in and task has tier targeting
@@ -618,7 +618,7 @@ router.get('/tasks/my-submissions', isUser, async (req, res) => {
       WHERE s.userId = ? AND s.status IN ('approved', 'completed')
       ORDER BY s.createdAt DESC
     `, [req.userId]) as any[];
-    
+
     res.json({ submissions });
   } catch (error: any) {
     console.error('Error fetching submissions:', error);
@@ -632,7 +632,7 @@ router.get('/tasks/my-submissions', isUser, async (req, res) => {
  */
 router.get('/tasks/:id', async (req, res) => {
   const taskId = parseInt(req.params.id);
-  
+
   try {
     // Get task
     const tasks = await mysqlQuery(`
@@ -661,7 +661,7 @@ router.get('/tasks/:id', async (req, res) => {
       const rawSurveyQuestions = await mysqlQuery(`
         SELECT * FROM survey_questions WHERE taskId = ? ORDER BY questionOrder
       `, [taskId]) as any[];
-      
+
       surveyQuestions = rawSurveyQuestions.map((q: any) => ({
         ...q,
         options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
@@ -693,7 +693,7 @@ router.get('/tasks/:id', async (req, res) => {
  */
 router.post('/tasks/:id/start', isUser, async (req, res) => {
   const taskId = parseInt(req.params.id);
-  
+
   try {
     // Check if task exists and is active in MySQL
     const tasks = await mysqlQuery('SELECT * FROM tasks WHERE id = ? AND status = ?', [taskId, 'active']) as any[];
@@ -716,8 +716,8 @@ router.post('/tasks/:id/start', isUser, async (req, res) => {
       }
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Task started',
       startTime: new Date().toISOString()
     });
@@ -735,12 +735,12 @@ router.post('/tasks/:id/start', isUser, async (req, res) => {
 router.post('/tasks/:id/submit', isUser, async (req, res) => {
   const taskId = parseInt(req.params.id);
   const { answers, watchTime } = req.body;
-  
+
   console.log('[Submit Task] User ID:', req.userId);
   console.log('[Submit Task] Task ID:', taskId);
   console.log('[Submit Task] Answers:', answers);
   console.log('[Submit Task] Watch Time:', watchTime);
-  
+
   try {
     // Get task with questions from MySQL
     const tasks = await mysqlQuery('SELECT * FROM tasks WHERE id = ?', [taskId]) as any[];
@@ -762,7 +762,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
       const userAnswer = answers[index];
       const isCorrect = userAnswer === q.correctAnswer;
       if (isCorrect) correctCount++;
-      
+
       return {
         questionId: q.id,
         questionText: q.questionText,
@@ -774,7 +774,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
 
     const score = Math.round((correctCount / questions.length) * 100);
     const passed = score >= task.passingScore;
-    
+
     console.log('[Submit Task] Correct Count:', correctCount);
     console.log('[Submit Task] Total Questions:', questions.length);
     console.log('[Submit Task] Score:', score);
@@ -813,7 +813,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
 
     // Format date for MySQL (YYYY-MM-DD HH:MM:SS)
     const mysqlDatetime = finalPassed ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
-    
+
     const result = await mysqlQuery(`
       INSERT INTO task_submissions (
         taskId, userId, status, submissionData,
@@ -841,15 +841,15 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
         `SELECT id FROM task_submissions WHERE userId = ? AND taskId = ? AND status = 'approved'`,
         [req.userId, taskId]
       ) as any[];
-      
+
       if (existingCompletion && existingCompletion.length > 1) { // 1 because we just inserted the current one
         console.log(`[DUPLICATE] User ${req.userId} already completed task ${taskId}`);
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'You have already completed this task',
           success: false
         });
       }
-      
+
       // Update user balance in MySQL database
       try {
         // Update balance, completedTasks, and totalEarnings
@@ -862,7 +862,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
            WHERE id = ?`,
           [task.reward, task.reward, req.userId]
         );
-        
+
         // Insert userTasks record to track completion
         await mysqlQuery(
           `INSERT INTO userTasks 
@@ -870,17 +870,17 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
            VALUES (?, ?, 'completed', NOW(), NOW(), ?, ?)`,
           [req.userId, taskId, task.reward, JSON.stringify({ score, answers: answerResults })]
         );
-        
+
         // Get advertiser tier for commission calculation
         const advertiserData = await mysqlQuery(
           `SELECT tier FROM advertisers WHERE id = ?`,
           [task.advertiserId]
         ) as any[];
         const advertiserTier = advertiserData[0]?.tier || 'basic';
-        
+
         // Calculate advertiser commission
         const commission = calculateAdvertiserCommission(parseFloat(task.reward), advertiserTier);
-        
+
         // Get user balance for transaction record
         const userBalanceData = await mysqlQuery(
           `SELECT balance FROM users WHERE id = ?`,
@@ -888,7 +888,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
         ) as any[];
         const balanceBefore = userBalanceData[0]?.balance || 0;
         const balanceAfter = parseFloat(balanceBefore) + parseFloat(task.reward);
-        
+
         // Insert transaction record in MySQL with commission tracking
         await mysqlQuery(
           `INSERT INTO transactions 
@@ -896,16 +896,16 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
            VALUES (?, 'earn', ?, ?, ?, ?, 'completed', ?, ?, ?, ?, NOW())`,
           [req.userId, task.reward, balanceBefore, balanceAfter, `Task completed: ${task.titleEn}`, taskId, commission.commissionAmount, commission.commissionRate, task.reward]
         );
-        
+
         // Deduct from advertiser balance (reward + commission)
         await mysqlQuery(
           `UPDATE advertisers SET balance = balance - ?, totalSpent = totalSpent + ? WHERE id = ?`,
           [commission.totalCost, commission.totalCost, task.advertiserId]
         );
-        
+
         // Update task completion count in MySQL
-        await mysqlQuery('UPDATE tasks SET completionsCount = completionsCount + 1 WHERE id = ?', [taskId]);
-        
+        await mysqlQuery('UPDATE tasks SET currentCompletions = currentCompletions + 1 WHERE id = ?', [taskId]);
+
         console.log(`[WALLET] Successfully credited ${task.reward} EGP to user ${req.userId}`);
       } catch (error) {
         console.error('[WALLET] Error updating user balance:', error);
@@ -956,11 +956,11 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
 router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
   const taskId = parseInt(req.params.id);
   const { answers } = req.body; // Array of { questionId, selectedOptions }
-  
+
   console.log('[Submit Survey] User ID:', req.userId);
   console.log('[Submit Survey] Task ID:', taskId);
   console.log('[Submit Survey] Answers:', JSON.stringify(answers));
-  
+
   try {
     // Get task from MySQL
     const tasks = await mysqlQuery('SELECT * FROM tasks WHERE id = ? AND type = ?', [taskId, 'survey']) as any[];
@@ -968,42 +968,42 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
       return res.status(404).json({ error: 'Survey task not found' });
     }
     const task = tasks[0];
-    
+
     // Get survey questions
     const questions = await mysqlQuery(`
       SELECT * FROM survey_questions WHERE taskId = ? ORDER BY questionOrder
     `, [taskId]) as any[];
-    
+
     if (!questions || questions.length === 0) {
       return res.status(404).json({ error: 'Survey questions not found' });
     }
-    
+
     // Validate all required questions are answered
     const answeredQuestionIds = new Set(answers.map((a: any) => a.questionId));
     const requiredQuestions = questions.filter((q: any) => q.isRequired);
     const missingQuestions = requiredQuestions.filter((q: any) => !answeredQuestionIds.has(q.id));
-    
+
     if (missingQuestions.length > 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Missing required answers',
         missingQuestions: missingQuestions.map((q: any) => q.id)
       });
     }
-    
+
     // Check if user already completed this survey
     const existingSubmissions = await mysqlQuery(`
       SELECT * FROM task_submissions 
       WHERE taskId = ? AND userId = ? AND status = 'approved'
     `, [taskId, req.userId]) as any[];
-    
+
     if (existingSubmissions && existingSubmissions.length > 0) {
       return res.status(400).json({ error: 'You have already completed this survey' });
     }
-    
+
     // Create submission
     const submissionData = JSON.stringify({ answers });
     const mysqlDatetime = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    
+
     const result = await mysqlQuery(`
       INSERT INTO task_submissions (
         taskId, userId, status, submissionData,
@@ -1019,9 +1019,9 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
       task.reward,
       mysqlDatetime
     ]) as any;
-    
+
     const submissionId = result.insertId;
-    
+
     // Store individual responses
     for (const answer of answers) {
       await mysqlQuery(`
@@ -1033,49 +1033,49 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
     const userBefore = await mysqlQuery("SELECT balance FROM users WHERE id = ?", [req.userId]) as any[];
     const balanceBefore = userBefore[0]?.balance || 0;
     const balanceAfter = parseFloat(balanceBefore) + parseFloat(task.reward);
-    
+
     // Credit reward to user
     await mysqlQuery(`
       UPDATE users SET balance = balance + ?, completedTasks = completedTasks + 1, totalEarnings = totalEarnings + ? WHERE id = ?
     `, [task.reward, task.reward, req.userId]);
-    
+
     // Get advertiser tier for commission calculation
     const advertiserData = await mysqlQuery(
       `SELECT tier FROM advertisers WHERE id = ?`,
       [task.advertiserId]
     ) as any[];
     const advertiserTier = advertiserData[0]?.tier || 'basic';
-    
+
     // Calculate advertiser commission
     const commission = calculateAdvertiserCommission(parseFloat(task.reward), advertiserTier);
-    
+
     // Create transaction record with commission tracking
     await mysqlQuery(`
       INSERT INTO transactions (userId, type, amount, status, description, relatedTaskId, balanceBefore, balanceAfter, commissionAmount, commissionRate, netAmount, createdAt)
       VALUES (?, "earn", ?, "completed", ?, ?, ?, ?, ?, ?, ?, NOW())
     `, [req.userId, task.reward, `Survey completed: ${task.titleEn}`, taskId, balanceBefore, balanceAfter, commission.commissionAmount, commission.commissionRate, task.reward]);
-    
+
     // Deduct from advertiser balance (reward + commission)
     await mysqlQuery(
       `UPDATE advertisers SET balance = balance - ?, totalSpent = totalSpent + ? WHERE id = ?`,
       [commission.totalCost, commission.totalCost, task.advertiserId]
     );
-    
+
     // Update task completion count
     await mysqlQuery(`
-      UPDATE tasks SET completionsCount = completionsCount + 1 WHERE id = ?
+      UPDATE tasks SET currentCompletions = currentCompletions + 1 WHERE id = ?
     `, [taskId]);
-    
+
     console.log('[Submit Survey] Survey completed successfully');
     console.log('[Submit Survey] Reward credited:', task.reward);
-    
+
     res.json({
       success: true,
       passed: true,
       rewardAmount: task.reward,
       message: 'Survey completed successfully'
     });
-    
+
   } catch (error: any) {
     console.error('[Submit Survey] Error:', error);
     res.status(500).json({ error: error.message });
@@ -1088,7 +1088,7 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
  */
 router.get('/tasks/my-submissions', isUser, (req, res) => {
   const db = getDb();
-  
+
   try {
     const submissions = db.prepare(`
       SELECT 
@@ -1158,7 +1158,7 @@ router.get('/weekly-earnings', isUser, async (req, res) => {
     // Get earnings for the last 7 days from MySQL (including today)
     // Using DATE_SUB with INTERVAL 6 DAY to include today as the 7th day
     // Fixed: GROUP BY must include all non-aggregated columns in SELECT for ONLY_FULL_GROUP_BY mode
-	    const earnings = await mysqlQuery(`
+    const earnings = await mysqlQuery(`
 	      SELECT 
 	        DATE(createdAt) as dateValue,
 	        DATE_FORMAT(DATE(createdAt), '%Y-%m-%d') as date,
@@ -1172,9 +1172,9 @@ router.get('/weekly-earnings', isUser, async (req, res) => {
 	      GROUP BY DATE(createdAt), dateValue, dayName
 	      ORDER BY dateValue ASC
 	    `, [req.userId]) as any[];
-    
+
     // Get previous week's total for comparison (7-13 days ago)
-	    const prevWeekEarnings = await mysqlQuery(`
+    const prevWeekEarnings = await mysqlQuery(`
 	      SELECT SUM(amount) as total
 	      FROM transactions 
 	      WHERE userId = ? 
@@ -1183,11 +1183,11 @@ router.get('/weekly-earnings', isUser, async (req, res) => {
 	        AND DATE(createdAt) >= DATE_SUB(CURDATE(), INTERVAL 13 DAY)
 	        AND DATE(createdAt) <= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
 	    `, [req.userId]) as any[];
-    
+
     // Create a map of all 7 days with 0 as default
     const today = new Date();
     const last7Days: any[] = [];
-    
+
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
@@ -1197,23 +1197,23 @@ router.get('/weekly-earnings', isUser, async (req, res) => {
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
       const dateStr = `${year}-${month}-${day}`;
-      
+
       // Find matching earning - compare as strings
       const earning = earnings.find((e: any) => {
         const eDate = typeof e.date === 'string' ? e.date : String(e.date).split('T')[0];
         return eDate === dateStr;
       });
-      
+
       last7Days.push({
         day: dayName,
         date: dateStr,
         amount: earning ? parseFloat(earning.totalAmount) : 0
       });
     }
-    
+
     const totalEarnings = last7Days.reduce((sum, d) => sum + d.amount, 0);
     const prevWeekTotal = prevWeekEarnings[0]?.total ? parseFloat(prevWeekEarnings[0].total) : 0;
-    
+
     res.json({
       earnings: last7Days,
       totalEarnings,
@@ -1234,36 +1234,36 @@ router.get('/profile/strength', isUser, async (req, res) => {
   console.log("[Profile Strength] User ID:", req.userId);
   try {
     let strength = 0;
-    
+
     // Phone verified = 20%
     if (req.user?.phoneVerified) strength += 20;
-    
+
     // Email verified = 10%
     if (req.user?.emailVerified) strength += 10;
-    
+
     // Check KYC verification = 20%
     const kycResult = await mysqlQuery(`
       SELECT COUNT(*) as count FROM user_verifications 
       WHERE userId = ? AND verificationType = 'national_id' AND status = 'verified'
     `, [req.userId]) as any[];
     if (kycResult[0]?.count > 0) strength += 20;
-    
+
     // Check social profiles = 10%
     const socialResult = await mysqlQuery(`
       SELECT COUNT(*) as count FROM user_social_profiles WHERE userId = ?
     `, [req.userId]) as any[];
     if (socialResult[0]?.count > 0) strength += 10;
-    
+
     // Profile questions answered = up to 40%
     const profileDataResult = await mysqlQuery(`
       SELECT COUNT(*) as count FROM user_profile_data WHERE userId = ?
     `, [req.userId]) as any[];
     const questionCount = profileDataResult[0]?.count || 0;
     strength += Math.min(questionCount * 4, 40);
-    
+
     // Cap at 100%
     strength = Math.min(strength, 100);
-    
+
     res.json({
       strength,
       breakdown: {

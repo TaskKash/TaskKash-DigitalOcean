@@ -57,7 +57,11 @@ async function seed() {
     ];
 
     for (const country of countriesData) {
-      await db.insert(countries).values(country);
+      try {
+        await db.insert(countries).values(country);
+      } catch (e: any) {
+        if (!String(e).includes('Duplicate entry') && !String(e.message).includes('Duplicate entry') && e.code !== 'ER_DUP_ENTRY') throw e;
+      }
     }
     console.log(`✅ Seeded ${countriesData.length} countries`);
 
@@ -128,7 +132,11 @@ async function seed() {
     ];
 
     for (const advertiser of advertisersData) {
-      await db.insert(advertisers).values(advertiser);
+      try {
+        await db.insert(advertisers).values(advertiser);
+      } catch (e: any) {
+        if (!String(e).includes('Duplicate entry') && !String(e.message).includes('Duplicate entry') && e.code !== 'ER_DUP_ENTRY') throw e;
+      }
     }
     console.log(`✅ Seeded ${advertisersData.length} advertisers`);
 
@@ -241,7 +249,11 @@ async function seed() {
     ];
 
     for (const task of tasksData) {
-      await db.insert(tasks).values(task);
+      try {
+        await db.insert(tasks).values(task);
+      } catch (e: any) {
+        if (!String(e).includes('Duplicate entry') && !String(e.message).includes('Duplicate entry') && e.code !== 'ER_DUP_ENTRY') throw e;
+      }
     }
     console.log(`✅ Seeded ${tasksData.length} tasks`);
 

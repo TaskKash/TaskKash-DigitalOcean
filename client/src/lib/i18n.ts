@@ -8,7 +8,7 @@ const resources = {
     translation: {
       // Common
       "welcome": "مرحباً بك في",
-      
+
       // Welcome Page
       "welcome.title": "مرحباً بك في",
       "welcome.subtitle": "ابدأ رحلتك في كسب المال من هاتفك",
@@ -49,7 +49,7 @@ const resources = {
       "common.all": "الكل",
       "common.clearAll": "مسح الكل",
       "common.apply": "تطبيق",
-      
+
       // Navigation
       "home": "الرئيسية",
       "tasks": "المهام",
@@ -58,7 +58,7 @@ const resources = {
       "settings": "الإعدادات",
       "logout": "تسجيل الخروج",
       "login": "تسجيل الدخول",
-      
+
       // Home Page
       "home.greeting": "مرحباً،",
       "home.currentBalance": "رصيدك الحالي",
@@ -96,26 +96,26 @@ const resources = {
       "home.days.wednesday": "الأربعاء",
       "home.days.thursday": "الخميس",
       "home.days.friday": "الجمعة",
-      
+
       // Tier names
       "tier.bronze": "برونزي",
       "tier.silver": "فضي",
       "tier.gold": "ذهبي",
       "tier.platinum": "بلاتيني",
-      
+
       // Time
       "time.minutes": "دقيقة",
       "time.hours": "ساعة",
       "time.days": "يوم",
-      
+
       // Currency
       "currency": "ج.م",
-      
+
       // Difficulty
       "difficulty.easy": "سهل",
       "difficulty.medium": "متوسط",
       "difficulty.hard": "صعب",
-      
+
       // Old keys (keep for backward compatibility)
       "currentBalance": "رصيدك الحالي",
       "manageWallet": "إدارة المحفظة",
@@ -124,7 +124,7 @@ const resources = {
       "featuredTasks": "مهام مميزة",
       "viewAll": "عرض الكل",
       "strengthenProfile": "عزز ملفك الآن",
-      
+
       // Tasks
       "tasks.title": "المهام",
       "tasks.tabs.available": "متاحة",
@@ -177,7 +177,7 @@ const resources = {
       "tasks.answerQuestions": "أجب على {{count}} أسئلة",
       "tasks.passingScore": "احصل على {{score}}% على الأقل",
       "difficulty.advanced": "متقدم",
-      
+
       // Old keys (keep for backward compatibility)
       "availableTasks": "المهام المتاحة",
       "taskDetails": "تفاصيل المهمة",
@@ -189,7 +189,7 @@ const resources = {
       "hard": "صعب",
       "startTask": "ابدأ المهمة",
       "completeTask": "أكمل المهمة",
-      
+
       // Advertiser
       "advertiser": "المعلن",
       "verified": "معلن موثوق",
@@ -219,7 +219,7 @@ const resources = {
       "advertiser.completed": "مكتمل",
       "advertiser.noTasks": "لا توجد مهام متاحة حالياً",
       "advertiser.followForUpdates": "تابع هذا المعلن لتلقي إشعارات عند إضافة مهام جديدة",
-      
+
       // Wallet
       "wallet.title": "المحفظة",
       "wallet.withdrawBalance": "سحب الرصيد",
@@ -246,7 +246,7 @@ const resources = {
       "wallet.empty.earnings": "لم تحصل على أي أرباح بعد",
       "wallet.empty.withdrawals": "لم تقم بأي عمليات سحب بعد",
       "wallet.empty.bonuses": "لم تحصل على أي مكافآت بعد",
-      
+
       // Old keys (keep for backward compatibility)
       "balance": "الرصيد",
       "withdraw": "سحب",
@@ -254,7 +254,7 @@ const resources = {
       "pending": "قيد الانتظار",
       "completed": "مكتمل",
       "failed": "فشل",
-      
+
       // Profile
       "profile.title": "الملف الشخصي",
       "profile.verified": "موثق",
@@ -272,7 +272,7 @@ const resources = {
       "profile.menu.helpSupport": "المساعدة والدعم",
       "profile.menu.terms": "الشروط والأحكام",
       "profile.menu.privacy": "سياسة الخصوصية",
-      
+
       // Edit Profile
       "editProfile.changePhoto": "انقر لتغيير الصورة",
       "editProfile.personalInfo": "المعلومات الشخصية",
@@ -298,7 +298,7 @@ const resources = {
       "editProfile.dangerZone": "منطقة الخطر",
       "editProfile.deleteWarning": "حذف الحساب نهائي ولا يمكن التراجع عنه",
       "editProfile.deleteAccount": "حذف الحساب",
-      
+
       // Profile Strength
       "profileStrength.title": "قوة الملف الشخصي",
       "profileStrength.badges.bronze": "برونزي",
@@ -310,7 +310,7 @@ const resources = {
       "profileStrength.boostProfile": "عزز ملفك الشخصي",
       "profileStrength.verifyIdentity": "تحقق من هويتك (+30%)",
       "profileStrength.answerQuestions": "أجب على أسئلة الملف الشخصي",
-      
+
       // Profile Questions
       "profileQuestions.progress": "المجموعة {{current}} من {{total}}",
       "profileQuestions.last": "(الأخيرة!)",
@@ -323,7 +323,7 @@ const resources = {
       "profileQuestions.sessionExpired": "انتهت الجلسة. الرجاء تسجيل الدخول مرة أخرى",
       "profileQuestions.error": "حدث خطأ أثناء إكمال الملف الشخصي",
       "profileQuestions.success": "🎉 مبروك! حصلت على {{reward}} ج.م وملفك مكتمل 100%",
-      
+
       // Page 1 - Demographics
       "profileQuestions.page1.title": "المعلومات الديموغرافية",
       "profileQuestions.gender": "الجنس",
@@ -343,7 +343,7 @@ const resources = {
       "profileQuestions.education.bachelor": "بكالوريوس",
       "profileQuestions.education.master": "ماجستير",
       "profileQuestions.education.phd": "دكتوراه",
-      
+
       // Page 2 - Work & Income
       "profileQuestions.page2.title": "العمل والدخل",
       "profileQuestions.employment": "حالة التوظيف",
@@ -368,7 +368,7 @@ const resources = {
       "profileQuestions.industry.healthcare": "صحة",
       "profileQuestions.industry.retail": "تجارة",
       "profileQuestions.industry.other": "أخرى",
-      
+
       // Page 3 - Interests
       "profileQuestions.page3.title": "الاهتمامات",
       "profileQuestions.shopping": "التسوق",
@@ -385,7 +385,7 @@ const resources = {
       "profileQuestions.interests.travel": "سفر",
       "profileQuestions.interests.food": "طعام",
       "profileQuestions.interests.gaming": "ألعاب",
-      
+
       // Page 4 - Lifestyle
       "profileQuestions.page4.title": "نمط الحياة",
       "profileQuestions.maritalStatus": "الحالة الاجتماعية",
@@ -405,7 +405,7 @@ const resources = {
       "profileQuestions.housingType.owned": "ملك",
       "profileQuestions.housingType.rent": "إيجار",
       "profileQuestions.housingType.family": "مع العائلة",
-      
+
       // Old keys (keep for backward compatibility)
       "personalInfo": "المعلومات الشخصية",
       "name": "الاسم",
@@ -433,7 +433,7 @@ const resources = {
       "language": "اللغة",
       "selectCountry": "اختر الدولة",
       "selectLanguage": "اختر اللغة",
-      
+
       // Identity Verification
       "identity.title": "التحقق من الهوية",
       "identity.hero.title": "عزز ملفك الشخصي",
@@ -455,7 +455,7 @@ const resources = {
       "identity.privacy.description": "جميع بياناتك محمية بأعلى معايير الأمان ولن تُشارك مع أي جهة خارجية",
       "identity.startVerification": "ابدأ التحقق الآن",
       "identity.maybeLater": "ربما لاحقاً",
-      
+
       // Upload ID
       "uploadId.title": "رفع الهوية",
       "uploadId.instructions.title": "تعليمات مهمة",
@@ -478,7 +478,7 @@ const resources = {
       "uploadId.success.complete": "تم رفع الهوية بنجاح!",
       "uploadId.errors.selectType": "الرجاء اختيار نوع الهوية",
       "uploadId.errors.uploadBoth": "الرجاء رفع صورتي الهوية (الوجه الأمامي والخلفي)",
-      
+
       // Countries
       "egypt": "مصر",
       "saudiArabia": "السعودية",
@@ -490,13 +490,13 @@ const resources = {
       "jordan": "الأردن",
       "lebanon": "لبنان",
       "morocco": "المغرب",
-      
+
       // Tiers
       "bronze": "برونزي",
       "silver": "فضي",
       "gold": "ذهبي",
       "platinum": "بلاتيني",
-      
+
       // Categories
       "telecommunications": "اتصالات",
       "ecommerce": "تجارة إلكترونية",
@@ -504,7 +504,7 @@ const resources = {
       "food": "طعام ومشروبات",
       "entertainment": "ترفيه",
       "finance": "خدمات مالية",
-      
+
       // Task Types
       "survey": "استبيان",
       "app": "تطبيق",
@@ -512,7 +512,7 @@ const resources = {
       "review": "تقييم",
       "social": "وسائل التواصل",
       "other": "أخرى",
-      
+
       // Selfie Capture
       "selfie.title": "صورة شخصية",
       "selfie.instructions.title": "تعليمات الصورة الشخصية",
@@ -536,7 +536,7 @@ const resources = {
       "selfie.success.captured": "تم التقاط الصورة بنجاح",
       "selfie.success.verified": "تم التحقق من هويتك بنجاح! 🎉",
       "selfie.errors.required": "الرجاء التقاط صورة شخصية",
-      
+
       // Task Detail
       "taskDetail.reward": "المكافأة",
       "taskDetail.duration": "المدة",
@@ -548,7 +548,7 @@ const resources = {
       "taskDetail.steps": "الخطوات",
       "taskDetail.startTask": "ابدأ المهمة",
       "taskDetail.apply": "تقديم",
-      
+
       // Settings
       "settings.title": "الإعدادات",
       "settings.account": "الحساب",
@@ -557,13 +557,13 @@ const resources = {
       "settings.language": "اللغة",
       "settings.about": "حول",
       "settings.logout": "تسجيل الخروج",
-      
+
       // Help & FAQ
       "help.title": "المساعدة والدعم",
       "help.search": "ابحث عن مساعدة",
       "help.contactUs": "اتصل بنا",
       "faq.title": "الأسئلة الشائعة",
-      
+
       // Auth
       "login.title": "تسجيل الدخول",
       "login.subtitle": "ادخل إلى حسابك",
@@ -598,12 +598,12 @@ const resources = {
       "register.errors.passwordMismatch": "كلمة المرور غير متطابقة",
       "register.errors.agreeTerms": "الرجاء الموافقة على الشروط والأحكام",
       "register.success": "تم إنشاء الحساب بنجاح!",
-      
+
       // Notifications
       "notifications.title": "الإشعارات",
       "notifications.markAllRead": "تعليم الكل كمقروء",
       "notifications.noNotifications": "لا توجد إشعارات",
-      
+
       // Phone Login
       "phoneLogin.title": "تسجيل الدخول برقم الهاتف",
       "phoneLogin.subtitle": "أدخل رقم هاتفك للمتابعة",
@@ -626,7 +626,7 @@ const resources = {
       "phoneLogin.terms": "الشروط والأحكام",
       "phoneLogin.and": "و",
       "phoneLogin.privacy": "سياسة الخصوصية",
-      
+
       // Profile Complete
       "profileComplete.title": "أكمل ملفك الشخصي",
       "profileComplete.profileStrength": "قوة الملف الشخصي",
@@ -676,7 +676,7 @@ const resources = {
     translation: {
       // Common
       "welcome": "Welcome to",
-      
+
       // Welcome Page
       "welcome.title": "Welcome to",
       "welcome.subtitle": "Start your journey to earn money from your phone",
@@ -717,7 +717,7 @@ const resources = {
       "common.all": "All",
       "common.clearAll": "Clear All",
       "common.apply": "Apply",
-      
+
       // Navigation
       "home": "Home",
       "tasks": "Tasks",
@@ -726,7 +726,7 @@ const resources = {
       "settings": "Settings",
       "logout": "Logout",
       "login": "Login",
-      
+
       // Home Page
       "home.greeting": "Hello,",
       "home.currentBalance": "Current Balance",
@@ -764,26 +764,26 @@ const resources = {
       "home.days.wednesday": "Wed",
       "home.days.thursday": "Thu",
       "home.days.friday": "Fri",
-      
+
       // Tier names
       "tier.bronze": "Bronze",
       "tier.silver": "Silver",
       "tier.gold": "Gold",
       "tier.platinum": "Platinum",
-      
+
       // Time
       "time.minutes": "minutes",
       "time.hours": "hours",
       "time.days": "days",
-      
+
       // Currency
       "currency": "EGP",
-      
+
       // Difficulty
       "difficulty.easy": "Easy",
       "difficulty.medium": "Medium",
       "difficulty.hard": "Hard",
-      
+
       // Old keys (keep for backward compatibility)
       "currentBalance": "Current Balance",
       "manageWallet": "Manage Wallet",
@@ -792,7 +792,7 @@ const resources = {
       "featuredTasks": "Featured Tasks",
       "viewAll": "View All",
       "strengthenProfile": "Strengthen Your Profile",
-      
+
       // Tasks
       "tasks.title": "Tasks",
       "tasks.tabs.available": "Available",
@@ -845,7 +845,7 @@ const resources = {
       "tasks.answerQuestions": "Answer {{count}} questions",
       "tasks.passingScore": "Achieve at least {{score}}%",
       "difficulty.advanced": "Advanced",
-      
+
       // Old keys (keep for backward compatibility)
       "availableTasks": "Available Tasks",
       "taskDetails": "Task Details",
@@ -857,7 +857,7 @@ const resources = {
       "hard": "Hard",
       "startTask": "Start Task",
       "completeTask": "Complete Task",
-      
+
       // Advertiser
       "advertiser": "Advertiser",
       "verified": "Verified Advertiser",
@@ -887,7 +887,7 @@ const resources = {
       "advertiser.completed": "Completed",
       "advertiser.noTasks": "No tasks available at the moment",
       "advertiser.followForUpdates": "Follow this advertiser to receive notifications when new tasks are added",
-      
+
       // Wallet
       "wallet.title": "Wallet",
       "wallet.withdrawBalance": "Withdraw Balance",
@@ -914,7 +914,7 @@ const resources = {
       "wallet.empty.earnings": "No earnings yet",
       "wallet.empty.withdrawals": "No withdrawals yet",
       "wallet.empty.bonuses": "No bonuses yet",
-      
+
       // Old keys (keep for backward compatibility)
       "balance": "Balance",
       "withdraw": "Withdraw",
@@ -922,7 +922,7 @@ const resources = {
       "pending": "Pending",
       "completed": "Completed",
       "failed": "Failed",
-      
+
       // Profile
       "profile.title": "Profile",
       "profile.verified": "Verified",
@@ -940,7 +940,7 @@ const resources = {
       "profile.menu.helpSupport": "Help & Support",
       "profile.menu.terms": "Terms & Conditions",
       "profile.menu.privacy": "Privacy Policy",
-      
+
       // Edit Profile
       "editProfile.changePhoto": "Click to change photo",
       "editProfile.personalInfo": "Personal Information",
@@ -966,7 +966,7 @@ const resources = {
       "editProfile.dangerZone": "Danger Zone",
       "editProfile.deleteWarning": "Account deletion is permanent and cannot be undone",
       "editProfile.deleteAccount": "Delete Account",
-      
+
       // Profile Strength
       "profileStrength.title": "Profile Strength",
       "profileStrength.badges.bronze": "Bronze",
@@ -978,7 +978,7 @@ const resources = {
       "profileStrength.boostProfile": "Boost Your Profile",
       "profileStrength.verifyIdentity": "Verify your identity (+30%)",
       "profileStrength.answerQuestions": "Answer profile questions",
-      
+
       // Profile Questions
       "profileQuestions.progress": "Group {{current}} of {{total}}",
       "profileQuestions.last": "(Last one!)",
@@ -991,7 +991,7 @@ const resources = {
       "profileQuestions.sessionExpired": "Session expired. Please login again",
       "profileQuestions.error": "An error occurred while completing profile",
       "profileQuestions.success": "🎉 Congratulations! You earned {{reward}} EGP and your profile is 100% complete",
-      
+
       // Page 1 - Demographics
       "profileQuestions.page1.title": "Demographics",
       "profileQuestions.gender": "Gender",
@@ -1011,7 +1011,7 @@ const resources = {
       "profileQuestions.education.bachelor": "Bachelor's Degree",
       "profileQuestions.education.master": "Master's Degree",
       "profileQuestions.education.phd": "PhD",
-      
+
       // Page 2 - Work & Income
       "profileQuestions.page2.title": "Work & Income",
       "profileQuestions.employment": "Employment Status",
@@ -1036,7 +1036,7 @@ const resources = {
       "profileQuestions.industry.healthcare": "Healthcare",
       "profileQuestions.industry.retail": "Retail",
       "profileQuestions.industry.other": "Other",
-      
+
       // Page 3 - Interests
       "profileQuestions.page3.title": "Interests",
       "profileQuestions.shopping": "Shopping",
@@ -1053,7 +1053,7 @@ const resources = {
       "profileQuestions.interests.travel": "Travel",
       "profileQuestions.interests.food": "Food",
       "profileQuestions.interests.gaming": "Gaming",
-      
+
       // Page 4 - Lifestyle
       "profileQuestions.page4.title": "Lifestyle",
       "profileQuestions.maritalStatus": "Marital Status",
@@ -1073,7 +1073,7 @@ const resources = {
       "profileQuestions.housingType.owned": "Owned",
       "profileQuestions.housingType.rent": "Rent",
       "profileQuestions.housingType.family": "With Family",
-      
+
       // Old keys (keep for backward compatibility)
       "personalInfo": "Personal Information",
       "name": "Name",
@@ -1084,7 +1084,6 @@ const resources = {
       "joinDate": "Join Date",
       "accountStats": "Account Statistics",
       "verification": "Verification",
-      "verified": "Verified",
       "nationalId": "National ID",
       "verify": "Verify",
       "dangerZone": "Danger Zone",
@@ -1101,7 +1100,7 @@ const resources = {
       "language": "Language",
       "selectCountry": "Select Country",
       "selectLanguage": "Select Language",
-      
+
       // Identity Verification
       "identity.title": "Identity Verification",
       "identity.hero.title": "Boost Your Profile",
@@ -1123,7 +1122,7 @@ const resources = {
       "identity.privacy.description": "All your data is protected with the highest security standards and will not be shared with any third party",
       "identity.startVerification": "Start Verification Now",
       "identity.maybeLater": "Maybe Later",
-      
+
       // Upload ID
       "uploadId.title": "Upload ID",
       "uploadId.instructions.title": "Important Instructions",
@@ -1146,7 +1145,7 @@ const resources = {
       "uploadId.success.complete": "ID uploaded successfully!",
       "uploadId.errors.selectType": "Please select ID type",
       "uploadId.errors.uploadBoth": "Please upload both sides of the ID (front and back)",
-      
+
       // Countries
       "egypt": "Egypt",
       "saudiArabia": "Saudi Arabia",
@@ -1158,13 +1157,13 @@ const resources = {
       "jordan": "Jordan",
       "lebanon": "Lebanon",
       "morocco": "Morocco",
-      
+
       // Tiers
       "bronze": "Bronze",
       "silver": "Silver",
       "gold": "Gold",
       "platinum": "Platinum",
-      
+
       // Categories
       "telecommunications": "Telecommunications",
       "ecommerce": "E-commerce",
@@ -1172,7 +1171,7 @@ const resources = {
       "food": "Food & Beverages",
       "entertainment": "Entertainment",
       "finance": "Financial Services",
-      
+
       // Task Types
       "survey": "Survey",
       "app": "App",
@@ -1180,7 +1179,7 @@ const resources = {
       "review": "Review",
       "social": "Social Media",
       "other": "Other",
-      
+
       // Selfie Capture
       "selfie.title": "Selfie Photo",
       "selfie.instructions.title": "Selfie Instructions",
@@ -1204,7 +1203,7 @@ const resources = {
       "selfie.success.captured": "Photo captured successfully",
       "selfie.success.verified": "Your identity verified successfully! 🎉",
       "selfie.errors.required": "Please take a selfie photo",
-      
+
       // Task Detail
       "taskDetail.reward": "Reward",
       "taskDetail.duration": "Duration",
@@ -1216,7 +1215,7 @@ const resources = {
       "taskDetail.steps": "Steps",
       "taskDetail.startTask": "Start Task",
       "taskDetail.apply": "Apply",
-      
+
       // Settings
       "settings.title": "Settings",
       "settings.account": "Account",
@@ -1225,13 +1224,13 @@ const resources = {
       "settings.language": "Language",
       "settings.about": "About",
       "settings.logout": "Logout",
-      
+
       // Help & FAQ
       "help.title": "Help & Support",
       "help.search": "Search for help",
       "help.contactUs": "Contact Us",
       "faq.title": "Frequently Asked Questions",
-      
+
       // Auth
       "login.title": "Login",
       "login.subtitle": "Access your account",
@@ -1266,12 +1265,12 @@ const resources = {
       "register.errors.passwordMismatch": "Passwords do not match",
       "register.errors.agreeTerms": "Please agree to the terms and conditions",
       "register.success": "Account created successfully!",
-      
+
       // Notifications
       "notifications.title": "Notifications",
       "notifications.markAllRead": "Mark All as Read",
       "notifications.noNotifications": "No notifications",
-      
+
       // Phone Login
       "phoneLogin.title": "Login with Phone",
       "phoneLogin.subtitle": "Enter your phone number to continue",
@@ -1294,7 +1293,7 @@ const resources = {
       "phoneLogin.terms": "Terms of Service",
       "phoneLogin.and": "and",
       "phoneLogin.privacy": "Privacy Policy",
-      
+
       // Profile Complete
       "profileComplete.title": "Complete Your Profile",
       "profileComplete.profileStrength": "Profile Strength",

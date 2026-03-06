@@ -24,7 +24,7 @@ try {
 
   // Step 1: Check if tasks table exists and backup if it does
   const tablesResult = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'").all();
-  
+
   if (tablesResult.length > 0) {
     console.log('📦 Backing up existing tasks...');
     db.exec(`CREATE TABLE tasks_backup AS SELECT * FROM tasks`);
@@ -53,9 +53,9 @@ try {
       -- Reward & Budget
       reward DECIMAL(10,2) NOT NULL,
       totalBudget DECIMAL(10,2) NOT NULL,
-      completionsNeeded INTEGER NOT NULL,
-      completionsCount INTEGER DEFAULT 0,
-      minimumBudget DECIMAL(10,2) NOT NULL, -- 20% of (completionsNeeded * reward)
+      maxCompletions INTEGER NOT NULL,
+      currentCompletions INTEGER DEFAULT 0,
+      minimumBudget DECIMAL(10,2) NOT NULL, -- 20% of (maxCompletions * reward)
       
       -- Task Properties
       difficulty VARCHAR(20) DEFAULT 'medium', -- 'easy', 'medium', 'hard'

@@ -27,7 +27,7 @@ router.get('/campaigns', async (req: Request, res: Response) => {
         c.*,
         a.nameEn as advertiserName,
         a.nameAr as advertiserNameAr,
-        a.logoUrl as advertiserLogo,
+        a.logo as advertiserLogo,
         (SELECT COUNT(*) FROM campaignTasks WHERE campaignId = c.id) as totalTasks,
         (SELECT COUNT(*) FROM userCampaignProgress WHERE campaignId = c.id AND status = 'completed') as completions
       FROM campaigns c
@@ -85,7 +85,7 @@ router.get('/campaigns/:id', async (req: Request, res: Response) => {
         c.*,
         a.nameEn as advertiserName,
         a.nameAr as advertiserNameAr,
-        a.logoUrl as advertiserLogo,
+        a.logo as advertiserLogo,
         a.descriptionEn as advertiserDescription,
         a.descriptionAr as advertiserDescriptionAr
       FROM campaigns c
@@ -205,9 +205,9 @@ router.post('/campaigns/:id/start', async (req: Request, res: Response) => {
         VALUES (${userId}, ${campaignId}, 'disqualified', ${JSON.stringify({ reason: qualificationResult.reason })})
       `);
 
-      return res.status(400).json({ 
-        error: 'You are not eligible for this campaign', 
-        reason: qualificationResult.reason 
+      return res.status(400).json({
+        error: 'You are not eligible for this campaign',
+        reason: qualificationResult.reason
       });
     }
 
@@ -340,9 +340,9 @@ router.post('/campaigns/:id/complete-task', async (req: Request, res: Response) 
           UPDATE campaigns SET disqualifiedParticipants = disqualifiedParticipants + 1 WHERE id = ${campaignId}
         `);
 
-        return res.status(400).json({ 
-          error: 'You have been disqualified from this campaign', 
-          reason: validationResult.reason 
+        return res.status(400).json({
+          error: 'You have been disqualified from this campaign',
+          reason: validationResult.reason
         });
       }
 
@@ -684,8 +684,8 @@ router.get('/campaigns/:id/kpis', async (req: Request, res: Response) => {
       totalParticipants: campaign.totalParticipants,
       completedParticipants: campaign.completedParticipants,
       disqualifiedParticipants: campaign.disqualifiedParticipants,
-      conversionRate: campaign.totalParticipants > 0 
-        ? ((campaign.completedParticipants / campaign.totalParticipants) * 100).toFixed(2) 
+      conversionRate: campaign.totalParticipants > 0
+        ? ((campaign.completedParticipants / campaign.totalParticipants) * 100).toFixed(2)
         : 0,
       videoCompletionRate: (videoCompletionRate[0] as any[])[0]?.rate?.toFixed(2) || 0,
       filterPassRate: (filterPassRate[0] as any[])[0]?.rate?.toFixed(2) || 0,
@@ -784,7 +784,7 @@ async function checkUserQualification(db: any, userId: number, campaignId: numbe
  */
 function validateTaskCompletion(task: any, taskData: any): { valid: boolean; reason?: string; disqualify?: boolean } {
   let gatingRules: any = {};
-  
+
   try {
     gatingRules = task.gatingRules ? (typeof task.gatingRules === 'string' ? JSON.parse(task.gatingRules) : task.gatingRules) : {};
   } catch (e) {

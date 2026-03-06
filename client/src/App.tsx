@@ -61,7 +61,7 @@ import AccountSettings from "./pages/advertiser/AccountSettings";
 import AudienceInsights from "./pages/advertiser/AudienceInsights";
 import EditCampaign from "./pages/advertiser/EditCampaign";
 import MultiTaskCampaignBuilder from "./pages/advertiser/MultiTaskCampaignBuilder";
-import AdvertiserDashboard from "./pages/AdvertiserDashboard";
+import AdvertiserDashboardLegacy from "./pages/AdvertiserDashboard";
 import CampaignAnalytics from "./pages/CampaignAnalytics";
 import TaskBuilder from "./pages/TaskBuilder";
 import CreateTask from "./pages/advertiser/CreateTask";
@@ -145,7 +145,7 @@ function Router() {
       {/* Splash */}
       <Route path="/splash" component={Splash} />
       <Route path="/welcome" component={Welcome} />
-      
+
       {/* Auth Routes */}
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/login" component={Login} />
@@ -161,7 +161,7 @@ function Router() {
       <Route path="/profile-questions-2" component={ProfileQuestions2} />
       <Route path="/profile-questions-3" component={ProfileQuestions3} />
       <Route path="/profile-questions-4" component={ProfileQuestions4} />
-      
+
       {/* User Routes */}
       <Route path="/">
         <Redirect to="/splash" />
@@ -194,9 +194,9 @@ function Router() {
       <Route path="/gamification" component={Gamification} />
       <Route path="/campaigns" component={Campaigns} />
       <Route path="/campaigns/:id" component={CampaignDetail} />
-	      <Route path="/profile/edit" component={EditProfile} />
-	      <Route path="/profile/language" component={Settings} />
-	      <Route path="/my-disputes" component={MyDisputes} />
+      <Route path="/profile/edit" component={EditProfile} />
+      <Route path="/profile/language" component={Settings} />
+      <Route path="/my-disputes" component={MyDisputes} />
       <Route path="/algorithm-transparency" component={AlgorithmTransparency} />
       <Route path="/transparency" component={TransparencyDashboard} />
       <Route path="/user/:userId" component={UserProfile} />
@@ -211,13 +211,13 @@ function Router() {
       <Route path="/landing" component={LandingPage} />
       <Route path="/blog" component={Blog} />
       <Route path="/profile/payment-methods" component={PaymentMethodsPage} />
-      
+
       {/* Compliance & Privacy Routes */}
       <Route path="/settings/consent" component={ConsentPreferences} />
       <Route path="/profile/tier-questions" component={ProfileTierQuestions} />
       <Route path="/privacy-center" component={PrivacyCenter} />
       <Route path="/kyc-verification" component={KYCVerification} />
-      
+
       {/* Admin Routes */}
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
@@ -225,7 +225,7 @@ function Router() {
       <Route path="/admin/advertisers" component={AdvertisersManagement} />
       <Route path="/admin/reports" component={ReportedTasks} />
       <Route path="/admin/settings" component={PlatformSettings} />
-      
+
       {/* Admin Routes */}
       <Route path="/admin" component={NewAdminDashboard} />
       <Route path="/admin/users" component={AdminUsers} />
@@ -236,7 +236,7 @@ function Router() {
       <Route path="/admin/transactions" component={ReportedTasks} />
       <Route path="/admin/countries" component={PlatformSettings} />
       <Route path="/admin/withdrawals" component={AdminWithdrawals} />
-      
+
       {/* Advertiser Routes */}
       <Route path="/advertiser/login" component={AdvertiserLogin} />
       <Route path="/advertiser/register" component={AdvertiserRegister} />
@@ -270,20 +270,20 @@ function Router() {
       <Route path="/advertiser/competitors" component={CompetitorAnalysis} />
       <Route path="/advertiser/success-stories" component={SuccessStories} />
       <Route path="/advertiser/:advertiserId" component={AdvertiserPage} />
-      
+
       {/* Survey Framework Routes */}
       <Route path="/advertiser/surveys/new" component={SurveyBuilder} />
       <Route path="/advertiser/surveys/:surveyId/edit" component={SurveyBuilder} />
       <Route path="/advertiser/surveys/:surveyId/launch" component={CampaignLaunch} />
       <Route path="/surveys" component={AvailableSurveys} />
       <Route path="/surveys/:surveyId/:campaignId" component={TakeSurvey} />
-      
+
       {/* Vote Framework Routes */}
       <Route path="/advertiser/votes/new" component={VoteBuilder} />
       <Route path="/advertiser/votes/:id/launch" component={VoteCampaignLaunch} />
       <Route path="/votes" component={AvailableVotes} />
       <Route path="/votes/:id/:campaignId" component={TakeVote} />
-      
+
       {/* Fallback */}
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
