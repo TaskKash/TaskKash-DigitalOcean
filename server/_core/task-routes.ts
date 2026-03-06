@@ -490,8 +490,8 @@ router.get('/tasks', async (req, res) => {
              a.logo as advertiserLogo, a.id as advertiserDbId
       FROM tasks t
       LEFT JOIN advertisers a ON t.advertiserId = a.id
-      WHERE t.status IN ('active', 'published')
-      AND t.currentCompletions < t.maxCompletions
+      WHERE t.status IN ('active', 'published', 'available')
+      AND (t.maxCompletions IS NULL OR t.currentCompletions < t.maxCompletions)
     `;
 
     const params: any[] = [];
@@ -1084,13 +1084,11 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
 
 /**
  * GET /api/tasks/my-submissions
- * Get user's task submissions
+ * Get user's task submissions (SQLite fallback - now migrated to MySQL)
  */
-router.get('/tasks/my-submissions', isUser, (req, res) => {
-  const db = getDb();
-
+router.get('/tasks/my-submissions', isUser, async (req, res) => {
   try {
-    const submissions = db.prepare(`
+    const submissions = await mysqlQuery(`
       SELECT 
         s.*,
         t.titleEn as taskTitle,
@@ -1098,10 +1096,10 @@ router.get('/tasks/my-submissions', isUser, (req, res) => {
         a.nameEn as advertiserName
       FROM task_submissions s
       JOIN tasks t ON s.taskId = t.id
-      JOIN advertisers a ON t.advertiserId = a.id
+      LEFT JOIN advertisers a ON t.advertiserId = a.id
       WHERE s.userId = ?
       ORDER BY s.createdAt DESC
-    `).all(req.userId);
+    `, [req.userId]) as any[];
 
     // Parse JSON fields
     const submissionsWithData = submissions.map((sub: any) => ({
@@ -1114,10 +1112,9 @@ router.get('/tasks/my-submissions', isUser, (req, res) => {
   } catch (error: any) {
     console.error('Error fetching submissions:', error);
     res.status(500).json({ error: error.message });
-  } finally {
-    db.close();
   }
 });
+
 
 /**
  * GET /api/transactions

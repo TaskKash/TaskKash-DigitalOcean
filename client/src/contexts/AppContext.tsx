@@ -1,10 +1,9 @@
 import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
-import { trpc } from '@/lib/trpc';
 import { mockTasks, mockTransactions, mockNotifications, type Task, type Transaction, type Notification } from '@/lib/mockData';
-import { 
-  getAdvertiserById, 
-  getAdvertiserCampaigns, 
+import {
+  getAdvertiserById,
+  getAdvertiserCampaigns,
   getAdvertiserTasks,
   type Advertiser,
   type AdvertiserCampaign,
@@ -36,27 +35,27 @@ interface AppContextType {
   tasks: Task[];
   transactions: Transaction[];
   notifications: Notification[];
-  
+
   // بيانات المعلنين
   currentAdvertiser: Advertiser | null;
   advertiserCampaigns: AdvertiserCampaign[];
   advertiserTasks: AdvertiserTask[];
-  
+
   // نوع المستخدم
   userType: 'user' | 'advertiser';
   setUserType: (type: 'user' | 'advertiser') => void;
-  
+
   // حالة التحميل
   isInitialized: boolean;
   isLoading: boolean;
-  
+
   // دوال المستخدمين العاديين
   updateBalance: (amount: number) => void;
   completeTask: (taskId: string) => void;
   markNotificationAsRead: (notificationId: string) => void;
   refreshTransactions: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  
+
   // دوال المعلنين
   loginAdvertiser: (advertiserId: string) => void;
   logoutAdvertiser: () => void;
@@ -67,21 +66,21 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   // Get authenticated user from useAuth hook
   const { user: authUser, loading: authLoading, isAuthenticated, refresh: refreshAuthUser } = useAuth();
-  
+
   // حالة المستخدمين العاديين - استخدام البيانات من API
   const [user, setUser] = useState<User | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  
+
   // حالة المعلنين
   const [currentAdvertiser, setCurrentAdvertiser] = useState<Advertiser | null>(null);
   const [advertiserCampaigns, setAdvertiserCampaigns] = useState<AdvertiserCampaign[]>([]);
   const [advertiserTasks, setAdvertiserTasks] = useState<AdvertiserTask[]>([]);
-  
+
   // نوع المستخدم
   const [userType, setUserType] = useState<'user' | 'advertiser'>('user');
-  
+
   // حالة التحميل (لمنع عرض الصفحات قبل استعادة البيانات)
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -149,13 +148,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setTasks([]);
       }
     };
-    
+
     fetchTasks();
   }, [user]); // Refetch tasks when user logs in or changes
-  
+
   // Function to fetch transactions - can be called manually
   const fetchTransactions = async () => {
-    
+
     if (!user) return;
     try {
       const response = await fetch('/api/transactions');
@@ -289,7 +288,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ? { ...notif, read: true }
         : notif
     ));
-    
+
     // Update on server
     try {
       await fetch(`/api/notifications/${notificationId}/read`, {
@@ -346,27 +345,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
       tasks,
       transactions,
       notifications,
-      
+
       // بيانات المعلنين
       currentAdvertiser,
       advertiserCampaigns,
       advertiserTasks,
-      
+
       // نوع المستخدم
       userType,
       setUserType,
-      
+
       // حالة التحميل
       isInitialized,
       isLoading: authLoading,
-      
+
       // دوال المستخدمين العاديين
       updateBalance,
       completeTask,
       markNotificationAsRead,
       refreshTransactions: fetchTransactions,
       refreshUser: refreshAuthUser,
-      
+
       // دوال المعلنين
       loginAdvertiser,
       logoutAdvertiser,

@@ -12,8 +12,15 @@ const plugins = [react(), tailwindcss(), jsxLocPlugin()];
 export default defineConfig({
   plugins,
   resolve: {
-    dedupe: ['react', 'react-dom'],
+    dedupe: [
+      'react',
+      'react-dom',
+      '@trpc/react-query',
+      '@tanstack/react-query'
+    ],
     alias: {
+      react: path.resolve(import.meta.dirname, "node_modules", "react"),
+      'react-dom': path.resolve(import.meta.dirname, "node_modules", "react-dom"),
       "@": path.resolve(import.meta.dirname, "client", "src"),
       "@shared": path.resolve(import.meta.dirname, "shared"),
       "@assets": path.resolve(import.meta.dirname, "attached_assets"),

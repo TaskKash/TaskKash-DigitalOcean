@@ -1,0 +1,8 @@
+fix: complete health check fixes
+
+- Fix logoUrl -> logo in route files
+- Fix tier1 -> bronze in registration
+- Fix duplicate verified key in i18n.ts
+- Add analytics ENV placeholders
+- Fix completionsCount column names
+- Force pnpm reinstall to fix broken symlinks
