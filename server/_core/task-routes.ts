@@ -487,7 +487,7 @@ router.get('/tasks', async (req, res) => {
 
     let query = `
       SELECT t.*, a.nameEn as advertiserName, a.nameAr as advertiserNameAr, 
-             a.logo as advertiserLogo, a.id as advertiserDbId
+             a.logoUrl as advertiserLogo, a.id as advertiserDbId
       FROM tasks t
       LEFT JOIN advertisers a ON t.advertiserId = a.id
       WHERE t.status IN ('available', 'active', 'published')
@@ -536,7 +536,7 @@ router.get('/tasks', async (req, res) => {
 
     // Parse JSON and add completion status
     const tasksWithData = tasks.map((task: any) => {
-      const parsedTaskData = task.taskData ? JSON.parse(task.taskData) : null;
+      const parsedTaskData = task.config ? (typeof task.config === 'string' ? JSON.parse(task.config) : task.config) : null;
 
       // Helper function to extract string from requirements/steps
       // Handles both simple strings and objects with instructionEn/instructionAr
@@ -551,11 +551,16 @@ router.get('/tasks', async (req, res) => {
         });
       };
 
+      // Extract config values to top level for frontend compatibility
+      const config = parsedTaskData || {};
+
       return {
         ...task,
-        targetLocations: task.targetLocations ? JSON.parse(task.targetLocations) : null,
-        targetTiers: task.targetTiers ? JSON.parse(task.targetTiers) : null,
+        targetLocations: task.targetLocations ? (typeof task.targetLocations === 'string' ? JSON.parse(task.targetLocations) : task.targetLocations) : null,
+        targetTiers: task.targetTiers ? (typeof task.targetTiers === 'string' ? JSON.parse(task.targetTiers) : task.targetTiers) : null,
         taskData: parsedTaskData,
+        passingScore: config.passingScore || 80,
+        minWatchPercentage: config.minWatchPercentage || 80,
         requirements: extractStrings(parsedTaskData?.requirements),
         steps: extractStrings(parsedTaskData?.steps),
         isCompleted: completedTaskIds.includes(task.id),
@@ -669,11 +674,15 @@ router.get('/tasks/:id', async (req, res) => {
     }
 
     // Parse JSON fields
+    const parsedConfig = task.config ? (typeof task.config === 'string' ? JSON.parse(task.config) : task.config) : {};
+
     const taskWithData = {
       ...task,
-      targetLocations: task.targetLocations ? JSON.parse(task.targetLocations) : null,
-      targetTiers: task.targetTiers ? JSON.parse(task.targetTiers) : null,
-      taskData: task.taskData ? JSON.parse(task.taskData) : null,
+      targetLocations: task.targetLocations ? (typeof task.targetLocations === 'string' ? JSON.parse(task.targetLocations) : task.targetLocations) : null,
+      targetTiers: task.targetTiers ? (typeof task.targetTiers === 'string' ? JSON.parse(task.targetTiers) : task.targetTiers) : null,
+      taskData: parsedConfig,
+      passingScore: parsedConfig.passingScore || 80,
+      minWatchPercentage: parsedConfig.minWatchPercentage || 80,
       questions,
       surveyQuestions
     };
@@ -780,28 +789,28 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
       };
     });
 
+    const parsedConfig = task.config ? (typeof task.config === 'string' ? JSON.parse(task.config) : task.config) : {};
+    const effectivePassingScore = parsedConfig.passingScore || 80;
     const score = Math.round((correctCount / questions.length) * 100);
-    const passed = score >= task.passingScore;
+    const passed = score >= effectivePassingScore;
 
     console.log('[Submit Task] Correct Count:', correctCount);
     console.log('[Submit Task] Total Questions:', questions.length);
     console.log('[Submit Task] Score:', score);
-    console.log('[Submit Task] Passing Score:', task.passingScore);
+    console.log('[Submit Task] Passing Score:', effectivePassingScore);
     console.log('[Submit Task] Passed:', passed);
 
     // For video tasks, also check watch time
     let watchTimePassed = true;
-    if (task.type === 'video' && watchTime) {
-      // Parse taskData to get actual video duration in seconds
+    if (task.type === 'video' && watchTime !== undefined) {
+      // Parse config (taskData) to get actual video duration in seconds
       let videoDurationSeconds = task.duration * 60; // Default: convert minutes to seconds
-      if (task.taskData) {
-        const taskData = typeof task.taskData === 'string' ? JSON.parse(task.taskData) : task.taskData;
-        if (taskData.duration) {
-          videoDurationSeconds = taskData.duration; // Use actual duration from taskData
-        }
+      if (parsedConfig && parsedConfig.duration) {
+        videoDurationSeconds = parsedConfig.duration; // Use actual duration from config
       }
-      const requiredWatchTime = (videoDurationSeconds * task.minWatchPercentage) / 100;
-      watchTimePassed = watchTime >= requiredWatchTime;
+      const effectiveMinWatch = parsedConfig.minWatchPercentage || 80;
+      const requiredWatchTime = (videoDurationSeconds * effectiveMinWatch) / 100;
+      watchTimePassed = parseFloat(watchTime) >= requiredWatchTime;
       console.log('[Submit Task] Video Duration:', videoDurationSeconds, 'seconds');
       console.log('[Submit Task] Required Watch Time:', requiredWatchTime, 'seconds');
       console.log('[Submit Task] User Watch Time:', watchTime, 'seconds');

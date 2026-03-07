@@ -9,7 +9,7 @@ const router = Router();
 router.get('/advertisers', async (req: Request, res: Response) => {
   try {
     const advertisers = await query(
-      `SELECT id, nameEn, nameAr, slug, logo, descriptionEn, descriptionAr, isActive
+      `SELECT id, nameEn, nameAr, slug, logoUrl, descriptionEn, descriptionAr, isActive
        FROM advertisers
        WHERE isActive = 1
        ORDER BY nameEn`
@@ -31,12 +31,12 @@ router.get("/advertisers/with-active-tasks", async (req: Request, res: Response)
         a.id, 
         a.nameEn, 
         a.nameAr,
-        a.logo,
+        a.logoUrl,
         COUNT(t.id) as activeTaskCount
       FROM advertisers a
       INNER JOIN tasks t ON a.id = t.advertiserId
       WHERE t.status IN ('available', 'active', 'published')
-      GROUP BY a.id, a.nameEn, a.nameAr, a.logo
+      GROUP BY a.id, a.nameEn, a.nameAr, a.logoUrl
       ORDER BY activeTaskCount DESC
     `);
 

@@ -27,7 +27,7 @@ router.get('/campaigns', async (req: Request, res: Response) => {
         c.*,
         a.nameEn as advertiserName,
         a.nameAr as advertiserNameAr,
-        a.logo as advertiserLogo,
+        a.logoUrl as advertiserLogo,
         (SELECT COUNT(*) FROM campaignTasks WHERE campaignId = c.id) as totalTasks,
         (SELECT COUNT(*) FROM userCampaignProgress WHERE campaignId = c.id AND status = 'completed') as completions
       FROM campaigns c
@@ -85,7 +85,7 @@ router.get('/campaigns/:id', async (req: Request, res: Response) => {
         c.*,
         a.nameEn as advertiserName,
         a.nameAr as advertiserNameAr,
-        a.logo as advertiserLogo,
+        a.logoUrl as advertiserLogo,
         a.descriptionEn as advertiserDescription,
         a.descriptionAr as advertiserDescriptionAr
       FROM campaigns c

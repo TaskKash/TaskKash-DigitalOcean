@@ -19,7 +19,7 @@ export const users = mysqlTable("users", {
   phone: varchar("phone", { length: 20 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  
+
   // TASKKASH-specific fields
   balance: int("balance", { unsigned: true }).default(0).notNull(), // in smallest currency unit
   completedTasks: int("completedTasks", { unsigned: true }).default(0).notNull(),
@@ -29,13 +29,13 @@ export const users = mysqlTable("users", {
   countryId: int("countryId"), // foreign key to countries table
   avatar: varchar("avatar", { length: 500 }),
   isVerified: int("isVerified", { unsigned: true }).default(0).notNull(), // 0 = not verified, 1 = verified
-  
+
   // User profile fields for campaign targeting
   age: int("age"),
   gender: varchar("gender", { length: 10 }),
   city: varchar("city", { length: 100 }),
   incomeLevel: varchar("incomeLevel", { length: 50 }),
-  
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -71,7 +71,7 @@ export const advertisers = mysqlTable("advertisers", {
   nameEn: varchar("nameEn", { length: 200 }).notNull(),
   descriptionAr: text("descriptionAr"),
   descriptionEn: text("descriptionEn"),
-  logo: varchar("logo", { length: 500 }),
+  logoUrl: varchar("logoUrl", { length: 500 }),
   coverImage: varchar("coverImage", { length: 500 }),
   category: varchar("category", { length: 100 }), // e.g., telecommunications, ecommerce, transport
   verified: int("verified", { unsigned: true }).default(0).notNull(),
@@ -109,7 +109,7 @@ export const tasks = mysqlTable("tasks", {
   currentCompletions: int("currentCompletions", { unsigned: true }).default(0).notNull(),
   image: varchar("image", { length: 500 }),
   rating: int("rating", { unsigned: true }).default(0).notNull(), // rating * 10
-  status: mysqlEnum("status", ["available", "completed", "upcoming"]).default("available").notNull(),
+  status: mysqlEnum("status", ["available", "completed", "upcoming", "active", "published"]).default("available").notNull(),
   launchDate: timestamp("launchDate"),
   expiryDate: timestamp("expiryDate"),
   countryId: int("countryId").notNull(),
