@@ -87,7 +87,7 @@ export default function Welcome() {
               <p className="text-xs text-muted-foreground">{t('welcome.stats.tasks')}</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-secondary">5M+</p>
+              <p className="text-2xl font-bold text-primary">5M+</p>
               <p className="text-xs text-muted-foreground">{t('welcome.stats.paid')}</p>
             </div>
           </div>
@@ -95,21 +95,21 @@ export default function Welcome() {
 
         {/* CTA Buttons */}
         <div className="space-y-3">
-          <Button 
+          <Button
             onClick={() => setLocation('/register')}
             className="w-full h-14 text-lg bg-white text-primary hover:bg-gray-100"
           >
             {t('welcome.buttons.register')}
           </Button>
-          
-          <Button 
+
+          <Button
             onClick={() => setLocation('/login')}
             variant="outline"
             className="w-full h-14 text-lg bg-transparent text-white border-2 border-white hover:bg-white/10"
           >
             {t('welcome.buttons.login')}
           </Button>
-          
+
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-white/30"></div>
@@ -118,8 +118,8 @@ export default function Welcome() {
               <span className="px-4 bg-primary text-white/80">{t('welcome.or')}</span>
             </div>
           </div>
-          
-          <Button 
+
+          <Button
             onClick={() => setLocation('/advertiser/login')}
             variant="outline"
             className="w-full h-12 text-base bg-white/10 text-white border border-white/50 hover:bg-white/20"
