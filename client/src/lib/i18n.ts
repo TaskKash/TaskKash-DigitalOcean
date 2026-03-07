@@ -402,7 +402,6 @@ const resources = {
       "joinDate": "تاريخ الانضمام",
       "accountStats": "إحصائيات الحساب",
       "verification": "التوثيق",
-      "verified": "موثق",
       "nationalId": "الهوية الوطنية",
       "verify": "توثيق",
       "dangerZone": "منطقة الخطر",
