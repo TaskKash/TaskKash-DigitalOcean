@@ -48,12 +48,14 @@ export default function Tasks() {
   const [completedTasks, setCompletedTasks] = useState<CompletedTask[]>([]);
   const [isLoadingCompleted, setIsLoadingCompleted] = useState(true);
   const [advancedFilters, setAdvancedFilters] = useState<{
+    category: string[];
     difficulty: string[];
     reward: { min: number; max: number };
     duration: { min: number; max: number };
     sortBy?: 'default' | 'value-high' | 'value-low' | 'duration' | 'difficulty';
     advertiserId?: number | null;
   }>({
+    category: [],
     difficulty: [],
     reward: { min: 0, max: 1000 },
     duration: { min: 0, max: 120 },
@@ -156,6 +158,26 @@ export default function Tasks() {
   let filteredAvailableTasks = filterType === 'all'
     ? availableTasks
     : availableTasks.filter(t => t.type === filterType);
+
+  // Apply category filter from Advanced Filters
+  if (advancedFilters.category && advancedFilters.category.length > 0) {
+    filteredAvailableTasks = filteredAvailableTasks.filter(t => {
+      // The task category from DB might be in English or missing. We do a loose match.
+      const taskCat = (t.category || '').toLowerCase();
+      return advancedFilters.category.some(c => {
+        const lowerC = c.toLowerCase();
+        // Match English directly
+        if (taskCat.includes(lowerC)) return true;
+        // Map Arabic categories to English equivalents for matching
+        if (c === 'تطبيقات' && taskCat.includes('app')) return true;
+        if (c === 'استبيانات' && taskCat.includes('survey')) return true;
+        if (c === 'تسوق' && taskCat.includes('shop')) return true;
+        if (c === 'تعليم' && taskCat.includes('education')) return true;
+        if (c === 'ترفيه' && taskCat.includes('entertainment')) return true;
+        return false;
+      });
+    });
+  }
 
   // Apply difficulty filter from Advanced Filters
   if (advancedFilters.difficulty && advancedFilters.difficulty.length > 0) {
