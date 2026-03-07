@@ -6,7 +6,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface FilterOptions {
-  category: string[];
   difficulty: string[];
   reward: { min: number; max: number };
   duration: { min: number; max: number };
@@ -52,27 +51,22 @@ export default function AdvancedFilters({ onFilterChange, activeFilters }: Advan
   }, []);
 
   // Use useMemo to update categories and difficulties when language changes
-  const categories = useMemo(() => isArabic 
+  const categories = useMemo(() => isArabic
     ? ['تطبيقات', 'استبيانات', 'تسوق', 'تعليم', 'ترفيه']
     : ['Apps', 'Surveys', 'Shopping', 'Education', 'Entertainment'], [isArabic]);
-  
-  const difficulties = useMemo(() => isArabic 
+
+  const difficulties = useMemo(() => isArabic
     ? ['سهل', 'متوسط', 'صعب']
     : ['Easy', 'Medium', 'Hard'], [isArabic]);
 
   // Clear filters when language changes to avoid stale filter values
   useEffect(() => {
-    if (activeFilters.category.length > 0 || activeFilters.difficulty.length > 0) {
+    if (activeFilters.difficulty.length > 0) {
       clearFilters();
     }
   }, [i18n.language]);
 
-  const toggleCategory = (cat: string) => {
-    const newCategories = activeFilters.category.includes(cat)
-      ? activeFilters.category.filter(c => c !== cat)
-      : [...activeFilters.category, cat];
-    onFilterChange({ ...activeFilters, category: newCategories });
-  };
+
 
   const toggleDifficulty = (diff: string) => {
     const newDifficulties = activeFilters.difficulty.includes(diff)
@@ -83,7 +77,6 @@ export default function AdvancedFilters({ onFilterChange, activeFilters }: Advan
 
   const clearFilters = () => {
     onFilterChange({
-      category: [],
       difficulty: [],
       reward: { min: 0, max: 1000 },
       duration: { min: 0, max: 120 },
@@ -100,7 +93,7 @@ export default function AdvancedFilters({ onFilterChange, activeFilters }: Advan
     onFilterChange({ ...activeFilters, sortBy });
   };
 
-  const activeCount = activeFilters.category.length + activeFilters.difficulty.length + (activeFilters.advertiserId ? 1 : 0);
+  const activeCount = activeFilters.difficulty.length + (activeFilters.advertiserId ? 1 : 0);
 
   return (
     <div className="space-y-2">
@@ -150,24 +143,6 @@ export default function AdvancedFilters({ onFilterChange, activeFilters }: Advan
             </div>
           )}
 
-          {/* Categories */}
-          <div>
-            <h4 className="text-sm font-semibold mb-2 text-foreground dark:text-white">
-              {t('tasks.category', 'Category')}
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {categories.map(cat => (
-                <Badge
-                  key={cat}
-                  variant={activeFilters.category.includes(cat) ? 'default' : 'outline'}
-                  className="cursor-pointer text-foreground dark:text-gray-200"
-                  onClick={() => toggleCategory(cat)}
-                >
-                  {cat}
-                </Badge>
-              ))}
-            </div>
-          </div>
 
           {/* Difficulty */}
           <div>
@@ -258,12 +233,12 @@ export default function AdvancedFilters({ onFilterChange, activeFilters }: Advan
       {/* Active Filters Display */}
       {activeCount > 0 && (
         <div className="flex flex-wrap gap-2">
-          {activeFilters.category.map(cat => (
-            <Badge key={cat} variant="secondary" className="gap-1 text-foreground dark:text-gray-200">
-              {cat}
+          {activeFilters.difficulty.map(diff => (
+            <Badge key={diff} variant="secondary" className="gap-1 text-foreground dark:text-gray-200">
+              {diff}
               <X
                 className="w-3 h-3 cursor-pointer"
-                onClick={() => toggleCategory(cat)}
+                onClick={() => toggleDifficulty(diff)}
               />
             </Badge>
           ))}
@@ -278,8 +253,8 @@ export default function AdvancedFilters({ onFilterChange, activeFilters }: Advan
           ))}
           {activeFilters.advertiserId && (
             <Badge variant="secondary" className="gap-1 text-foreground dark:text-gray-200">
-              {isArabic 
-                ? advertisers.find(a => a.id === activeFilters.advertiserId)?.nameAr 
+              {isArabic
+                ? advertisers.find(a => a.id === activeFilters.advertiserId)?.nameAr
                 : advertisers.find(a => a.id === activeFilters.advertiserId)?.nameEn}
               <X
                 className="w-3 h-3 cursor-pointer"

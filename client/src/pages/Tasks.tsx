@@ -47,13 +47,18 @@ export default function Tasks() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [completedTasks, setCompletedTasks] = useState<CompletedTask[]>([]);
   const [isLoadingCompleted, setIsLoadingCompleted] = useState(true);
-  const [advancedFilters, setAdvancedFilters] = useState({
-    category: [] as string[],
-    difficulty: [] as string[],
+  const [advancedFilters, setAdvancedFilters] = useState<{
+    difficulty: string[];
+    reward: { min: number; max: number };
+    duration: { min: number; max: number };
+    sortBy?: 'default' | 'value-high' | 'value-low' | 'duration' | 'difficulty';
+    advertiserId?: number | null;
+  }>({
+    difficulty: [],
     reward: { min: 0, max: 1000 },
     duration: { min: 0, max: 120 },
-    sortBy: 'default' as 'default' | 'value-high' | 'value-low' | 'duration' | 'difficulty',
-    advertiserId: null as number | null
+    sortBy: 'default',
+    advertiserId: null
   });
 
   // Fetch available tasks
@@ -64,7 +69,7 @@ export default function Tasks() {
         if (advancedFilters.advertiserId) {
           params.append('advertiserId', advancedFilters.advertiserId.toString());
         }
-        
+
         const response = await fetch(`/api/tasks?${params}`);
         if (response.ok) {
           const data = await response.json();
@@ -100,7 +105,7 @@ export default function Tasks() {
         setTasks(contextTasks);
       }
     };
-    
+
     fetchTasks();
   }, [advancedFilters.advertiserId]);
 
@@ -113,7 +118,7 @@ export default function Tasks() {
         if (response.ok) {
           const data = await response.json();
           console.log('[Tasks] My submissions:', data);
-          
+
           // Filter only approved/completed submissions and transform them
           const completedSubmissions = (data.submissions || [])
             .filter((sub: any) => sub.status === 'approved' || sub.status === 'completed')
@@ -131,7 +136,7 @@ export default function Tasks() {
               score: sub.score || 0,
               completedAt: sub.completedAt || sub.createdAt
             }));
-          
+
           setCompletedTasks(completedSubmissions);
         }
       } catch (error) {
@@ -141,16 +146,26 @@ export default function Tasks() {
         setIsLoadingCompleted(false);
       }
     };
-    
+
     fetchCompletedTasks();
   }, []);
 
   const availableTasks = tasks.filter(t => t.status === 'available' || t.status === 'active');
   const inProgressTasks = tasks.filter(t => t.status === 'in-progress');
 
-  let filteredAvailableTasks = filterType === 'all' 
-    ? availableTasks 
+  let filteredAvailableTasks = filterType === 'all'
+    ? availableTasks
     : availableTasks.filter(t => t.type === filterType);
+
+  // Apply difficulty filter from Advanced Filters
+  if (advancedFilters.difficulty && advancedFilters.difficulty.length > 0) {
+    filteredAvailableTasks = filteredAvailableTasks.filter(t =>
+      advancedFilters.difficulty.includes(t.difficulty) ||
+      advancedFilters.difficulty.includes(getDifficultyLabel(t.difficulty)) ||
+      // Also match English names in case the filter uses them natively but data is different
+      advancedFilters.difficulty.map(d => d.toLowerCase()).includes(t.difficulty.toLowerCase())
+    );
+  }
 
   // Apply sorting
   if (advancedFilters.sortBy && advancedFilters.sortBy !== 'default') {
@@ -164,8 +179,8 @@ export default function Tasks() {
           return a.duration - b.duration; // Shortest duration first
         case 'difficulty':
           const difficultyOrder = { easy: 1, medium: 2, hard: 3 };
-          return (difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0) - 
-                 (difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0);
+          return (difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0) -
+            (difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0);
         default:
           return 0;
       }
@@ -181,7 +196,7 @@ export default function Tasks() {
       quiz: t('tasks.types.quiz'),
       photo: t('tasks.types.photo'),
       visit: t('tasks.types.visit'),
-    vote: t('tasks.types.vote')
+      vote: t('tasks.types.vote')
     };
     return typeMap[type] || type;
   };
@@ -197,7 +212,7 @@ export default function Tasks() {
   };
 
   const TaskCard = ({ task }: { task: typeof tasks[0] }) => (
-    <Card 
+    <Card
       className="p-4 cursor-pointer hover:shadow-md transition-shadow"
       onClick={() => {
         // Redirect video, quiz, and survey tasks to new completion flow
@@ -212,7 +227,7 @@ export default function Tasks() {
     >
       <div className="flex items-start gap-3">
         {/* Advertiser Logo - Clickable */}
-        <div 
+        <div
           className="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer hover:border-primary transition-colors"
           onClick={(e) => {
             e.stopPropagation();
@@ -220,18 +235,18 @@ export default function Tasks() {
             setLocation(`/advertiser/${advertiserId}`);
           }}
         >
-          <img 
-            src={task.advertiserLogo} 
+          <img
+            src={task.advertiserLogo}
             alt={task.advertiser}
             className="w-full h-full object-contain p-1"
             onError={(e) => {
-              // Fallback to icon if image fails to load
               e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement!.innerHTML = `<div class="text-2xl">${taskTypeIcons[task.type]}</div>`;
+              const typeIcons: Record<string, string> = { survey: '📋', video: '🎥', app: '📱', social: '👥', quiz: '❓', photo: '📸', visit: '📍', vote: '☑️' };
+              e.currentTarget.parentElement!.innerHTML = `<div class="text-2xl">${typeIcons[task.type] || '💼'}</div>`;
             }}
           />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
             <h4 className="font-semibold text-sm line-clamp-1">{getLocalizedField(task, 'title')}</h4>
@@ -239,9 +254,9 @@ export default function Tasks() {
               {task.reward} {t('currency')}
             </Badge>
           </div>
-          
+
           <div className="flex items-center gap-2 mb-2">
-            <p 
+            <p
               className="text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
@@ -252,11 +267,11 @@ export default function Tasks() {
               {getLocalizedField(task, 'advertiser')}
             </p>
           </div>
-          
+
           <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
             {getLocalizedField(task, 'description')}
           </p>
-          
+
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
@@ -281,7 +296,7 @@ export default function Tasks() {
         <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-800 flex items-center justify-center flex-shrink-0">
           <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
             <h4 className="font-semibold text-sm line-clamp-1">{task.title}</h4>
@@ -289,11 +304,11 @@ export default function Tasks() {
               +{task.reward} {t('currency')}
             </Badge>
           </div>
-          
+
           <p className="text-xs text-muted-foreground mb-2">
             {task.advertiser}
           </p>
-          
+
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <Badge variant="outline" className="text-xs bg-green-100 dark:bg-green-800 border-green-300 dark:border-green-700">
               {getTaskTypeName(task.type)}

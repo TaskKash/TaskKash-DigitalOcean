@@ -92,7 +92,7 @@ export default function Home() {
               {getTierName(user.tier)}
             </Badge>
           </div>
-          
+
           <div className="mt-6">
             <p className="text-sm opacity-90">{t('home.currentBalance')}</p>
             <div className="flex items-baseline gap-2">
@@ -101,7 +101,7 @@ export default function Home() {
             </div>
           </div>
 
-          <Button 
+          <Button
             onClick={() => setLocation('/wallet')}
             className="w-full mt-4 bg-white text-primary hover:bg-gray-100"
           >
@@ -113,7 +113,7 @@ export default function Home() {
         {profileStrength < 100 && (
           <Card className="p-4">
             <ProfileStrengthBar strength={profileStrength} showDetails={true} />
-            <Button 
+            <Button
               onClick={() => {
                 if (profileStrength < 60) {
                   setLocation('/identity-verification');
@@ -151,8 +151,8 @@ export default function Home() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">{t('home.featuredTasks')}</h3>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => setLocation('/tasks')}
               className="text-primary"
@@ -164,14 +164,14 @@ export default function Home() {
 
           <div className="space-y-3">
             {availableTasks.map(task => (
-              <Card 
+              <Card
                 key={task.id}
                 className="p-4 cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => setLocation(`/tasks/${task.id}`)}
               >
                 <div className="flex items-start gap-3">
                   {/* Advertiser Logo - Clickable */}
-                  <div 
+                  <div
                     className="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer hover:border-primary transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -179,9 +179,18 @@ export default function Home() {
                       setLocation(`/advertiser/${advertiserId}`);
                     }}
                   >
-                    <img src={task.advertiserLogo} alt={task.advertiser} className="w-full h-full object-contain p-1" />
+                    <img
+                      src={task.advertiserLogo}
+                      alt={task.advertiser}
+                      className="w-full h-full object-contain p-1"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const taskTypeIcons: Record<string, string> = { survey: '📋', video: '🎥', app: '📱', social: '👥', quiz: '❓', photo: '📸', visit: '📍', vote: '☑️' };
+                        e.currentTarget.parentElement!.innerHTML = `<div class="text-2xl">${taskTypeIcons[task.type] || '💼'}</div>`;
+                      }}
+                    />
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <h4 className="font-semibold text-sm line-clamp-1">{getLocalizedField(task, 'title')}</h4>
@@ -189,11 +198,11 @@ export default function Home() {
                         {task.reward} {t('currency')}
                       </Badge>
                     </div>
-                    
+
                     <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                       {getLocalizedField(task, 'description')}
                     </p>
-                    
+
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
