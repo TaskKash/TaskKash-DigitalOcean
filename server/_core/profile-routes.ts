@@ -48,34 +48,34 @@ router.post('/complete', async (req, res) => {
     const authUser = await sdk.authenticateRequest(req);
     if (!authUser || !authUser.openId) {
       console.log('[Profile] Authentication failed');
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Unauthorized',
         details: 'Please login again.'
       });
     }
-    
+
     const openId = authUser.openId;
 
-    const { profileData } = req.body;
-    
+    const { maritalStatus, carType, housingType } = req.body;
+
     console.log('[Profile] Completing profile for user:', openId);
-    console.log('[Profile] Profile data:', profileData);
+    console.log('[Profile] Lifestyle data:', { maritalStatus, carType, housingType });
 
     // Get current user
     const users = await query(
       'SELECT id, balance, profileStrength FROM users WHERE openId = ?',
       [openId]
-    );
+    ) as any[];
 
     if (users.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     const user = users[0];
-    
+
     // Check if profile already completed
     if (user.profileStrength >= 100) {
-      return res.status(400).json({ error: 'Profile already completed' });
+      return res.status(409).json({ error: 'Profile already completed' });
     }
 
     // Profile completion reward
@@ -88,11 +88,11 @@ router.post('/complete', async (req, res) => {
       [newBalance, user.id]
     );
 
-    // Create transaction record
+    // Create transaction record using correct schema columns
     await query(
-      `INSERT INTO transactions (userId, type, amount, balanceBefore, balanceAfter, status, description, createdAt) 
-       VALUES (?, 'earn', ?, ?, ?, 'completed', 'Profile completion reward', NOW())`,
-      [user.id, PROFILE_REWARD, user.balance, newBalance]
+      `INSERT INTO transactions (userId, type, currency, amount, description, status, createdAt) 
+       VALUES (?, 'earning', 'EGP', ?, 'Profile completion reward', 'completed', NOW())`,
+      [user.id, PROFILE_REWARD]
     );
 
     console.log('[Profile] Profile completed successfully');
@@ -119,11 +119,11 @@ router.put('/update', async (req, res) => {
     if (!authUser || !authUser.openId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    
+
     const openId = authUser.openId;
 
     const { name, phone, email } = req.body;
-    
+
     console.log('[Profile] Updating profile for user:', openId);
 
     // Get current user
@@ -321,17 +321,17 @@ router.post('/answers', async (req, res) => {
     const userBefore = await query("SELECT balance FROM users WHERE id = ?", [userId]) as any[];
     const balanceBefore = userBefore[0]?.balance || 0;
     const balanceAfter = parseFloat(balanceBefore) + parseFloat(section.bonusAmount);
-    
+
     // Award bonus to user wallet
     await query(
       "UPDATE users SET balance = balance + ? WHERE id = ?",
       [section.bonusAmount, userId]
     );
-    // Record transaction
+    // Record transaction using correct schema columns
     await query(
-      `INSERT INTO transactions (userId, type, amount, balanceBefore, balanceAfter, description, status, createdAt)
-       VALUES (?, "bonus", ?, ?, ?, ?, "completed", NOW())`,
-      [userId, section.bonusAmount, balanceBefore, balanceAfter, `Profile completion bonus: ${section.nameEn}`]
+      `INSERT INTO transactions (userId, type, currency, amount, description, status, createdAt)
+       VALUES (?, 'earning', 'EGP', ?, ?, 'completed', NOW())`,
+      [userId, section.bonusAmount, `Profile completion bonus: ${section.nameEn}`]
     );
     // Calculate new tier
     const completedCount = await query(
