@@ -35,8 +35,7 @@ router.get("/advertisers/with-active-tasks", async (req: Request, res: Response)
         COUNT(t.id) as activeTaskCount
       FROM advertisers a
       INNER JOIN tasks t ON a.id = t.advertiserId
-      WHERE t.status IN ('active', 'published', 'available')
-      AND (t.maxCompletions IS NULL OR t.currentCompletions < t.maxCompletions)
+      WHERE t.status = 'available'
       GROUP BY a.id, a.nameEn, a.nameAr, a.logo
       ORDER BY activeTaskCount DESC
     `);

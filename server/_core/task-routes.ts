@@ -490,8 +490,7 @@ router.get('/tasks', async (req, res) => {
              a.logo as advertiserLogo, a.id as advertiserDbId
       FROM tasks t
       LEFT JOIN advertisers a ON t.advertiserId = a.id
-      WHERE t.status IN ('active', 'published', 'available')
-      AND (t.maxCompletions IS NULL OR t.currentCompletions < t.maxCompletions)
+      WHERE t.status = 'available'
     `;
 
     const params: any[] = [];
