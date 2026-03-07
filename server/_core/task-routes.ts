@@ -752,9 +752,18 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
     const task = tasks[0];
 
     // Get questions with correct answers from MySQL
-    const questions = await mysqlQuery(`
-      SELECT * FROM task_questions WHERE taskId = ? ORDER BY questionOrder
-    `, [taskId]) as any[];
+    let questions: any[] = [];
+    try {
+      questions = await mysqlQuery(`
+        SELECT * FROM task_questions WHERE taskId = ? ORDER BY questionOrder
+      `, [taskId]) as any[];
+    } catch (err: any) {
+      if (err.code === 'ER_NO_SUCH_TABLE') {
+        console.warn(`[Submit Task] task_questions table missing, proceeding with 0 questions.`);
+      } else {
+        throw err;
+      }
+    }
 
     // Verify answers
     let correctCount = 0;
@@ -866,9 +875,9 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
         // Insert userTasks record to track completion
         await mysqlQuery(
           `INSERT INTO userTasks 
-           (userId, taskId, status, submittedAt, completedAt, reward, submissionData)
-           VALUES (?, ?, 'completed', NOW(), NOW(), ?, ?)`,
-          [req.userId, taskId, task.reward, JSON.stringify({ score, answers: answerResults })]
+           (userId, taskId, status, startedAt, completedAt, createdAt)
+           VALUES (?, ?, 'completed', NOW(), NOW(), NOW())`,
+          [req.userId, taskId]
         );
 
         // Get advertiser tier for commission calculation
@@ -892,8 +901,8 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
         // Insert transaction record in MySQL with commission tracking
         await mysqlQuery(
           `INSERT INTO transactions 
-           (userId, type, amount, balanceBefore, balanceAfter, description, status, relatedTaskId, commissionAmount, commissionRate, netAmount, createdAt)
-           VALUES (?, 'earn', ?, ?, ?, ?, 'completed', ?, ?, ?, ?, NOW())`,
+           (userId, type, currency, amount, balanceBefore, balanceAfter, description, status, relatedTaskId, commissionAmount, commissionRate, netAmount, createdAt)
+           VALUES (?, 'earning', 'EGP', ?, ?, ?, ?, 'completed', ?, ?, ?, ?, NOW())`,
           [req.userId, task.reward, balanceBefore, balanceAfter, `Task completed: ${task.titleEn}`, taskId, commission.commissionAmount, commission.commissionRate, task.reward]
         );
 
@@ -1051,8 +1060,8 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
 
     // Create transaction record with commission tracking
     await mysqlQuery(`
-      INSERT INTO transactions (userId, type, amount, status, description, relatedTaskId, balanceBefore, balanceAfter, commissionAmount, commissionRate, netAmount, createdAt)
-      VALUES (?, "earn", ?, "completed", ?, ?, ?, ?, ?, ?, ?, NOW())
+      INSERT INTO transactions (userId, type, currency, amount, status, description, relatedTaskId, balanceBefore, balanceAfter, commissionAmount, commissionRate, netAmount, createdAt)
+      VALUES (?, "earning", "EGP", ?, "completed", ?, ?, ?, ?, ?, ?, ?, NOW())
     `, [req.userId, task.reward, `Survey completed: ${task.titleEn}`, taskId, balanceBefore, balanceAfter, commission.commissionAmount, commission.commissionRate, task.reward]);
 
     // Deduct from advertiser balance (reward + commission)
@@ -1158,16 +1167,14 @@ router.get('/weekly-earnings', isUser, async (req, res) => {
     const earnings = await mysqlQuery(`
 	      SELECT 
 	        DATE(createdAt) as dateValue,
-	        DATE_FORMAT(DATE(createdAt), '%Y-%m-%d') as date,
-	        DAYNAME(DATE(createdAt)) as dayName,
 	        SUM(amount) as totalAmount
 	      FROM transactions 
 	      WHERE userId = ? 
 	        AND type IN ('earn', 'earning') 
 	        AND status = 'completed'
 	        AND DATE(createdAt) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-	      GROUP BY DATE(createdAt), dateValue, dayName
-	      ORDER BY dateValue ASC
+	      GROUP BY DATE(createdAt)
+	      ORDER BY DATE(createdAt) ASC
 	    `, [req.userId]) as any[];
 
     // Get previous week's total for comparison (7-13 days ago)
@@ -1197,8 +1204,10 @@ router.get('/weekly-earnings', isUser, async (req, res) => {
 
       // Find matching earning - compare as strings
       const earning = earnings.find((e: any) => {
-        const eDate = typeof e.date === 'string' ? e.date : String(e.date).split('T')[0];
-        return eDate === dateStr;
+        let val = e.dateValue || e.date;
+        if (!val) return false;
+        const eDateStr = (val instanceof Date) ? val.toISOString().split('T')[0] : new Date(val).toISOString().split('T')[0];
+        return eDateStr === dateStr;
       });
 
       last7Days.push({
@@ -1252,10 +1261,19 @@ router.get('/profile/strength', isUser, async (req, res) => {
     if (socialResult[0]?.count > 0) strength += 10;
 
     // Profile questions answered = up to 40%
-    const profileDataResult = await mysqlQuery(`
-      SELECT COUNT(*) as count FROM user_profile_data WHERE userId = ?
-    `, [req.userId]) as any[];
-    const questionCount = profileDataResult[0]?.count || 0;
+    let questionCount = 0;
+    try {
+      const profileDataResult = await mysqlQuery(`
+        SELECT COUNT(*) as count FROM user_profile_data WHERE userId = ?
+      `, [req.userId]) as any[];
+      questionCount = profileDataResult[0]?.count || 0;
+    } catch (e: any) {
+      if (e.code === 'ER_NO_SUCH_TABLE') {
+        console.warn('user_profile_data table missing, treating profile questions as 0');
+      } else {
+        throw e;
+      }
+    }
     strength += Math.min(questionCount * 4, 40);
 
     // Cap at 100%

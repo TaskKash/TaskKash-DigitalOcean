@@ -44,6 +44,7 @@ interface AppContextType {
   // نوع المستخدم
   userType: 'user' | 'advertiser';
   setUserType: (type: 'user' | 'advertiser') => void;
+  setUser: (user: User | null) => void;
 
   // حالة التحميل
   isInitialized: boolean;
@@ -354,6 +355,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // نوع المستخدم
       userType,
       setUserType,
+      setUser,
 
       // حالة التحميل
       isInitialized,

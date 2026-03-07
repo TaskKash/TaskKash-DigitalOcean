@@ -37,7 +37,7 @@ export default function TaskDetail() {
   const getLocalizedField = useLocalizedFieldGetter();
   const [, params] = useRoute('/tasks/:id');
   const [, setLocation] = useLocation();
-  const { tasks, completeTask } = useApp();
+  const { tasks, completeTask, refreshUser, refreshTransactions } = useApp();
   const [isStarting, setIsStarting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [uploadedProof, setUploadedProof] = useState<ProofImage[]>([]);
@@ -120,7 +120,7 @@ export default function TaskDetail() {
   const handleStartTask = () => {
     setIsStarting(true);
     toast.success('تم بدء المهمة بنجاح!');
-    
+
     // Move to step 2 (reading instructions)
     setTimeout(() => {
       setCurrentStep(2);
@@ -139,22 +139,41 @@ export default function TaskDetail() {
     toast.info('ارفع صور تثبت إكمال المهمة');
   };
 
-  const handleProofUpload = (images: ProofImage[]) => {
+  const handleProofUpload = async (images: ProofImage[]) => {
     setUploadedProof(images);
     setCurrentStep(5);
     toast.success('تم رفع الإثبات بنجاح!');
-    
-    // Simulate review process
-    setTimeout(() => {
+
+    try {
+      // Submit to backend
+      const res = await fetch(`/api/tasks/${task.id}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: images.map(img => img.url) }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to submit task');
+      }
+
+      // Refresh context data
+      await refreshUser();
+      await refreshTransactions();
+
       setCurrentStep(6);
       completeTask(task.id);
       toast.success(`تهانينا! حصلت على ${task.reward} ج.م`);
-      
+
       // Redirect after 2 seconds
       setTimeout(() => {
         setLocation('/tasks');
       }, 2000);
-    }, 3000);
+    } catch (error: any) {
+      console.error('Submit task error:', error);
+      toast.error(error.message || 'حدث خطأ أثناء إرسال إثبات المهمة');
+      setCurrentStep(4); // Revert back to proof upload step
+    }
   };
 
   const difficultyColors: Record<string, string> = {
@@ -286,8 +305,8 @@ export default function TaskDetail() {
         )}
 
         {/* Action Buttons */}
-        {task.status === 'available' && currentStep === 1 && (
-          <Button 
+        {currentStep === 1 && (
+          <Button
             className="w-full h-12 text-lg"
             onClick={handleStartTask}
             disabled={isStarting}
@@ -297,7 +316,7 @@ export default function TaskDetail() {
         )}
 
         {currentStep === 2 && (
-          <Button 
+          <Button
             className="w-full h-12 text-lg"
             onClick={handleReadInstructions}
           >
@@ -306,7 +325,7 @@ export default function TaskDetail() {
         )}
 
         {currentStep === 3 && (
-          <Button 
+          <Button
             className="w-full h-12 text-lg"
             onClick={handleExecuteTask}
           >

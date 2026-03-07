@@ -67,7 +67,7 @@ router.get('/advertisers/:slug', async (req: Request, res: Response) => {
 
     const tasks = await query(
       `SELECT id, titleEn, titleAr, descriptionEn, descriptionAr, type, reward, duration, 
-              difficulty, status, currentCompletions as completionsCount, maxCompletions as completionsNeeded, taskData
+              difficulty, status, currentCompletions as completionsCount, maxCompletions as completionsNeeded, config as taskData
        FROM tasks
        WHERE advertiserId = ?
        ORDER BY createdAt DESC`,
