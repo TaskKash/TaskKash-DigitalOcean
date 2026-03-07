@@ -898,12 +898,12 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
         const balanceBefore = userBalanceData[0]?.balance || 0;
         const balanceAfter = parseFloat(balanceBefore) + parseFloat(task.reward);
 
-        // Insert transaction record in MySQL with commission tracking
+        // Insert transaction record in MySQL
         await mysqlQuery(
           `INSERT INTO transactions 
-           (userId, type, currency, amount, balanceBefore, balanceAfter, description, status, relatedTaskId, commissionAmount, commissionRate, netAmount, createdAt)
-           VALUES (?, 'earning', 'EGP', ?, ?, ?, ?, 'completed', ?, ?, ?, ?, NOW())`,
-          [req.userId, task.reward, balanceBefore, balanceAfter, `Task completed: ${task.titleEn}`, taskId, commission.commissionAmount, commission.commissionRate, task.reward]
+           (userId, type, currency, amount, description, status, taskId, createdAt)
+           VALUES (?, 'earning', 'EGP', ?, ?, 'completed', ?, NOW())`,
+          [req.userId, task.reward, `Task completed: ${task.titleEn}`, taskId]
         );
 
         // Deduct from advertiser balance (reward + commission)
@@ -1091,38 +1091,6 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
   }
 });
 
-/**
- * GET /api/tasks/my-submissions
- * Get user's task submissions (SQLite fallback - now migrated to MySQL)
- */
-router.get('/tasks/my-submissions', isUser, async (req, res) => {
-  try {
-    const submissions = await mysqlQuery(`
-      SELECT 
-        s.*,
-        t.titleEn as taskTitle,
-        t.type as taskType,
-        a.nameEn as advertiserName
-      FROM task_submissions s
-      JOIN tasks t ON s.taskId = t.id
-      LEFT JOIN advertisers a ON t.advertiserId = a.id
-      WHERE s.userId = ?
-      ORDER BY s.createdAt DESC
-    `, [req.userId]) as any[];
-
-    // Parse JSON fields
-    const submissionsWithData = submissions.map((sub: any) => ({
-      ...sub,
-      submissionData: sub.submissionData ? JSON.parse(sub.submissionData) : null
-    }));
-
-    res.json({ submissions: submissionsWithData });
-
-  } catch (error: any) {
-    console.error('Error fetching submissions:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
 
 
 /**
