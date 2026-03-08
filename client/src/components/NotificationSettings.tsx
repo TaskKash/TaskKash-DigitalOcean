@@ -65,7 +65,7 @@ export default function NotificationSettings() {
       if (newPermission === 'granted') {
         // Subscribe to push notifications
         const subscription = await subscribeToPushNotifications();
-        
+
         if (subscription) {
           setIsSubscribed(true);
           toast.success('تم تفعيل الإشعارات بنجاح!', {
@@ -73,9 +73,9 @@ export default function NotificationSettings() {
           });
 
           // Show a test notification
-          await showLocalNotification('TASKKASH', {
+          await showLocalNotification('TaskKash', {
             body: 'تم تفعيل الإشعارات بنجاح! سوف تتلقى تحديثات فورية.',
-            icon: '/icon-192.svg',
+            icon: '/icon-192.png',
           });
         } else {
           toast.error('فشل الاشتراك في الإشعارات');
@@ -97,7 +97,7 @@ export default function NotificationSettings() {
     setIsLoading(true);
     try {
       const success = await unsubscribeFromPushNotifications();
-      
+
       if (success) {
         setIsSubscribed(false);
         toast.success('تم إيقاف الإشعارات');
@@ -114,10 +114,10 @@ export default function NotificationSettings() {
 
   const handleTestNotification = async () => {
     try {
-      await showLocalNotification('TASKKASH - إشعار تجريبي', {
+      await showLocalNotification('TaskKash - إشعار تجريبي', {
         body: 'هذا إشعار تجريبي للتأكد من عمل الإشعارات بشكل صحيح',
-        icon: '/icon-192.svg',
-        badge: '/icon-192.svg',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
         tag: 'test-notification',
       });
       toast.success('تم إرسال إشعار تجريبي');
@@ -156,20 +156,19 @@ export default function NotificationSettings() {
       {/* Main Notification Toggle */}
       <Card className="p-6">
         <div className="flex items-start gap-4">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-            isSubscribed ? 'bg-green-100' : 'bg-gray-100'
-          }`}>
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${isSubscribed ? 'bg-green-100' : 'bg-gray-100'
+            }`}>
             {isSubscribed ? (
               <Bell className="w-6 h-6 text-green-600" />
             ) : (
               <BellOff className="w-6 h-6 text-gray-600" />
             )}
           </div>
-          
+
           <div className="flex-1">
             <h3 className="font-semibold text-lg mb-1">الإشعارات الفورية</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              {isSubscribed 
+              {isSubscribed
                 ? 'الإشعارات مفعلة - سوف تتلقى تحديثات فورية'
                 : 'قم بتفعيل الإشعارات لتلقي تحديثات فورية عن المهام والأرباح'
               }
@@ -177,11 +176,10 @@ export default function NotificationSettings() {
 
             {/* Permission Status */}
             <div className="flex items-center gap-2 mb-4">
-              <div className={`w-2 h-2 rounded-full ${
-                permission === 'granted' ? 'bg-green-500' :
-                permission === 'denied' ? 'bg-red-500' :
-                'bg-yellow-500'
-              }`} />
+              <div className={`w-2 h-2 rounded-full ${permission === 'granted' ? 'bg-green-500' :
+                  permission === 'denied' ? 'bg-red-500' :
+                    'bg-yellow-500'
+                }`} />
               <span className="text-sm">
                 {permission === 'granted' && 'تم منح الإذن'}
                 {permission === 'denied' && 'تم رفض الإذن'}

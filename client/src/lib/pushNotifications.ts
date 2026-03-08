@@ -56,7 +56,7 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription |
 
   try {
     const registration = await navigator.serviceWorker.ready;
-    
+
     // Check if already subscribed
     const existingSubscription = await registration.pushManager.getSubscription();
     if (existingSubscription) {
@@ -77,10 +77,10 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription |
     });
 
     console.log('Subscribed to push notifications:', subscription);
-    
+
     // Send subscription to backend
     await sendSubscriptionToBackend(subscription);
-    
+
     return subscription;
   } catch (error) {
     console.error('Error subscribing to push notifications:', error);
@@ -97,17 +97,17 @@ export async function unsubscribeFromPushNotifications(): Promise<boolean> {
   try {
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
-    
+
     if (subscription) {
       await subscription.unsubscribe();
       console.log('Unsubscribed from push notifications');
-      
+
       // Notify backend
       await removeSubscriptionFromBackend(subscription);
-      
+
       return true;
     }
-    
+
     return false;
   } catch (error) {
     console.error('Error unsubscribing from push notifications:', error);
@@ -190,8 +190,8 @@ export async function showLocalNotification(title: string, options?: Notificatio
   try {
     const registration = await navigator.serviceWorker.ready;
     await registration.showNotification(title, {
-      icon: '/icon-192.svg',
-      badge: '/icon-192.svg',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
       ...options,
     });
   } catch (error) {

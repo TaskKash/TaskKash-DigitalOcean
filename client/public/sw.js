@@ -1,135 +1,203 @@
-const CACHE_NAME = 'taskkash-v4-no-api-cache';
-const urlsToCache = [
+/* ============================================================
+   TaskKash Service Worker  v5.0
+   Strategy:
+   - Static assets  → Cache-First (then update cache in bg)
+   - Navigation     → Network-First → fallback to cache → offline.html
+   - API calls      → Network-Only (never cached)
+   ============================================================ */
+
+const CACHE_VERSION = 'taskkash-v5';
+const STATIC_CACHE = `${CACHE_VERSION}-static`;
+const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
+
+// Files to pre-cache on install
+const PRECACHE_URLS = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/offline.html',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
 ];
 
-// Install event
+// ── Install ──────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(STATIC_CACHE).then((cache) => {
+      return cache.addAll(PRECACHE_URLS);
+    })
   );
+  // Activate immediately — don't wait for old SW to die
   self.skipWaiting();
 });
 
-// Fetch event
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  
-  // Never cache auth API calls or tRPC calls
-  if (url.pathname.includes('/api/trpc/auth') || 
-      url.pathname.includes('/api/trpc') ||
-      url.pathname.includes('/api/')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-  
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request).then(
-          (response) => {
-            // Check if valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Clone the response
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
-        );
-      })
-  );
-});
-
-// Activate event
+// ── Activate ─────────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
+    caches.keys().then((cacheNames) =>
+      Promise.all(
+        cacheNames
+          .filter((name) => name !== STATIC_CACHE && name !== RUNTIME_CACHE)
+          .map((name) => caches.delete(name))
+      )
+    ).then(() => {
+      // Tell all open clients a new SW is active
+      self.clients.matchAll({ includeUncontrolled: true }).then((clients) => {
+        clients.forEach((client) =>
+          client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION })
+        );
+      });
+      return self.clients.claim();
     })
   );
-  self.clients.claim();
 });
 
-// Push notification event
+// ── Fetch ─────────────────────────────────────────────────────
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // 1. API calls — always go to network, never cache
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/api/trpc')
+  ) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // 2. Navigation requests (HTML pages) — network-first, offline fallback
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache successful navigations
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(request).then(
+            (cached) => cached || caches.match('/offline.html')
+          )
+        )
+    );
+    return;
+  }
+
+  // 3. Static assets — stale-while-revalidate (serve from cache, refresh in background)
+  if (
+    url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|gif|webp|woff|woff2|ico)$/)
+  ) {
+    event.respondWith(
+      caches.open(RUNTIME_CACHE).then((cache) =>
+        cache.match(request).then((cached) => {
+          const fetchPromise = fetch(request)
+            .then((response) => {
+              if (response && response.status === 200) {
+                cache.put(request, response.clone());
+              }
+              return response;
+            })
+            .catch(() => cached); // network failed → serve stale
+
+          return cached || fetchPromise;
+        })
+      )
+    );
+    return;
+  }
+
+  // 4. Everything else — network with cache fallback
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const clone = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
+  );
+});
+
+// ── Push Notifications ────────────────────────────────────────
 self.addEventListener('push', (event) => {
-  console.log('Push notification received:', event);
-  
-  let notificationData = {
-    title: 'TASKKASH',
-    body: 'You have a new notification',
-    icon: '/icon-192.svg',
-    badge: '/icon-192.svg',
-    data: {}
+  let data = {
+    title: 'TaskKash',
+    body: 'لديك إشعار جديد',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    url: '/',
+    tag: 'taskkash-notification',
   };
 
   if (event.data) {
     try {
-      notificationData = event.data.json();
-    } catch (e) {
-      notificationData.body = event.data.text();
+      const parsed = event.data.json();
+      data = { ...data, ...parsed };
+    } catch {
+      data.body = event.data.text();
     }
   }
 
   event.waitUntil(
-    self.registration.showNotification(notificationData.title, {
-      body: notificationData.body,
-      icon: notificationData.icon || '/icon-192.svg',
-      badge: notificationData.badge || '/icon-192.svg',
-      data: notificationData.data || {},
-      tag: notificationData.tag || 'taskkash-notification',
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon,
+      badge: data.badge,
+      tag: data.tag,
+      data: { url: data.url },
       requireInteraction: false,
-      vibrate: [200, 100, 200]
+      vibrate: [200, 100, 200],
     })
   );
 });
 
-// Notification click event
+// ── Notification Click ────────────────────────────────────────
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event);
   event.notification.close();
-
-  const urlToOpen = event.notification.data?.url || '/';
+  const targetUrl = event.notification.data?.url || '/';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
+    clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
       .then((windowClients) => {
-        // Check if there is already a window/tab open
-        for (let i = 0; i < windowClients.length; i++) {
-          const client = windowClients[i];
-          if (client.url === urlToOpen && 'focus' in client) {
+        // Focus existing window if already open at target URL
+        for (const client of windowClients) {
+          if (client.url.includes(targetUrl) && 'focus' in client) {
             return client.focus();
           }
         }
-        // If not, open a new window/tab
+        // Otherwise focus any open window and navigate
+        for (const client of windowClients) {
+          if ('focus' in client) {
+            return client.focus().then(() => client.navigate(targetUrl));
+          }
+        }
+        // Or open a new window
         if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
+          return clients.openWindow(targetUrl);
         }
       })
   );
 });
 
+// ── Background Sync ───────────────────────────────────────────
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-pending-tasks') {
+    event.waitUntil(syncPendingTasks());
+  }
+});
+
+async function syncPendingTasks() {
+  try {
+    // Placeholder: In production, replay any queued API requests stored in IndexedDB
+    console.log('[SW] Background sync: syncing pending tasks...');
+  } catch (err) {
+    console.error('[SW] Background sync failed:', err);
+  }
+}

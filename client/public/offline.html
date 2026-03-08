@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TaskKash - غير متصل</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100dvh;
+            background: linear-gradient(135deg, #0d2318 0%, #1a3d2b 50%, #0d2318 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            color: #fff;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .logo-wrap {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 28px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-wrap img {
+            width: 68px;
+            height: 68px;
+            object-fit: contain;
+        }
+
+        .wifi-icon {
+            font-size: 56px;
+            margin-bottom: 8px;
+            filter: grayscale(1) brightness(0.6);
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #10B981;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 24px;
+        }
+
+        p {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.6;
+            max-width: 300px;
+            margin-bottom: 36px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 14px 32px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 28px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #10B981, transparent);
+            border-radius: 2px;
+            margin: 32px auto;
+        }
+
+        .tips {
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.35);
+            line-height: 1.8;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 0.9;
+            }
+        }
+
+        .wifi-icon {
+            animation: pulse 2.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="logo-wrap">
+        <img src="/icon-192.png" alt="TaskKash"
+            onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=&quot;font-size:40px&quot;>💎</span>'" />
+    </div>
+
+    <div class="wifi-icon">📡</div>
+
+    <h1>أنت غير متصل بالإنترنت</h1>
+    <h2>You're Offline</h2>
+
+    <p>
+        تحقق من اتصالك بالإنترنت وحاول مرة أخرى.<br />
+        Check your internet connection and try again.
+    </p>
+
+    <button class="btn" onclick="window.location.reload()">
+        🔄 حاول مجدداً / Try Again
+    </button>
+
+    <div class="divider"></div>
+
+    <div class="tips">
+        نصيحة: قم بتثبيت التطبيق للوصول السريع<br />
+        Tip: Install the app for faster access
+    </div>
+
+</body>
+
+</html>

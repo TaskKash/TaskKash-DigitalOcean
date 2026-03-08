@@ -5,6 +5,8 @@ import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppProvider } from "./contexts/AppContext";
+import { PWAInstallBanner } from "./components/PWAInstallBanner";
+import { PWAUpdateBanner } from "./components/PWAUpdateBanner";
 
 // User Pages
 import Home from "./pages/Home";
@@ -293,8 +295,10 @@ function App() {
       <ThemeProvider defaultTheme="light" switchable>
         <AppProvider>
           <TooltipProvider>
+            <PWAUpdateBanner />
             <Toaster />
             <Router />
+            <PWAInstallBanner />
           </TooltipProvider>
         </AppProvider>
       </ThemeProvider>

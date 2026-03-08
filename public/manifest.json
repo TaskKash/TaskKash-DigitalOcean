@@ -1,29 +1,60 @@
 {
-  "name": "TASKKASH - اربح المال من هاتفك",
-  "short_name": "TASKKASH",
-  "description": "منصة رقمية تربط المعلنين بالمستخدمين لإكمال مهام صغيرة مقابل مكافآت مالية",
+  "name": "TaskKash",
+  "short_name": "TaskKash",
+  "description": "Earn money by completing simple tasks | أربح المال بإكمال مهام بسيطة",
+  "id": "/",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#2E8B57",
-  "theme_color": "#2E8B57",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "background_color": "#1a3d2b",
+  "theme_color": "#10B981",
   "orientation": "portrait",
-  "dir": "rtl",
+  "dir": "auto",
   "lang": "ar",
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["finance", "productivity", "business"],
+  "categories": [
+    "finance",
+    "productivity",
+    "business"
+  ],
+  "share_target": {
+    "action": "/tasks",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
   "shortcuts": [
     {
       "name": "المهام - Tasks",
@@ -64,13 +95,5 @@
         }
       ]
     }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshot1.png",
-      "sizes": "540x720",
-      "type": "image/png"
-    }
   ]
 }
-
