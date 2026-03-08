@@ -9,6 +9,7 @@ import {
   type AdvertiserCampaign,
   type AdvertiserTask
 } from '@/lib/advertiserMockData';
+import { requestNotificationPermission } from '@/lib/pushNotifications';
 
 // Define User type based on database schema
 export interface User {
@@ -105,6 +106,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         countryId: authUser.countryId,
         role: authUser.role,
       });
+      // Automatically request notification permissions when user logs in/is authenticated
+      setTimeout(() => {
+        requestNotificationPermission().catch(console.error);
+      }, 2000);
     } else {
       setUser(null);
     }
