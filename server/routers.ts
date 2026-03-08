@@ -91,12 +91,12 @@ export const appRouter = router({
           VALUES (${input.phone}, ${code}, ${expiresAt}, FALSE, 0)
         `);
 
-        console.log(`[MOCK OTP] Code ${code} sent to ${input.phone}`);
+        console.log(`[OTP] Code generated for ${input.phone} (not sent in response)`);
 
         return {
           success: true,
           message: `OTP sent to ${input.phone}`,
-          mockCode: code, // Remove in production
+          // mockCode intentionally removed — never expose OTP in API response
         };
       }),
 
@@ -199,57 +199,6 @@ export const appRouter = router({
         return { success: true, user, isNewUser };
       }),
 
-    // Phone login (direct - for demo)
-    phoneLogin: publicProcedure
-      .input(z.object({
-        phone: z.string().min(10).max(20),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const db = await getDb();
-        if (!db) throw new Error('Database not available');
-
-        const result = await db.select().from(users).where(eq(users.phone, input.phone)).limit(1);
-        const user = result[0];
-
-        if (!user) {
-          throw new Error('User not found. Please register first.');
-        }
-
-        await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, user.id));
-
-        const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || '' });
-        const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, sessionToken, cookieOptions);
-
-        return { success: true, user };
-      }),
-
-    // Email/Password login
-    login: publicProcedure
-      .input(z.object({
-        email: z.string().email(),
-        password: z.string(),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const db = await getDb();
-        if (!db) throw new Error('Database not available');
-
-        const result = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
-        const user = result[0];
-
-        if (!user) throw new Error('Invalid email or password');
-        if (!user.password) throw new Error('Password authentication not configured');
-
-        const isPasswordValid = await bcrypt.compare(input.password, user.password);
-        if (!isPasswordValid) throw new Error('Invalid email or password');
-
-        const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || '' });
-        const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, sessionToken, cookieOptions);
-
-        return { success: true, user };
-      }),
-
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -277,7 +226,7 @@ export const appRouter = router({
         return { user: user[0], verifications, socialProfiles, consents, devices, profileData };
       }),
 
-    updateProfile: publicProcedure
+    updateProfile: protectedProcedure
       .input(z.object({
         userId: z.number(),
         name: z.string().optional(),
@@ -297,7 +246,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    submitKYC: publicProcedure
+    submitKYC: protectedProcedure
       .input(z.object({
         userId: z.number(),
         documentType: z.enum(['national_id', 'passport', 'drivers_license']),
@@ -495,7 +444,7 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await getUserBalance(input.userId);
       }),
-    requestWithdrawal: publicProcedure
+    requestWithdrawal: protectedProcedure
       .input(z.object({
         userId: z.number(),
         amount: z.number(),
@@ -505,7 +454,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await requestWithdrawal(input.userId, input.amount, input.method, input.accountDetails);
       }),
-    processWithdrawal: publicProcedure
+    processWithdrawal: protectedProcedure
       .input(z.object({
         withdrawalId: z.string(),
         status: z.enum(['approved', 'rejected']),
@@ -570,7 +519,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await assignTaskToUser(input.taskId, input.userId);
       }),
-    submit: publicProcedure
+    submit: protectedProcedure
       .input(z.object({
         taskId: z.number(),
         userId: z.number(),
@@ -579,7 +528,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await submitTaskCompletion(input.taskId, input.userId, input.proof);
       }),
-    verify: publicProcedure
+    verify: protectedProcedure
       .input(z.object({
         submissionId: z.string(),
         status: z.enum(['approved', 'rejected']),

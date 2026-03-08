@@ -485,9 +485,9 @@ authRouter.post("/admin/login", async (req, res) => {
       });
     }
 
-    // Hardcoded admin credentials for now
-    const ADMIN_EMAIL = "admin@taskkash.com";
-    const ADMIN_PASSWORD = "password123"; // Changed to match seed data
+    // Admin credentials from environment variables
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@taskkash.com";
+    const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "";
 
     if (email !== ADMIN_EMAIL) {
       return res.status(401).json({
@@ -496,8 +496,18 @@ authRouter.post("/admin/login", async (req, res) => {
       });
     }
 
-    // Verify password
-    const isValidPassword = password === ADMIN_PASSWORD;
+    // Verify password using bcrypt
+    let isValidPassword = false;
+    if (ADMIN_PASSWORD_HASH) {
+      isValidPassword = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    } else if (process.env.NODE_ENV === "development") {
+      // Dev-only fallback: check ADMIN_PASSWORD_PLAIN env var
+      const devPassword = process.env.ADMIN_PASSWORD_PLAIN || "";
+      isValidPassword = devPassword.length > 0 && password === devPassword;
+      if (!ADMIN_PASSWORD_HASH) {
+        console.warn("[Auth] WARNING: ADMIN_PASSWORD_HASH not set. Using dev plaintext fallback only.");
+      }
+    }
 
     if (!isValidPassword) {
       return res.status(401).json({

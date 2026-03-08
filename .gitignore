@@ -3,3 +3,58 @@ dist
 *.log
 .vite
 .cache
+
+# Environment & secrets — NEVER commit these
+.env
+.env.*
+!.env.example
+
+# Build archives / source tarballs
+*.tar.gz
+*.zip
+
+# Database backups & SQL dumps
+backup_*.sql
+database_backup.sql
+sample_data*.sql
+seed_*.sql
+*.db
+
+# Drizzle migration artifacts (keep schema but not lock)
+# drizzle/
+
+# Backup source files — use git branches instead
+*.backup
+*.backup_*
+*.bak
+
+# Root-level test & utility scripts
+check_db.ts
+clean_and_seed.ts
+deep_check.ts
+describe_adv.ts
+describe_db.ts
+describe_q.ts
+dump_questions.ts
+list_tables.ts
+migrate_schema.ts
+run_seed.ts
+test_update.ts
+verify_api.ts
+verify_live_api.ts
+verify_tasks.ts
+verify_video_api.ts
+fix_passwords.js
+fix_passwords.mjs
+gen_hash.mjs
+query_users.mjs
+test-db.mjs
+test_endpoints.mjs
+test_password.js
+test_password.mjs
+test_tasks_api.mjs
+check_tasks.mjs
+migrate_db.cjs
+migrate_db.mjs
+migrate-advertisers.js
+test-tasks.ts

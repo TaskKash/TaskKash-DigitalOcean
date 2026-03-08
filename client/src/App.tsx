@@ -168,6 +168,7 @@ function Router() {
       </Route>
       <Route path="/home" component={Home} />
       <Route path="/tasks" component={Tasks} />
+      <Route path="/tasks/history" component={TaskHistory} />
       <Route path="/tasks/:id" component={TaskDetail} />
       <Route path="/task/survey" component={SurveyTask} />
       <Route path="/task/video" component={VideoTask} />
@@ -203,7 +204,6 @@ function Router() {
       <Route path="/faq" component={FAQ} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
-      <Route path="/tasks/history" component={TaskHistory} />
       <Route path="/withdraw-success" component={WithdrawSuccess} />
       <Route path="/platform-dashboard" component={PlatformDashboard} />
       <Route path="/how-it-works" component={HowItWorks} />
@@ -220,20 +220,16 @@ function Router() {
 
       {/* Admin Routes */}
       <Route path="/admin/login" component={AdminLogin} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
-      <Route path="/admin/users" component={UsersManagement} />
-      <Route path="/admin/advertisers" component={AdvertisersManagement} />
-      <Route path="/admin/reports" component={ReportedTasks} />
-      <Route path="/admin/settings" component={PlatformSettings} />
-
-      {/* Admin Routes */}
       <Route path="/admin" component={NewAdminDashboard} />
-      <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin/users" component={UsersManagementNew} />
       <Route path="/admin/users-manage" component={UsersManagementNew} />
+      <Route path="/admin/advertisers" component={AdvertisersManagementNew} />
       <Route path="/admin/advertisers-manage" component={AdvertisersManagementNew} />
       <Route path="/admin/tasks" component={AdminTasks} />
-      <Route path="/admin/advertisers" component={AdvertisersManagement} />
+      <Route path="/admin/reports" component={ReportedTasks} />
       <Route path="/admin/transactions" component={ReportedTasks} />
+      <Route path="/admin/settings" component={PlatformSettings} />
       <Route path="/admin/countries" component={PlatformSettings} />
       <Route path="/admin/withdrawals" component={AdminWithdrawals} />
 

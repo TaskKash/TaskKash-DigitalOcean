@@ -21,13 +21,15 @@ import campaignRouter from "./campaign-routes";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { 
-  loginLimiter, 
-  apiLimiter, 
-  securityHeaders, 
+import {
+  loginLimiter,
+  apiLimiter,
+  securityHeaders,
   addSecurityHeaders,
-  validateBodySize 
+  validateBodySize,
+  corsOptions
 } from "./security";
+import cors from "cors";
 import { csrfTokenMiddleware, csrfProtection, getCsrfTokenHandler } from "./csrf";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -52,25 +54,28 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
-  
+
   // Trust proxy - Required for rate limiting behind reverse proxy/load balancer
   app.set('trust proxy', 1);
-  
+
   // Security middleware
   app.use(securityHeaders);
   app.use(addSecurityHeaders);
   app.use(validateBodySize);
-  
+
+  // CORS — must come before routes
+  app.use(cors(corsOptions));
+
   // Configure body parser and cookie parser for REST API routes
   app.use(cookieParser());
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // CSRF token endpoint (must be before CSRF protection)
   app.get("/api/csrf-token", getCsrfTokenHandler);
-  
+
   // CSRF token middleware (adds token to all responses)
   app.use(csrfTokenMiddleware);
-  
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // Simple REST auth endpoints (with rate limiting, CSRF protection will be added after frontend integration)
@@ -107,9 +112,6 @@ async function startServer() {
       createContext,
     })
   );
-  // Configure body parser for non-tRPC routes
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);

@@ -47,15 +47,20 @@ export const bountyLimiter = rateLimit({
 /**
  * Helmet security headers
  */
+const isDev = process.env.NODE_ENV !== 'production';
+
 const directives: any = {
   defaultSrc: ["'self'"],
   styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
   fontSrc: ["'self'", "https://fonts.gstatic.com"],
-  scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Note: unsafe-eval needed for Vite in dev
+  // Only allow unsafe-inline/unsafe-eval in development (Vite HMR needs them)
+  scriptSrc: isDev
+    ? ["'self'", "'unsafe-inline'", "'unsafe-eval'"]
+    : ["'self'"],
   imgSrc: ["'self'", "data:", "https:", "blob:"],
   connectSrc: ["'self'", "https:", "ws:", "wss:"],
 };
-if (process.env.NODE_ENV !== 'development') {
+if (!isDev) {
   directives.upgradeInsecureRequests = [];
 }
 
