@@ -68,8 +68,8 @@ async function startServer() {
 
   // Configure body parser and cookie parser for REST API routes
   app.use(cookieParser());
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ limit: "1mb", extended: true }));
   // CSRF token endpoint (must be before CSRF protection)
   app.get("/api/csrf-token", getCsrfTokenHandler);
 
@@ -78,7 +78,9 @@ async function startServer() {
 
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
-  // Simple REST auth endpoints (with rate limiting, CSRF protection will be added after frontend integration)
+  // Global API rate limiter (all /api routes)
+  app.use('/api', apiLimiter);
+  // Simple REST auth endpoints (with stricter rate limiting on auth)
   app.use("/api/auth", loginLimiter, authRouter);
   // Admin management endpoints (with CSRF protection)
   app.use("/api/admin", csrfProtection, adminRouter);
@@ -90,8 +92,8 @@ async function startServer() {
   app.use("/api", advertiserRouter);
   // Withdrawal endpoints (with CSRF protection)
   app.use("/api/withdrawals", csrfProtection, withdrawalRouter);
-  // Admin withdrawal management endpoints
-  app.use("/api/admin", adminWithdrawalRouter);
+  // Admin withdrawal management endpoints (with CSRF protection)
+  app.use("/api/admin", csrfProtection, adminWithdrawalRouter);
   // Referral system endpoints
   app.use("/api/referrals", referralRouter);
   // Gamification endpoints

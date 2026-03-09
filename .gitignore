@@ -4,6 +4,10 @@ dist
 .vite
 .cache
 
+# Sensitive credentials and internal docs — NEVER commit
+CREDENTIALS.md
+CREDENTIALS*.md
+
 # Environment & secrets — NEVER commit these
 .env
 .env.*

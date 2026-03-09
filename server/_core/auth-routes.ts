@@ -1,9 +1,25 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { nanoid } from "nanoid";
 import { getUserByEmail, getUserByOpenId } from "../db";
 import { sdk } from "./sdk";
 import { COOKIE_NAME } from "../../shared/const";
 import { getPool, query } from "./mysql-pool";
+
+// Reusable helper: always use Secure + SameSite=None (requires HTTPS)
+const cookieOptions = (req: any) => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'lax') as 'none' | 'lax',
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  path: "/",
+});
+
+// Reusable Zod schemas
+const emailSchema = z.string().email().max(254);
+const passwordSchema = z.string().min(6).max(128);
+const nameSchema = z.string().min(1).max(100);
 
 export const authRouter = Router();
 
@@ -20,11 +36,9 @@ authRouter.post("/login", async (req, res) => {
     }
 
     // Get user from database
-    console.log('[Auth] Looking up user:', email);
     const user = await getUserByEmail(email);
-    console.log('[Auth] User found:', user ? 'YES' : 'NO');
-    if (user) {
-      console.log('[Auth] User has password:', user.password ? 'YES' : 'NO');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Auth] User found:', user ? 'YES' : 'NO');
     }
 
     if (!user) {
@@ -43,9 +57,10 @@ authRouter.post("/login", async (req, res) => {
     }
 
     // Verify password
-    console.log('[Auth] Comparing passwords...');
     const isValidPassword = await bcrypt.compare(password, user.password);
-    console.log('[Auth] Password valid:', isValidPassword);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Auth] Password valid:', isValidPassword);
+    }
 
     if (!isValidPassword) {
       return res.status(401).json({
@@ -113,17 +128,13 @@ authRouter.post("/logout", (req, res) => {
 // Get current user endpoint
 authRouter.get("/me", async (req, res) => {
   try {
-    console.log('[Auth /me] Cookies:', req.headers.cookie);
-
-    // Get session token from cookie
-    const cookies = req.headers.cookie?.split(';').reduce((acc: any, cookie: string) => {
-      const [key, value] = cookie.trim().split('=');
-      acc[key] = value;
-      return acc;
-    }, {}) || {};
-
-    const sessionToken = cookies[COOKIE_NAME];
-    console.log('[Auth /me] Session token:', sessionToken ? 'exists' : 'missing');
+    // Get session token from cookie (use cookie-parser result or parse manually)
+    const sessionToken = req.cookies?.[COOKIE_NAME] ||
+      req.headers.cookie?.split(';').reduce((acc: any, c: string) => {
+        const [k, v] = c.trim().split('=');
+        acc[k] = v;
+        return acc;
+      }, {})[COOKIE_NAME];
 
     if (!sessionToken) {
       return res.status(401).json({
@@ -134,7 +145,6 @@ authRouter.get("/me", async (req, res) => {
 
     // Verify session and get openId
     const session = await sdk.verifySession(sessionToken);
-    console.log('[Auth /me] Session:', session);
 
     if (!session || !session.openId) {
       return res.status(401).json({
@@ -191,9 +201,21 @@ authRouter.post("/register", async (req, res) => {
       });
     }
 
+    // Validate inputs with Zod
+    const emailResult = emailSchema.safeParse(email);
+    const passResult = passwordSchema.safeParse(password);
+    const nameResult = nameSchema.safeParse(name);
+
+    if (!emailResult.success || !passResult.success || !nameResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid name, email, or password format",
+      });
+    }
+
     // Hash password with bcrypt (same as login verification)
     const hashedPassword = await bcrypt.hash(password, 10);
-    const openId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const openId = `user_${nanoid()}`;
 
     console.log('[Auth] Creating user with openId:', openId);
 
