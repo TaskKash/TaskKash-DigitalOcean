@@ -1,19 +1,14 @@
 @echo off
-echo 🚀 Starting TaskKash APK Build & Sync...
-echo ----------------------------------------
+echo ========================================
+echo TaskKash APK Preparation Tool
+echo ========================================
 cd /d %~dp0
 
-echo 📦 Running Web Production Build...
+echo [1/1] Running Complete Web Build ^& Android Sync...
 call npm run build
 
-echo 🔄 Syncing with Android Native Project...
-call npx cap sync
-
-echo 🧹 Pruning Large Assets...
-node scripts/prune-android.js
-
 echo ----------------------------------------
-echo ✅ APK Build and Sync Completed!
-echo 📲 Open Android Studio and click Build -> Build APK(s)
+echo ✅ DONE! The latest code is now inside the Android folder.
+echo 📲 Go to Android Studio and click: Build -^> Build APK(s)
 echo ----------------------------------------
 pause
