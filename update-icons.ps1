@@ -20,11 +20,19 @@ foreach ($folderName in $densities.Keys) {
     $destFolder = Join-Path $resBase $folderName
     if (-not (Test-Path $destFolder)) { New-Item -ItemType Directory -Path $destFolder -Force }
 
-    # Standard and Round Icons
+    # Standard and Round Icons (with 30% padding to prevent cropping)
     $bmp = New-Object System.Drawing.Bitmap($size, $size)
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-    $g.DrawImage($sourceImg, 0, 0, $size, $size)
+    
+    # Fill background white so transparency doesn't turn black
+    $g.Clear([System.Drawing.Color]::White)
+    
+    # Calculate 70% inner size
+    $innerSize = [int]($size * 0.70)
+    $innerOffset = [int](($size - $innerSize) / 2)
+    
+    $g.DrawImage($sourceImg, $innerOffset, $innerOffset, $innerSize, $innerSize)
     $bmp.Save((Join-Path $destFolder "ic_launcher.png"), [System.Drawing.Imaging.ImageFormat]::Png)
     $bmp.Save((Join-Path $destFolder "ic_launcher_round.png"), [System.Drawing.Imaging.ImageFormat]::Png)
     $g.Dispose(); $bmp.Dispose()
