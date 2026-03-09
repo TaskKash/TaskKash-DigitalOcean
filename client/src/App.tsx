@@ -7,6 +7,9 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppProvider } from "./contexts/AppContext";
 import { PWAInstallBanner } from "./components/PWAInstallBanner";
 import { PWAUpdateBanner } from "./components/PWAUpdateBanner";
+import { useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 
 // User Pages
 import Home from "./pages/Home";
@@ -290,6 +293,36 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    // Implement Android hardware back button handler
+    const setupBackButton = async () => {
+      await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+        const path = window.location.pathname;
+        const rootPaths = ['/', '/home', '/login', '/welcome', '/splash', '/onboarding'];
+
+        // Exit app if on main screens
+        if (rootPaths.includes(path)) {
+          CapacitorApp.exitApp();
+        } else if (canGoBack) {
+          // Go back in web history instead of closing
+          window.history.back();
+        } else {
+          CapacitorApp.exitApp();
+        }
+      });
+    };
+
+    if (Capacitor.isNativePlatform()) {
+      setupBackButton();
+    }
+
+    return () => {
+      if (Capacitor.isNativePlatform()) {
+        CapacitorApp.removeAllListeners();
+      }
+    };
+  }, []);
+
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light" switchable>
