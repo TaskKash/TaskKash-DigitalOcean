@@ -26,18 +26,20 @@ export function getPool(): mysql.Pool {
     
     console.log('[Database] MySQL connection pool initialized');
     
-    // Log pool events for debugging
-    _pool.on('connection', () => {
-      console.log('[Database] New connection established from pool');
-    });
-    
-    _pool.on('release', () => {
-      console.log('[Database] Connection released back to pool');
-    });
-    
-    _pool.on('enqueue', () => {
-      console.log('[Database] Waiting for available connection slot');
-    });
+    // Log pool events for debugging (dev only)
+    if (process.env.NODE_ENV === 'development') {
+      _pool.on('connection', () => {
+        console.log('[Database] New connection established from pool');
+      });
+      
+      _pool.on('release', () => {
+        console.log('[Database] Connection released back to pool');
+      });
+      
+      _pool.on('enqueue', () => {
+        console.log('[Database] Waiting for available connection slot');
+      });
+    }
   }
   
   return _pool;

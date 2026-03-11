@@ -113,7 +113,7 @@ export const sanitizeInput = (input: string): string => {
  */
 export const validateBodySize = (req: Request, res: Response, next: NextFunction) => {
   const contentLength = req.headers['content-length'];
-  const maxSize = 10 * 1024 * 1024; // 10MB
+  const maxSize = 1 * 1024 * 1024; // 1MB — matches express.json({ limit: "1mb" })
 
   if (contentLength && parseInt(contentLength) > maxSize) {
     return res.status(413).json({

@@ -439,7 +439,7 @@ export const appRouter = router({
 
   // Wallet API
   wallet: router({
-    getBalance: publicProcedure
+    getBalance: protectedProcedure
       .input(z.object({ userId: z.number() }))
       .query(async ({ input }) => {
         return await getUserBalance(input.userId);
@@ -463,7 +463,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await processWithdrawal(input.withdrawalId, input.status, input.adminNotes);
       }),
-    getTransactions: publicProcedure
+    getTransactions: protectedProcedure
       .input(z.object({
         userId: z.number(),
         limit: z.number().optional(),
@@ -472,15 +472,15 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await getTransactionHistory(input.userId, input.limit, input.offset);
       }),
-    getPendingWithdrawals: publicProcedure.query(async () => {
+    getPendingWithdrawals: protectedProcedure.query(async () => {
       return await getPendingWithdrawals();
     }),
-    getTotalEarnings: publicProcedure
+    getTotalEarnings: protectedProcedure
       .input(z.object({ userId: z.number() }))
       .query(async ({ input }) => {
         return await getTotalEarnings(input.userId);
       }),
-    getTotalWithdrawals: publicProcedure
+    getTotalWithdrawals: protectedProcedure
       .input(z.object({ userId: z.number() }))
       .query(async ({ input }) => {
         return await getTotalWithdrawals(input.userId);
@@ -489,7 +489,7 @@ export const appRouter = router({
 
   // Tasks API
   tasks: router({
-    create: publicProcedure
+    create: protectedProcedure
       .input(z.object({
         advertiserId: z.string(),
         title: z.string(),
@@ -511,7 +511,7 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await getAvailableTasks(input.userId, input.type, input.limit);
       }),
-    assign: publicProcedure
+    assign: protectedProcedure
       .input(z.object({
         taskId: z.number(),
         userId: z.number(),

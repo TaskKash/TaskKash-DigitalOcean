@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { sdk } from "./sdk";
 import { COOKIE_NAME } from "../../shared/const";
+import { getPool } from "./mysql-pool";
 
 export const adminRouter = Router();
 
@@ -61,8 +62,8 @@ adminRouter.post("/users", verifyAdmin, async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const openId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    
+    const connection = getPool();
     
     // Check if email already exists
     const [existing] = await connection.execute(
@@ -71,7 +72,6 @@ adminRouter.post("/users", verifyAdmin, async (req, res) => {
     );
     
     if (Array.isArray(existing) && existing.length > 0) {
-      await connection.end();
       return res.status(400).json({
         success: false,
         error: "Email already exists",
@@ -104,7 +104,7 @@ adminRouter.post("/users", verifyAdmin, async (req, res) => {
       [(result as any).insertId]
     );
     
-    await connection.end();
+
 
     return res.json({
       success: true,
@@ -123,14 +123,12 @@ adminRouter.post("/users", verifyAdmin, async (req, res) => {
 // Get all users
 adminRouter.get("/users", verifyAdmin, async (req, res) => {
   try {
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    const connection = getPool();
     
     const [users] = await connection.execute(
       "SELECT id, openId, name, email, phone, role, balance, completedTasks, totalEarnings, tier, profileStrength, countryId, isVerified, createdAt, updatedAt, lastSignedIn FROM users ORDER BY createdAt DESC"
     );
-    
-    await connection.end();
+
 
     return res.json({
       success: true,
@@ -157,7 +155,6 @@ adminRouter.get("/users/:id", verifyAdmin, async (req, res) => {
       [id]
     );
     
-    await connection.end();
 
     if (!Array.isArray(users) || users.length === 0) {
       return res.status(404).json({
@@ -185,8 +182,7 @@ adminRouter.put("/users/:id", verifyAdmin, async (req, res) => {
     const { id } = req.params;
     const { name, email, phone, role, balance, tier, isVerified, profileStrength } = req.body;
     
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    const connection = getPool();
     
     // Build update query dynamically
     const updates: string[] = [];
@@ -239,7 +235,7 @@ adminRouter.put("/users/:id", verifyAdmin, async (req, res) => {
       [id]
     );
     
-    await connection.end();
+
 
     return res.json({
       success: true,
@@ -261,24 +257,23 @@ adminRouter.post("/users/:id/reset-password", verifyAdmin, async (req, res) => {
     const { id } = req.params;
     const { newPassword } = req.body;
     
-    if (!newPassword || newPassword.length < 6) {
+    if (!newPassword || newPassword.length < 8) {
       return res.status(400).json({
         success: false,
-        error: "Password must be at least 6 characters",
+        error: "Password must be at least 8 characters",
       });
     }
     
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    const connection = getPool();
     
     await connection.execute(
       "UPDATE users SET password = ?, updatedAt = NOW() WHERE id = ?",
       [hashedPassword, id]
     );
     
-    await connection.end();
+
 
     return res.json({
       success: true,
@@ -298,12 +293,11 @@ adminRouter.delete("/users/:id", verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    const connection = getPool();
     
     await connection.execute("DELETE FROM users WHERE id = ?", [id]);
     
-    await connection.end();
+
 
     return res.json({
       success: true,
@@ -332,18 +326,17 @@ adminRouter.post("/advertisers", verifyAdmin, async (req, res) => {
       });
     }
     
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res.status(400).json({
         success: false,
-        error: "Password must be at least 6 characters",
+        error: "Password must be at least 8 characters",
       });
     }
     
     const hashedPassword = await bcrypt.hash(password, 10);
     const finalSlug = slug || nameEn.toLowerCase().replace(/\s+/g, '-');
     
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    const connection = getPool();
     
     // Check if email already exists
     const [existing] = await connection.execute(
@@ -352,7 +345,6 @@ adminRouter.post("/advertisers", verifyAdmin, async (req, res) => {
     );
     
     if (Array.isArray(existing) && existing.length > 0) {
-      await connection.end();
       return res.status(400).json({
         success: false,
         error: "Email or slug already exists",
@@ -380,7 +372,7 @@ adminRouter.post("/advertisers", verifyAdmin, async (req, res) => {
       [(result as any).insertId]
     );
     
-    await connection.end();
+
 
     return res.json({
       success: true,
@@ -399,14 +391,13 @@ adminRouter.post("/advertisers", verifyAdmin, async (req, res) => {
 // Get all advertisers
 adminRouter.get("/advertisers", verifyAdmin, async (req, res) => {
   try {
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    const connection = getPool();
     
     const [advertisers] = await connection.execute(
       "SELECT id, email, nameEn, nameAr, slug, isActive, createdAt, updatedAt FROM advertisers ORDER BY createdAt DESC"
     );
     
-    await connection.end();
+
 
     return res.json({
       success: true,
@@ -425,15 +416,14 @@ adminRouter.get("/advertisers", verifyAdmin, async (req, res) => {
 adminRouter.get("/advertisers/:id", verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    const connection = getPool();
     
     const [advertisers] = await connection.execute(
       "SELECT id, email, nameEn, nameAr, slug, isActive, createdAt, updatedAt FROM advertisers WHERE id = ?",
       [id]
     );
     
-    await connection.end();
+
 
     if (!Array.isArray(advertisers) || advertisers.length === 0) {
       return res.status(404).json({
@@ -461,8 +451,7 @@ adminRouter.put("/advertisers/:id", verifyAdmin, async (req, res) => {
     const { id } = req.params;
     const { email, nameEn, nameAr, slug, isActive } = req.body;
     
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    const connection = getPool();
     
     // Build update query dynamically
     const updates: string[] = [];
@@ -503,7 +492,7 @@ adminRouter.put("/advertisers/:id", verifyAdmin, async (req, res) => {
       [id]
     );
     
-    await connection.end();
+
 
     return res.json({
       success: true,
@@ -525,24 +514,23 @@ adminRouter.post("/advertisers/:id/reset-password", verifyAdmin, async (req, res
     const { id } = req.params;
     const { newPassword } = req.body;
     
-    if (!newPassword || newPassword.length < 6) {
+    if (!newPassword || newPassword.length < 8) {
       return res.status(400).json({
         success: false,
-        error: "Password must be at least 6 characters",
+        error: "Password must be at least 8 characters",
       });
     }
     
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    const connection = getPool();
     
     await connection.execute(
       "UPDATE advertisers SET password = ?, updatedAt = NOW() WHERE id = ?",
       [hashedPassword, id]
     );
     
-    await connection.end();
+
 
     return res.json({
       success: true,
@@ -562,12 +550,11 @@ adminRouter.delete("/advertisers/:id", verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    const connection = getPool();
     
     await connection.execute("DELETE FROM advertisers WHERE id = ?", [id]);
     
-    await connection.end();
+
 
     return res.json({
       success: true,
@@ -587,14 +574,13 @@ adminRouter.delete("/advertisers/:id", verifyAdmin, async (req, res) => {
 // Get admin dashboard statistics
 adminRouter.get("/stats", verifyAdmin, async (req, res) => {
   try {
-    const mysql = await import("mysql2/promise");
-    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+    const connection = getPool();
     
     const [userCount] = await connection.execute("SELECT COUNT(*) as count FROM users");
     const [advertiserCount] = await connection.execute("SELECT COUNT(*) as count FROM advertisers WHERE isActive = 1");
     const [verifiedUsers] = await connection.execute("SELECT COUNT(*) as count FROM users WHERE isVerified = 1");
     
-    await connection.end();
+
 
     return res.json({
       success: true,

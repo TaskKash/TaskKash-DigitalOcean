@@ -42,18 +42,21 @@ export async function addFunds(
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  // Get current balance
-  const currentBalance = await getUserBalance(userId);
-  const newBalance = currentBalance + amount;
-
-  // Update user balance
+  // Atomic increment — avoids read-compute-write race condition
   await db
     .update(users)
     .set({
-      balance: newBalance,
+      balance: sql`${users.balance} + ${amount}`,
+      totalEarnings: sql`COALESCE(totalEarnings, 0) + ${amount}`,
       updatedAt: new Date(),
     })
     .where(eq(users.id, userId));
+
+  // Read back the updated balance
+  const updated = await db.select({ balance: users.balance }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!updated || updated.length === 0) throw new Error('User not found');
+  const newBalance = updated[0].balance ?? 0;
+  const currentBalance = newBalance - amount;
 
   // Create transaction record
   await db.insert(transactions).values({
@@ -89,31 +92,29 @@ export async function deductFunds(
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  // Get current balance
-  const currentBalance = await getUserBalance(userId);
+  // Atomic decrement with guard — prevents balance going negative under concurrency
+  const result = await db
+    .update(users)
+    .set({
+      balance: sql`${users.balance} - ${amount}`,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(users.id, userId), sql`${users.balance} >= ${amount}`));
 
-  // Check if sufficient balance
-  if (currentBalance < amount) {
+  if ((result as any).affectedRows === 0) {
     throw new Error('Insufficient balance');
   }
 
-  const newBalance = currentBalance - amount;
+  // Read back updated balance
+  const updated = await db.select({ balance: users.balance }).from(users).where(eq(users.id, userId)).limit(1);
+  const newBalance = updated[0]?.balance ?? 0;
+  const balanceBefore = newBalance + amount;
 
-  // Update user balance
-  await db
-    .update(users)
-    .set({
-      balance: newBalance,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, userId));
-
-  // Create transaction record
   await db.insert(transactions).values({
     userId,
     type: 'debit',
     amount,
-    balanceBefore: currentBalance,
+    balanceBefore,
     balanceAfter: newBalance,
     description,
     taskId: relatedTaskId,
@@ -205,23 +206,36 @@ export async function processWithdrawal(
   }
 
   if (status === 'completed') {
-    // Deduct from user balance
-    const newBalance = txn.balanceBefore - txn.amount;
-
-    await db
+    // Atomic deduction with guard — ensures user still has the balance at approval time
+    const deductResult = await db
       .update(users)
       .set({
-        balance: newBalance,
+        balance: sql`${users.balance} - ${txn.amount}`,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, txn.userId));
+      .where(and(eq(users.id, txn.userId), sql`${users.balance} >= ${txn.amount}`));
 
-    // Update transaction
+    if ((deductResult as any).affectedRows === 0) {
+      // User no longer has sufficient balance — auto-reject
+      await db
+        .update(transactions)
+        .set({
+          status: 'cancelled',
+          processedAt: new Date(),
+          note: 'Auto-cancelled: insufficient balance at approval time',
+        })
+        .where(eq(transactions.id, transactionId));
+      throw new Error('Insufficient balance — withdrawal auto-rejected');
+    }
+
+    // Read back new balance
+    const updated = await db.select({ balance: users.balance }).from(users).where(eq(users.id, txn.userId)).limit(1);
+    const newBalance = updated[0]?.balance ?? 0;
+
     await db
       .update(transactions)
       .set({
         status: 'completed',
-        balanceAfter: newBalance,
         processedAt: new Date(),
         note,
       })
@@ -231,7 +245,7 @@ export async function processWithdrawal(
     await db
       .update(transactions)
       .set({
-        status: 'rejected',
+        status: 'cancelled',
         processedAt: new Date(),
         note,
       })
@@ -248,7 +262,7 @@ export async function processWithdrawal(
  * @param limit - Number of transactions to return
  * @returns Array of transactions
  */
-export async function getTransactionHistory(userId: number, limit: number = 50) {
+export async function getTransactionHistory(userId: number, limit: number = 50, offset: number = 0) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
@@ -257,7 +271,8 @@ export async function getTransactionHistory(userId: number, limit: number = 50) 
     .from(transactions)
     .where(eq(transactions.userId, userId))
     .orderBy(sql`${transactions.createdAt} DESC`)
-    .limit(limit);
+    .limit(Math.min(limit, 200)) // cap at 200
+    .offset(offset);
 }
 
 /**

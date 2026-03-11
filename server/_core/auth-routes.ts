@@ -37,7 +37,7 @@ authRouter.post("/login", async (req, res) => {
 
     // Get user from database
     const user = await getUserByEmail(email);
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV === 'development') {
       console.log('[Auth] User found:', user ? 'YES' : 'NO');
     }
 
@@ -58,7 +58,7 @@ authRouter.post("/login", async (req, res) => {
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV === 'development') {
       console.log('[Auth] Password valid:', isValidPassword);
     }
 
@@ -155,7 +155,7 @@ authRouter.get("/me", async (req, res) => {
 
     // Get user from database using openId
     const user = await getUserByOpenId(session.openId);
-    console.log('[Auth /me] User from DB:', user ? user.name : 'null');
+    if (process.env.NODE_ENV === 'development') console.log('[Auth /me] User from DB:', user ? user.name : 'null');
 
     if (!user) {
       return res.status(401).json({
@@ -185,7 +185,7 @@ authRouter.post("/register", async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
 
-    console.log('[Auth] Registration attempt:', { name, email, phone });
+    if (process.env.NODE_ENV === 'development') console.log('[Auth] Registration attempt:', { name, email, phone });
 
     if (!email || !password || !name) {
       return res.status(400).json({
@@ -194,10 +194,10 @@ authRouter.post("/register", async (req, res) => {
       });
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res.status(400).json({
         success: false,
-        error: "Password must be at least 6 characters",
+        error: "Password must be at least 8 characters",
       });
     }
 
@@ -217,7 +217,7 @@ authRouter.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const openId = `user_${nanoid()}`;
 
-    console.log('[Auth] Creating user with openId:', openId);
+    if (process.env.NODE_ENV === 'development') console.log('[Auth] Creating user with openId:', openId);
 
     const pool = getPool();
 
@@ -255,7 +255,7 @@ authRouter.post("/register", async (req, res) => {
         ]
       );
 
-      console.log('[Auth] User created successfully:', result);
+      if (process.env.NODE_ENV === 'development') console.log('[Auth] User created successfully:', result);
 
       // Create session token for auto-login
       const token = await sdk.signSession({
@@ -430,11 +430,9 @@ authRouter.post("/advertiser/login", async (req, res) => {
 // Get current advertiser endpoint
 authRouter.get("/advertiser/me", async (req, res) => {
   try {
-    console.log('[Advertiser /me] Cookies:', req.headers.cookie);
-    console.log('[Advertiser /me] COOKIE_NAME:', COOKIE_NAME);
     // Get session token from cookie
     const token = req.cookies[COOKIE_NAME];
-    console.log('[Advertiser /me] Token:', token ? 'exists' : 'missing');
+    if (process.env.NODE_ENV === 'development') console.log('[Advertiser /me] Token:', token ? 'exists' : 'missing');
 
     if (!token) {
       return res.status(401).json({
@@ -575,10 +573,9 @@ authRouter.post("/admin/login", async (req, res) => {
 // Get current admin endpoint
 authRouter.get("/admin/me", async (req, res) => {
   try {
-    console.log('[Admin /me] Cookies:', req.headers.cookie);
     // Get session token from cookie
     const token = req.cookies[COOKIE_NAME];
-    console.log('[Admin /me] Token:', token ? 'exists' : 'missing');
+    if (process.env.NODE_ENV === 'development') console.log('[Admin /me] Token:', token ? 'exists' : 'missing');
 
     if (!token) {
       return res.status(401).json({

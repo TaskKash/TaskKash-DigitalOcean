@@ -1,4 +1,14 @@
 import "dotenv/config";
+
+// --- Required env var validation (fail fast if misconfigured) ---
+const REQUIRED_ENV = ['JWT_SECRET', 'DATABASE_URL', 'ADMIN_EMAIL', 'ADMIN_PASSWORD_HASH'] as const;
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) {
+    console.error(`[Server] FATAL: Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+}
+// ---------------------------------------------------------------
 import express from "express";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
@@ -31,6 +41,7 @@ import {
 } from "./security";
 import cors from "cors";
 import { csrfTokenMiddleware, csrfProtection, getCsrfTokenHandler } from "./csrf";
+import { processScheduledPayments } from "../services/task.service";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -62,6 +73,12 @@ async function startServer() {
   app.use(securityHeaders);
   app.use(addSecurityHeaders);
   app.use(validateBodySize);
+
+  // Prevent API responses from being embedded in iframes
+  app.use('/api', (_req, res, next) => {
+    res.setHeader('X-Frame-Options', 'DENY');
+    next();
+  });
 
   // CORS — must come before routes
   app.use(cors(corsOptions));
@@ -134,3 +151,15 @@ async function startServer() {
 }
 
 startServer().catch(console.error);
+
+// --- Scheduled Payments Cron (every 15 minutes) ---
+// Processes tier-1 and tier-2 user payments that are due
+const PAYMENT_CRON_INTERVAL_MS = 15 * 60 * 1000;
+setInterval(async () => {
+  try {
+    await processScheduledPayments();
+  } catch (err) {
+    console.error('[Cron] Scheduled payment processing error:', err);
+  }
+}, PAYMENT_CRON_INTERVAL_MS);
+console.log(`[Cron] Scheduled payments running every ${PAYMENT_CRON_INTERVAL_MS / 60000} minutes`);

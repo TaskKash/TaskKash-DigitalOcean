@@ -9,6 +9,8 @@
  * - Managing notification preferences
  */
 
+import { PushNotifications } from '@capacitor/push-notifications';
+
 // Check if push notifications are supported
 export function isPushNotificationSupported(): boolean {
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;

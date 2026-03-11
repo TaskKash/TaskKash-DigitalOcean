@@ -3,7 +3,8 @@
   "short_name": "TaskKash",
   "description": "Earn money by completing simple tasks | أربح المال بإكمال مهام بسيطة",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/splash",
+  "scope": "/",
   "display": "standalone",
   "display_override": [
     "window-controls-overlay",

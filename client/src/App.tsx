@@ -104,7 +104,6 @@ import Pricing from "./pages/Pricing";
 import LandingPage from "./pages/LandingPage";
 import Blog from "./pages/Blog";
 
-// Admin Pages
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UsersManagement from "./pages/admin/UsersManagement";
@@ -117,6 +116,7 @@ import AdminTasks from "./pages/admin/Tasks";
 import UsersManagementNew from "./pages/admin/UsersManagementNew";
 import AdvertisersManagementNew from "./pages/admin/AdvertisersManagementNew";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
+import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
 import Referrals from "./pages/Referrals";
 import Levels from "./pages/Levels";
 import Badges from "./pages/Badges";
@@ -225,18 +225,42 @@ function Router() {
 
       {/* Admin Routes */}
       <Route path="/admin/login" component={AdminLogin} />
-      <Route path="/admin" component={NewAdminDashboard} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
-      <Route path="/admin/users" component={UsersManagementNew} />
-      <Route path="/admin/users-manage" component={UsersManagementNew} />
-      <Route path="/admin/advertisers" component={AdvertisersManagementNew} />
-      <Route path="/admin/advertisers-manage" component={AdvertisersManagementNew} />
-      <Route path="/admin/tasks" component={AdminTasks} />
-      <Route path="/admin/reports" component={ReportedTasks} />
-      <Route path="/admin/transactions" component={ReportedTasks} />
-      <Route path="/admin/settings" component={PlatformSettings} />
-      <Route path="/admin/countries" component={PlatformSettings} />
-      <Route path="/admin/withdrawals" component={AdminWithdrawals} />
+      <Route path="/admin">
+        <AdminProtectedRoute><NewAdminDashboard /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/dashboard">
+        <AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/users">
+        <AdminProtectedRoute><UsersManagementNew /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/users-manage">
+        <AdminProtectedRoute><UsersManagementNew /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/advertisers">
+        <AdminProtectedRoute><AdvertisersManagementNew /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/advertisers-manage">
+        <AdminProtectedRoute><AdvertisersManagementNew /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/tasks">
+        <AdminProtectedRoute><AdminTasks /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/reports">
+        <AdminProtectedRoute><ReportedTasks /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/transactions">
+        <AdminProtectedRoute><ReportedTasks /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/settings">
+        <AdminProtectedRoute><PlatformSettings /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/countries">
+        <AdminProtectedRoute><PlatformSettings /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/withdrawals">
+        <AdminProtectedRoute><AdminWithdrawals /></AdminProtectedRoute>
+      </Route>
 
       {/* Advertiser Routes */}
       <Route path="/advertiser/login" component={AdvertiserLogin} />

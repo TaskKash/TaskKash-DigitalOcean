@@ -1,0 +1,36 @@
+User-agent: *
+# Prevent search engines from indexing admin and private sections
+Disallow: /admin/
+Disallow: /admin
+Disallow: /advertiser/dashboard
+Disallow: /advertiser/campaigns
+Disallow: /advertiser/analytics
+Disallow: /advertiser/billing
+Disallow: /advertiser/reports
+Disallow: /advertiser/settings
+Disallow: /advertiser/team
+Disallow: /advertiser/payment-methods
+Disallow: /settings
+Disallow: /wallet
+Disallow: /profile/edit
+Disallow: /kyc-verification
+Disallow: /upload-id
+Disallow: /selfie-capture
+Disallow: /complete-profile
+Disallow: /otp-verification
+
+# Allow public pages
+Allow: /
+Allow: /landing
+Allow: /how-it-works
+Allow: /pricing
+Allow: /blog
+Allow: /faq
+Allow: /terms
+Allow: /privacy
+Allow: /login
+Allow: /register
+Allow: /advertiser/login
+Allow: /advertiser/register
+
+Sitemap: https://taskkash.com/sitemap.xml
