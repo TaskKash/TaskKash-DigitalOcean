@@ -11,20 +11,25 @@ export const getLoginUrl = () => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
   
-  // If OAuth is not configured, return null
-  if (!oauthPortalUrl || !appId) {
+  // If OAuth is not configured, or if the bundler replaced it with "undefined" string literal
+  if (!oauthPortalUrl || oauthPortalUrl === "undefined" || !appId || appId === "undefined") {
     console.warn('[OAuth] OAuth is not configured. VITE_OAUTH_PORTAL_URL or VITE_APP_ID is missing.');
     return null;
   }
   
-  const redirectUri = `${window.location.origin}/api/oauth/callback`;
-  const state = btoa(redirectUri);
+  try {
+    const redirectUri = `${window.location.origin}/api/oauth/callback`;
+    const state = btoa(redirectUri);
 
-  const url = new URL(`${oauthPortalUrl}/app-auth`);
-  url.searchParams.set("appId", appId);
-  url.searchParams.set("redirectUri", redirectUri);
-  url.searchParams.set("state", state);
-  url.searchParams.set("type", "signIn");
+    const url = new URL(`${oauthPortalUrl}/app-auth`);
+    url.searchParams.set("appId", appId);
+    url.searchParams.set("redirectUri", redirectUri);
+    url.searchParams.set("state", state);
+    url.searchParams.set("type", "signIn");
 
-  return url.toString();
+    return url.toString();
+  } catch (error) {
+    console.error('[OAuth] Failed to construct login URL:', error);
+    return null;
+  }
 };
