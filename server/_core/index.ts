@@ -9,8 +9,8 @@ for (const key of REQUIRED_ENV) {
   }
 }
 if (!process.env.NODE_ENV) {
-  console.warn('[Server] WARNING: NODE_ENV is not set. Defaulting to production behavior.');
-  process.env.NODE_ENV = 'production';
+  console.warn('[Server] WARNING: NODE_ENV is not set. Defaulting to local development mode.');
+  process.env.NODE_ENV = 'development';
 }
 // ---------------------------------------------------------------
 import express from "express";
