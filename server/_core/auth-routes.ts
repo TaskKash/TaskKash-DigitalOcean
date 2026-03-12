@@ -182,12 +182,14 @@ authRouter.get("/me", async (req, res) => {
 
 // Register endpoint
 authRouter.post("/register", async (req, res) => {
+  console.log('[Auth] POST /api/auth/register - Body keys:', Object.keys(req.body));
   try {
     const { name, email, password, phone } = req.body;
 
-    if (process.env.NODE_ENV === 'development') console.log('[Auth] Registration attempt:', { name, email, phone });
+    console.log('[Auth] Registration attempt:', { name, email, phone });
 
     if (!email || !password || !name) {
+      console.warn('[Auth] Registration failed: Missing required fields', { name: !!name, email: !!email, password: !!password });
       return res.status(400).json({
         success: false,
         error: "Name, email, and password are required",
