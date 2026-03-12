@@ -6,9 +6,36 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, FlaskConical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { APP_LOGO, APP_TITLE } from '@/const';
+
+// ─── Demo Mode ──────────────────────────────────────────────────────────────
+// This creates a full mock user session stored entirely in localStorage.
+// No database or backend needed. Remove this section once a hosted DB is live.
+const DEMO_USER = {
+  id: 9999,
+  name: 'Demo User',
+  email: 'demo@taskkash.com',
+  phone: '+201000000000',
+  tier: 1,
+  balance: 150.00,
+  totalEarnings: 340.50,
+  profileStrength: 45,
+  profilePicture: null,
+  isVerified: false,
+  referralCode: 'DEMO2026',
+  joinDate: new Date().toISOString(),
+  isDemo: true, // flag to identify demo sessions
+};
+
+function activateDemoMode(setLocation: (path: string) => void) {
+  localStorage.setItem('manus-runtime-user-info', JSON.stringify(DEMO_USER));
+  localStorage.setItem('isLoggedIn', 'true');
+  localStorage.setItem('demo-mode', 'true');
+  window.location.href = '/home';
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 export default function Login() {
   const { t } = useTranslation();
@@ -165,6 +192,29 @@ export default function Login() {
             </button>
           </div>
         </Card>
+
+        {/* ── Demo Mode Banner ─────────────────────────────────────────────── */}
+        {/* Remove this entire section once a hosted database is available */}
+        <div className="mt-4 rounded-2xl border-2 border-dashed border-white/40 bg-white/10 p-4 text-center">
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <FlaskConical className="w-4 h-4 text-yellow-300" />
+            <span className="text-xs font-semibold text-yellow-300 uppercase tracking-wider">
+              Testing Mode
+            </span>
+          </div>
+          <p className="text-white/80 text-xs mb-3">
+            No database yet? Explore all features with a pre-loaded demo account.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => activateDemoMode(setLocation)}
+            className="w-full border-white/60 text-white hover:bg-white/20 hover:text-white bg-white/10 font-semibold"
+          >
+            🚀 Enter Demo Mode — Explore App
+          </Button>
+        </div>
+        {/* ──────────────────────────────────────────────────────────────────── */}
 
         {/* Back to Home */}
         <div className="text-center mt-4">

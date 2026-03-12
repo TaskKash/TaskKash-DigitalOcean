@@ -9,15 +9,18 @@ const config: CapacitorConfig = {
   },
   plugins: {
     StatusBar: {
-      overlaysWebView: true,
-      style: "LIGHT" // This ensures text/icons are dark, good for light apps
+      // FIX: overlaysWebView=false ensures the status bar does NOT cover app content
+      // This pushes the app below the phone's status bar icons
+      overlaysWebView: false,
+      style: "DARK",       // White icons on the dark green status bar background
+      backgroundColor: "#1a3d2b" // Match app brand color
     },
     SplashScreen: {
       launchShowDuration: 2000,
-      backgroundColor: "#ffffff",
-      showSpinner: true,
-      androidSpinnerStyle: "large",
-      spinnerColor: "#2F9E44"
+      // FIX: Changed from white (#ffffff) to TaskKash brand dark green
+      backgroundColor: "#1a3d2b",
+      showSpinner: false,           // Logo only, no spinner (looks more premium)
+      androidScaleType: "CENTER_CROP"
     }
   }
 };
