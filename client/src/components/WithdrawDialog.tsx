@@ -245,11 +245,16 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
               </Select>
             )}
             {selectedMethodConfig && (
-              <p className="text-xs text-muted-foreground">
-                {isRTL ? 'الحد الأدنى:' : 'Min:'} {selectedMethodConfig.minAmount} EGP • 
-                {isRTL ? ' الحد الأقصى:' : ' Max:'} {selectedMethodConfig.maxAmount} EGP • 
-                {isRTL ? ' وقت المعالجة:' : ' Processing:'} {selectedMethodConfig.processingTime}
-              </p>
+              <div className="bg-primary/5 p-3 rounded-md border border-primary/20 mt-2">
+                <p className="text-sm font-medium text-primary flex items-center gap-2">
+                  <span>{isRTL ? 'الحد الأدنى للسحب:' : 'Minimum Withdrawal:'}</span>
+                  <strong>{selectedMethodConfig.minAmount} EGP</strong>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {isRTL ? 'الحد الأقصى:' : 'Max:'} {selectedMethodConfig.maxAmount} EGP • 
+                  {isRTL ? ' وقت المعالجة:' : ' Processing:'} {selectedMethodConfig.processingTime}
+                </p>
+              </div>
             )}
           </div>
 
@@ -263,7 +268,13 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
               onChange={(e) => handleAmountChange(e.target.value)}
               placeholder={isRTL ? 'أدخل المبلغ' : 'Enter amount'}
               disabled={!selectedMethod}
+              className={selectedMethodConfig && amount && parseFloat(amount) < selectedMethodConfig.minAmount ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
+            {selectedMethodConfig && amount && parseFloat(amount) < selectedMethodConfig.minAmount && (
+              <p className="text-xs text-red-500 mt-1">
+                {isRTL ? `يجب أن يكون المبلغ ${selectedMethodConfig.minAmount} جنيه على الأقل` : `Amount must be at least ${selectedMethodConfig.minAmount} EGP`}
+              </p>
+            )}
           </div>
 
           {/* Dynamic Account Details Fields */}

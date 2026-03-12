@@ -17,10 +17,15 @@ export default function Splash() {
         // If has valid session, go to home
         setLocation('/home');
       } else {
-        // No valid session, clear any stale localStorage and go to welcome
+        // No valid session, clear any stale localStorage and check onboarding
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('tk_user_info');
-        setLocation('/welcome');
+        
+        if (!localStorage.getItem('hasSeenOnboarding')) {
+          setLocation('/onboarding');
+        } else {
+          setLocation('/welcome');
+        }
       }
     }, 2500);
 
@@ -43,9 +48,9 @@ export default function Splash() {
 
         {/* Loading Animation */}
         <div className="flex items-center justify-center gap-2">
-          <div className="w-3 h-3 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
-          <div className="w-3 h-3 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-          <div className="w-3 h-3 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+          <div className="w-3 h-3 bg-white rounded-full animate-pulse [animation-delay:0s]"></div>
+          <div className="w-3 h-3 bg-white rounded-full animate-pulse [animation-delay:0.2s]"></div>
+          <div className="w-3 h-3 bg-white rounded-full animate-pulse [animation-delay:0.4s]"></div>
         </div>
 
         {/* Version */}

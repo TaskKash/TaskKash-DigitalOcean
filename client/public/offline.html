@@ -35,6 +35,7 @@
             justify-content: center;
             margin-bottom: 28px;
             border: 1px solid rgba(16, 185, 129, 0.3);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
         }
 
@@ -128,6 +129,13 @@
         .wifi-icon {
             animation: pulse 2.5s ease-in-out infinite;
         }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            box-shadow: none;
+            margin-top: 12px;
+            color: #10B981;
+        }
     </style>
 </head>
 
@@ -150,6 +158,9 @@
 
     <button class="btn" onclick="window.location.reload()">
         🔄 حاول مجدداً / Try Again
+    </button>
+    <button class="btn btn-secondary" onclick="window.location.href='/home'">
+        🏠 الصفحة الرئيسية (مخزنة) / Home (Cached)
     </button>
 
     <div class="divider"></div>

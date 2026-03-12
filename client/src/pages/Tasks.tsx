@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLocation } from 'wouter';
-import { Clock, Filter, CheckCircle } from 'lucide-react';
+import { Clock, Filter, CheckCircle, ListTodo } from 'lucide-react';
 import AdvancedFilters from '@/components/AdvancedFilters';
 import { getAdvertiserId } from '@/lib/advertiserUtils';
 import { useLocalizedFieldGetter } from '@/lib/languageUtils';
@@ -409,8 +409,10 @@ export default function Tasks() {
                 <TaskCard key={task.id} task={task} />
               ))}
               {filteredAvailableTasks.length === 0 && (
-                <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">{t('tasks.empty.available')}</p>
+                <Card className="p-10 text-center border-dashed border-2 bg-muted/30">
+                  <ListTodo className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-40" />
+                  <p className="font-medium text-foreground mb-1">{t('tasks.empty.available') || 'لا توجد مهام حالياً'}</p>
+                  <p className="text-sm text-muted-foreground">جرب تغيير عوامل التصفية لعرض المهام</p>
                 </Card>
               )}
             </div>
@@ -421,8 +423,10 @@ export default function Tasks() {
               <TaskCard key={task.id} task={task} />
             ))}
             {inProgressTasks.length === 0 && (
-              <Card className="p-8 text-center">
-                <p className="text-muted-foreground">{t('tasks.empty.inProgress')}</p>
+              <Card className="p-10 text-center border-dashed border-2 bg-muted/30">
+                <Clock className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-40" />
+                <p className="font-medium text-foreground mb-1">{t('tasks.empty.inProgress') || 'لا يوجد مهام قيد التنفيذ'}</p>
+                <p className="text-sm text-muted-foreground">قم ببدء مهمة لتظهر هنا</p>
               </Card>
             )}
           </TabsContent>
@@ -438,8 +442,10 @@ export default function Tasks() {
                 <CompletedTaskCard key={task.id} task={task} />
               ))
             ) : (
-              <Card className="p-8 text-center">
-                <p className="text-muted-foreground">{t('tasks.empty.completed')}</p>
+              <Card className="p-10 text-center border-dashed border-2 bg-muted/30">
+                <CheckCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-40" />
+                <p className="font-medium text-foreground mb-1">{t('tasks.empty.completed') || 'لم تكمل أي مهام بعد'}</p>
+                <p className="text-sm text-muted-foreground">أكمل المزيد من المهام لزيادة أرباحك!</p>
               </Card>
             )}
           </TabsContent>

@@ -17,7 +17,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 max-w-md mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 max-w-md mx-auto pb-[env(safe-area-inset-bottom,0px)]">
       <div className="flex items-center justify-around h-16">
         {navItems.map(({ icon: Icon, label, path }) => {
           const isActive = location === path;

@@ -39,45 +39,21 @@ const transactionColors: Record<string, string> = {
 // Updated: 2025-12-21 - Fixed transactions loading
 export default function Wallet() {
   const { t } = useTranslation();
-  const { user, updateBalance } = useApp();
+  const { user, transactions, updateBalance, refreshUser, refreshTransactions } = useApp();
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
 
-  // Fetch transactions directly from API
+  // Fetch freshest transactions on mount
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        setIsLoadingTransactions(true);
-        const response = await fetch('/api/transactions');
-        if (response.ok) {
-          const data = await response.json();
-          const transformedTransactions = data.transactions.map((txn: any) => ({
-            id: txn.id.toString(),
-            type: txn.type,
-            amount: txn.amount,
-            description: txn.description,
-            date: new Date(txn.date).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit'
-            }),
-            status: txn.status
-          }));
-          setTransactions(transformedTransactions);
-        }
-      } catch (error) {
-        console.error('Failed to fetch transactions:', error);
-        setTransactions([]);
-      } finally {
-        setIsLoadingTransactions(false);
-      }
+    const fetchLatest = async () => {
+      setIsLoadingTransactions(true);
+      await refreshTransactions();
+      setIsLoadingTransactions(false);
     };
-    
-    fetchTransactions();
-  }, [user?.id]); // Refetch when user changes
+    fetchLatest();
+  }, [user?.id, refreshTransactions]);
 
   const getTransactionName = (type: string) => {
     const typeMap: Record<string, string> = {
@@ -189,9 +165,10 @@ export default function Wallet() {
               isOpen={isDialogOpen}
               onClose={() => setIsDialogOpen(false)}
               userBalance={user.balance}
-              onSuccess={() => {
-                // Refresh user data after successful withdrawal
-                window.location.reload();
+              onSuccess={async () => {
+                // Refresh data via API contexts instead of a hard reload
+                await refreshUser();
+                await refreshTransactions();
               }}
             />
 
@@ -238,10 +215,10 @@ export default function Wallet() {
                   <p className="text-muted-foreground">Loading transactions...</p>
                 </Card>
               ) : transactions.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <WalletIcon className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground">{t('wallet.empty.all')}</p>
-                  <p className="text-sm text-muted-foreground mt-2">{t('wallet.empty.startEarning')}</p>
+                <Card className="p-10 text-center border-dashed border-2 bg-muted/30">
+                  <WalletIcon className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-40" />
+                  <p className="font-medium text-foreground mb-1">{t('wallet.empty.all')}</p>
+                  <p className="text-sm text-muted-foreground">{t('wallet.empty.startEarning')}</p>
                 </Card>
               ) : (
                 transactions.map(transaction => (
@@ -252,9 +229,9 @@ export default function Wallet() {
 
             <TabsContent value="earn" className="space-y-3">
               {earnTransactions.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <ArrowDownLeft className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground">{t('wallet.empty.earnings')}</p>
+                <Card className="p-10 text-center border-dashed border-2 bg-muted/30">
+                  <ArrowDownLeft className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-40" />
+                  <p className="font-medium text-foreground">{t('wallet.empty.earnings')}</p>
                 </Card>
               ) : (
                 earnTransactions.map(transaction => (
@@ -265,9 +242,9 @@ export default function Wallet() {
 
             <TabsContent value="withdraw" className="space-y-3">
               {withdrawTransactions.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <ArrowUpRight className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground">{t('wallet.empty.withdrawals')}</p>
+                <Card className="p-10 text-center border-dashed border-2 bg-muted/30">
+                  <ArrowUpRight className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-40" />
+                  <p className="font-medium text-foreground">{t('wallet.empty.withdrawals')}</p>
                 </Card>
               ) : (
                 withdrawTransactions.map(transaction => (
@@ -278,9 +255,9 @@ export default function Wallet() {
 
             <TabsContent value="bonus" className="space-y-3">
               {bonusTransactions.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <Gift className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground">{t('wallet.empty.bonuses')}</p>
+                <Card className="p-10 text-center border-dashed border-2 bg-muted/30">
+                  <Gift className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-40" />
+                  <p className="font-medium text-foreground">{t('wallet.empty.bonuses')}</p>
                 </Card>
               ) : (
                 bonusTransactions.map(transaction => (

@@ -38,17 +38,15 @@ export default function Profile() {
   const handleLogout = async () => {
     try {
       await authApi.logout();
-      // Clear all localStorage
-      localStorage.removeItem('isLoggedIn');
-      localStorage.removeItem('tk_user_info');
-      // Redirect to splash which will then go to welcome
-      window.location.href = '/splash';
     } catch (error) {
       console.error('[Profile] Logout error:', error);
-      // Still redirect even if API call fails
+    } finally {
+      // Clear all session data including demo mode
       localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('tk_user_info');
-      window.location.href = '/splash';
+      localStorage.removeItem('demo-mode');
+      // Use React Router for smooth SPA navigation (no full reload)
+      setLocation('/login');
     }
   };
 
@@ -200,9 +198,11 @@ export default function Profile() {
               </p>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
-              <div 
+              {/* Dynamic width must use inline style — value is computed at runtime */}
+              {/* eslint-disable-next-line react/forbid-component-props */}
+              <div
                 className={`${currentTierInfo.color} h-2 rounded-full transition-all`}
-                style={{ width: `${(user.completedTasks / (user.completedTasks + currentTierInfo.tasksNeeded)) * 100}%` }}
+                style={{ width: `${Math.round((user.completedTasks / (user.completedTasks + currentTierInfo.tasksNeeded)) * 100)}%` }}
               />
             </div>
           </Card>

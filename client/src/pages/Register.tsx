@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useLocation } from 'wouter';
 import { useApp } from '@/contexts/AppContext';
-import { User, Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Phone, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { APP_LOGO, APP_TITLE } from '@/const';
 import { toast } from 'sonner';
 
@@ -44,8 +44,12 @@ export default function Register() {
       return;
     }
 
-    setIsLoading(true);
-    
+    const registerTimeout = setTimeout(() => {
+      if (isLoading) {
+        toast.info('جاري معالجة طلبك، يرجى الانتظار...');
+      }
+    }, 8000);
+
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -78,6 +82,8 @@ export default function Register() {
       console.error('Registration error:', error);
       toast.error(t('register.errors.failed'));
       setIsLoading(false);
+    } finally {
+      clearTimeout(registerTimeout);
     }
   };
 
@@ -210,7 +216,14 @@ export default function Register() {
               className="w-full h-12"
               disabled={isLoading}
             >
-              {isLoading ? t('register.creating') : t('register.createAccount')}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {t('register.creating') || 'جاري إنشاء الحساب...'}
+                </>
+              ) : (
+                t('register.createAccount')
+              )}
             </Button>
           </form>
 

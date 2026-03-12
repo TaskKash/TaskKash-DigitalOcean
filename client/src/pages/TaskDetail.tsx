@@ -117,16 +117,28 @@ export default function TaskDetail() {
     );
   }
 
-  const handleStartTask = () => {
+  const handleStartTask = async () => {
+    if (!task) return;
     setIsStarting(true);
-    toast.success('تم بدء المهمة بنجاح!');
+    
+    try {
+      if (localStorage.getItem('demo-mode') !== 'true') {
+        const res = await fetch(`/api/tasks/${task.id}/start`, { method: 'POST' });
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to start task');
+        }
+      }
 
-    // Move to step 2 (reading instructions)
-    setTimeout(() => {
+      toast.success('تم بدء المهمة بنجاح!');
       setCurrentStep(2);
-      setIsStarting(false);
       toast.info('اقرأ التعليمات بعناية');
-    }, 1000);
+    } catch (error: any) {
+      console.error('Start task error:', error);
+      toast.error(error.message || 'حدث خطأ أثناء بدء المهمة');
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   const handleReadInstructions = () => {

@@ -20,6 +20,17 @@ export function useAuth(options?: UseAuthOptions) {
     const fetchUser = async () => {
       try {
         setLoading(true);
+        
+        // If demo mode is active, hydrate from local storage instead of backend validation
+        if (localStorage.getItem('demo-mode') === 'true') {
+          const demoUser = localStorage.getItem(TK_USER_KEY);
+          if (demoUser) {
+            setUser(JSON.parse(demoUser));
+            setLoading(false);
+            return;
+          }
+        }
+        
         const result = await authApi.me();
         
         if (result.success && result.user) {
@@ -57,6 +68,17 @@ export function useAuth(options?: UseAuthOptions) {
   const refresh = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // If demo mode is active, hydrate from local storage instead of backend validation
+      if (localStorage.getItem('demo-mode') === 'true') {
+        const demoUser = localStorage.getItem(TK_USER_KEY);
+        if (demoUser) {
+          setUser(JSON.parse(demoUser));
+          setLoading(false);
+          return;
+        }
+      }
+      
       const result = await authApi.me();
       
       if (result.success && result.user) {

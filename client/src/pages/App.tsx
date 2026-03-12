@@ -40,7 +40,7 @@ import Notifications from "./pages/Notifications";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import SurveyTask from "./pages/SurveyTask";
+
 import VideoTask from "./pages/VideoTask";
 import AppTask from "./pages/AppTask";
 import QuizTask from "./pages/QuizTask";
@@ -180,7 +180,7 @@ function Router() {
       <Route path="/home" component={Home} />
       <Route path="/tasks" component={Tasks} />
       <Route path="/tasks/:id" component={TaskDetail} />
-      <Route path="/task/survey" component={SurveyTask} />
+
       <Route path="/task/video" component={VideoTask} />
       <Route path="/tasks/:id/complete" component={TaskCompletion} />
       <Route path="/tasks/:id/survey" component={SurveyCompletion} />
