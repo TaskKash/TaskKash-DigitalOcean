@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <pattern id="circuit" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+      <!-- Horizontal lines -->
+      <line x1="0" y1="20" x2="30" y2="20" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="50" y1="20" x2="80" y2="20" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- Vertical lines -->
+      <line x1="40" y1="0" x2="40" y2="15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="40" y1="25" x2="40" y2="55" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="40" y1="65" x2="40" y2="80" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- Junction circle -->
+      <circle cx="40" cy="20" r="3" fill="white"/>
+      <!-- Small node at corners -->
+      <circle cx="0" cy="60" r="2" fill="white"/>
+      <circle cx="80" cy="60" r="2" fill="white"/>
+      <!-- Horizontal trace at bottom -->
+      <line x1="0" y1="60" x2="15" y2="60" stroke="white" stroke-width="1" stroke-linecap="round"/>
+      <line x1="65" y1="60" x2="80" y2="60" stroke="white" stroke-width="1" stroke-linecap="round"/>
+      <!-- IC chip outline -->
+      <rect x="15" y="50" width="50" height="20" rx="2" fill="none" stroke="white" stroke-width="1"/>
+      <!-- IC pins -->
+      <line x1="20" y1="50" x2="20" y2="45" stroke="white" stroke-width="1"/>
+      <line x1="30" y1="50" x2="30" y2="45" stroke="white" stroke-width="1"/>
+      <line x1="50" y1="50" x2="50" y2="45" stroke="white" stroke-width="1"/>
+      <line x1="60" y1="50" x2="60" y2="45" stroke="white" stroke-width="1"/>
+      <line x1="20" y1="70" x2="20" y2="75" stroke="white" stroke-width="1"/>
+      <line x1="50" y1="70" x2="50" y2="75" stroke="white" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="400" height="400" fill="url(#circuit)"/>
+</svg>

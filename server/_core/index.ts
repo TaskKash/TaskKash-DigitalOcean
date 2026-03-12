@@ -8,6 +8,10 @@ for (const key of REQUIRED_ENV) {
     process.exit(1);
   }
 }
+if (!process.env.NODE_ENV) {
+  console.warn('[Server] WARNING: NODE_ENV is not set. Defaulting to production behavior.');
+  process.env.NODE_ENV = 'production';
+}
 // ---------------------------------------------------------------
 import express from "express";
 import cookieParser from "cookie-parser";
