@@ -27,8 +27,7 @@ export default function DemoModeBanner() {
     <div
       role="status"
       aria-label="Demo mode active"
-      className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-medium shadow-lg"
-      style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}
+      className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between gap-2 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] bg-amber-500 text-white text-sm font-medium shadow-lg"
     >
       <div className="flex items-center gap-2">
         <FlaskConical className="w-4 h-4 flex-shrink-0" />

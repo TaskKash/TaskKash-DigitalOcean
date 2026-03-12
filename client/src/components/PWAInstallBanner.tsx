@@ -6,7 +6,6 @@ export function PWAInstallBanner() {
     const { isInstallable, isIOS, promptInstall, dismiss } = usePWAInstall();
     const [visible, setVisible] = useState(false);
 
-    // Delay appearance slightly so it doesn't flash immediately on load
     useEffect(() => {
         if (isInstallable) {
             const timer = setTimeout(() => setVisible(true), 2500);
@@ -17,7 +16,7 @@ export function PWAInstallBanner() {
     }, [isInstallable]);
 
     const handleInstall = async () => {
-        if (isIOS) return; // iOS uses manual instructions shown in UI
+        if (isIOS) return;
         const accepted = await promptInstall();
         if (accepted) setVisible(false);
     };
@@ -31,37 +30,23 @@ export function PWAInstallBanner() {
 
     return (
         <div
-            style={{
-                position: 'fixed',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                zIndex: 9998,
-                transform: visible ? 'translateY(0)' : 'translateY(100%)',
-                transition: 'transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                pointerEvents: visible ? 'all' : 'none',
-            }}
+            className={`fixed bottom-0 left-0 right-0 z-[9998] transition-transform duration-[450ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                visible ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'
+            }`}
         >
-            <div
-                style={{
-                    background: 'linear-gradient(135deg, #0d2318 0%, #1a3d2b 100%)',
-                    borderTop: '1px solid rgba(16, 185, 129, 0.4)',
-                    padding: '16px',
-                    boxShadow: '0 -8px 32px rgba(0,0,0,0.4)',
-                }}
-            >
+            <div className="bg-gradient-to-br from-[#0d2318] to-[#1a3d2b] border-t border-emerald-500/40 p-4 shadow-[0_-8px_32px_rgba(0,0,0,0.4)]">
                 {/* Header row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <div className="flex items-center gap-3 mb-3">
                     <img
                         src="/icon-192.png"
                         alt="TaskKash"
-                        style={{ width: 48, height: 48, borderRadius: 12, flexShrink: 0 }}
+                        className="w-12 h-12 rounded-xl flex-shrink-0"
                     />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.2 }}>
+                    <div className="flex-1 min-w-0">
+                        <div className="text-white font-bold text-[0.95rem] leading-tight">
                             TaskKash
                         </div>
-                        <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.78rem', marginTop: 2 }}>
+                        <div className="text-white/60 text-[0.78rem] mt-0.5">
                             {isIOS
                                 ? 'أضف التطبيق لشاشة الرئيسية | Add to Home Screen'
                                 : 'ثبّت التطبيق لتجربة أسرع | Install for faster access'}
@@ -70,19 +55,7 @@ export function PWAInstallBanner() {
                     <button
                         onClick={handleDismiss}
                         title="Dismiss"
-                        style={{
-                            background: 'rgba(255,255,255,0.08)',
-                            border: 'none',
-                            color: 'rgba(255,255,255,0.6)',
-                            borderRadius: '50%',
-                            width: 30,
-                            height: 30,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            flexShrink: 0,
-                        }}
+                        className="bg-white/10 border-none text-white/60 rounded-full w-[30px] h-[30px] flex items-center justify-center cursor-pointer flex-shrink-0 hover:bg-white/20 transition-colors"
                     >
                         <X size={15} />
                     </button>
@@ -90,47 +63,21 @@ export function PWAInstallBanner() {
 
                 {/* iOS instructions */}
                 {isIOS ? (
-                    <div
-                        style={{
-                            background: 'rgba(16, 185, 129, 0.1)',
-                            border: '1px solid rgba(16, 185, 129, 0.25)',
-                            borderRadius: 10,
-                            padding: '10px 14px',
-                            fontSize: '0.82rem',
-                            color: 'rgba(255,255,255,0.75)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                        }}
-                    >
-                        <Share size={16} style={{ color: '#10B981', flexShrink: 0 }} />
+                    <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-[10px] px-[14px] py-[10px] text-[0.82rem] text-white/75 flex items-center gap-2">
+                        <Share size={16} className="text-emerald-400 flex-shrink-0" />
                         <span>
-                            اضغط على <strong style={{ color: '#10B981' }}>مشاركة</strong> ثم{' '}
-                            <strong style={{ color: '#10B981' }}>"إضافة للشاشة الرئيسية"</strong>
+                            اضغط على <strong className="text-emerald-400">مشاركة</strong> ثم{' '}
+                            <strong className="text-emerald-400">"إضافة للشاشة الرئيسية"</strong>
                             <br />
-                            Tap <strong style={{ color: '#10B981' }}>Share</strong> → <strong style={{ color: '#10B981' }}>Add to Home Screen</strong>
+                            Tap <strong className="text-emerald-400">Share</strong> →{' '}
+                            <strong className="text-emerald-400">Add to Home Screen</strong>
                         </span>
                     </div>
                 ) : (
                     /* Android / Chrome install button */
                     <button
                         onClick={handleInstall}
-                        style={{
-                            width: '100%',
-                            background: 'linear-gradient(135deg, #10B981, #059669)',
-                            border: 'none',
-                            borderRadius: 12,
-                            color: '#fff',
-                            padding: '12px 16px',
-                            fontSize: '0.95rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 8,
-                            boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)',
-                        }}
+                        className="w-full bg-gradient-to-br from-emerald-500 to-emerald-700 border-none rounded-xl text-white py-3 px-4 text-[0.95rem] font-semibold cursor-pointer flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(16,185,129,0.4)] hover:shadow-[0_6px_24px_rgba(16,185,129,0.55)] transition-shadow"
                     >
                         <Download size={18} />
                         تثبيت التطبيق / Install App
