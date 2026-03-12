@@ -40,14 +40,14 @@ export default function Profile() {
       await authApi.logout();
       // Clear all localStorage
       localStorage.removeItem('isLoggedIn');
-      localStorage.removeItem('manus-runtime-user-info');
+      localStorage.removeItem('tk_user_info');
       // Redirect to splash which will then go to welcome
       window.location.href = '/splash';
     } catch (error) {
       console.error('[Profile] Logout error:', error);
       // Still redirect even if API call fails
       localStorage.removeItem('isLoggedIn');
-      localStorage.removeItem('manus-runtime-user-info');
+      localStorage.removeItem('tk_user_info');
       window.location.href = '/splash';
     }
   };

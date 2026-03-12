@@ -7,10 +7,39 @@ const csrfTokens = new Map<string, { token: string; createdAt: number }>();
 // Token expiration time (1 hour)
 const TOKEN_EXPIRATION = 60 * 60 * 1000;
 
+// Memory cap: max number of simultaneous CSRF sessions (prevents DoS)
+const MAX_CSRF_ENTRIES = 10_000;
+
+/**
+ * Get or create a per-browser CSRF session ID using a persistent cookie.
+ * Falls back to IP only as last resort (never shared across users on same IP).
+ */
+function getCsrfSessionId(req: Request, res: Response): string {
+  const COOKIE = 'csrf_sid';
+  let sid: string = req.cookies?.[COOKIE];
+  if (!sid) {
+    sid = crypto.randomBytes(16).toString('hex');
+    // Set as non-httpOnly so the frontend can read it, SameSite=Strict
+    res.cookie(COOKIE, sid, {
+      httpOnly: false,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: TOKEN_EXPIRATION,
+    });
+  }
+  return sid;
+}
+
 /**
  * Generate a CSRF token for a session
  */
 export function generateCsrfToken(sessionId: string): string {
+  // Enforce memory cap: remove oldest entry if over limit
+  if (csrfTokens.size >= MAX_CSRF_ENTRIES) {
+    const firstKey = csrfTokens.keys().next().value;
+    if (firstKey) csrfTokens.delete(firstKey);
+  }
+
   const token = crypto.randomBytes(32).toString('hex');
   csrfTokens.set(sessionId, {
     token,
@@ -42,18 +71,10 @@ export function verifyCsrfToken(sessionId: string, token: string): boolean {
  * Middleware to generate CSRF token and attach to response
  */
 export function csrfTokenMiddleware(req: Request, res: Response, next: NextFunction) {
-  // Get or create session ID (use authenticated user ID or generate temp ID)
-  const sessionId = (req as any).user?.id?.toString() || req.ip || 'anonymous';
-  
-  // Generate token
+  const sessionId = getCsrfSessionId(req, res);
   const token = generateCsrfToken(sessionId);
-  
-  // Attach to response locals for use in templates
   res.locals.csrfToken = token;
-  
-  // Also send as header for SPA consumption
   res.setHeader('X-CSRF-Token', token);
-  
   next();
 }
 
@@ -65,11 +86,8 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     return next();
   }
-  
-  // Get session ID
-  const sessionId = (req as any).user?.id?.toString() || req.ip || 'anonymous';
-  
-  // Get token from header or body
+
+  const sessionId = getCsrfSessionId(req, res);
   const token = req.headers['x-csrf-token'] as string || req.body._csrf;
   
   if (!token) {
@@ -93,7 +111,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
  * Endpoint to get CSRF token
  */
 export function getCsrfTokenHandler(req: Request, res: Response) {
-  const sessionId = (req as any).user?.id?.toString() || req.ip || 'anonymous';
+  const sessionId = getCsrfSessionId(req, res);
   const token = generateCsrfToken(sessionId);
   
   res.json({
@@ -107,9 +125,10 @@ export function getCsrfTokenHandler(req: Request, res: Response) {
  */
 setInterval(() => {
   const now = Date.now();
-  for (const [sessionId, data] of csrfTokens.entries()) {
+  for (const [sessionId, data] of Array.from(csrfTokens.entries())) {
     if (now - data.createdAt > TOKEN_EXPIRATION) {
       csrfTokens.delete(sessionId);
     }
   }
 }, TOKEN_EXPIRATION);
+

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { authApi } from "@/lib/authApi";
 
+export const TK_USER_KEY = "tk_user_info";
+
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
   redirectPath?: string;
@@ -22,11 +24,10 @@ export function useAuth(options?: UseAuthOptions) {
         
         if (result.success && result.user) {
           setUser(result.user);
-          // Cache user data
-          localStorage.setItem("manus-runtime-user-info", JSON.stringify(result.user));
+          localStorage.setItem(TK_USER_KEY, JSON.stringify(result.user));
         } else {
           setUser(null);
-          localStorage.removeItem("manus-runtime-user-info");
+          localStorage.removeItem(TK_USER_KEY);
         }
       } catch (err) {
         console.error("[useAuth] Error fetching user:", err);
@@ -47,8 +48,9 @@ export function useAuth(options?: UseAuthOptions) {
       console.error("[useAuth] Logout error:", error);
     } finally {
       setUser(null);
-      localStorage.removeItem('manus-runtime-user-info');
+      localStorage.removeItem(TK_USER_KEY);
       localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('demo-mode');
     }
   }, []);
 
@@ -59,10 +61,10 @@ export function useAuth(options?: UseAuthOptions) {
       
       if (result.success && result.user) {
         setUser(result.user);
-        localStorage.setItem("manus-runtime-user-info", JSON.stringify(result.user));
+        localStorage.setItem(TK_USER_KEY, JSON.stringify(result.user));
       } else {
         setUser(null);
-        localStorage.removeItem("manus-runtime-user-info");
+        localStorage.removeItem(TK_USER_KEY);
       }
     } catch (err) {
       console.error("[useAuth] Error refreshing user:", err);
@@ -78,7 +80,6 @@ export function useAuth(options?: UseAuthOptions) {
     if (user) return;
     if (typeof window === "undefined") return;
     
-    // Use provided redirectPath or default to /login
     const finalRedirectPath = redirectPath || "/login";
     if (window.location.pathname === finalRedirectPath) return;
 
@@ -99,3 +100,4 @@ export function useAuth(options?: UseAuthOptions) {
     logout,
   };
 }
+

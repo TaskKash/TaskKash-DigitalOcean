@@ -19,7 +19,7 @@ export default function Splash() {
       } else {
         // No valid session, clear any stale localStorage and go to welcome
         localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('manus-runtime-user-info');
+        localStorage.removeItem('tk_user_info');
         setLocation('/welcome');
       }
     }, 2500);

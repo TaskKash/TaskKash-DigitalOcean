@@ -2,9 +2,33 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch, Redirect } from "wouter";
+import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppProvider } from "./contexts/AppContext";
+import DemoModeBanner from "./components/DemoModeBanner";
+
+// 🦥 Lazy-loaded: heavy pages (only loaded when route is accessed)
+const SurveyBuilder = lazy(() => import("./pages/SurveyBuilder"));
+const VoteBuilder = lazy(() => import("./pages/VoteBuilder"));
+const TaskBuilder = lazy(() => import("./pages/TaskBuilder"));
+const CampaignLaunch = lazy(() => import("./pages/CampaignLaunch"));
+const VoteCampaignLaunch = lazy(() => import("./pages/VoteCampaignLaunch"));
+const CampaignDetail = lazy(() => import("./pages/CampaignDetail"));
+const KYCVerification = lazy(() => import("./pages/KYCVerification"));
+const PrivacyCenter = lazy(() => import("./pages/PrivacyCenter"));
+const TakeSurvey = lazy(() => import("./pages/TakeSurvey"));
+const TakeVote = lazy(() => import("./pages/TakeVote"));
+// Dev-only showcase — excluded from production bundle
+const ComponentShowcase = import.meta.env.DEV
+  ? lazy(() => import("./pages/ComponentShowcase"))
+  : null;
+
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 // User Pages
 import Home from "./pages/Home";
@@ -61,9 +85,9 @@ import AccountSettings from "./pages/advertiser/AccountSettings";
 import AudienceInsights from "./pages/advertiser/AudienceInsights";
 import EditCampaign from "./pages/advertiser/EditCampaign";
 import MultiTaskCampaignBuilder from "./pages/advertiser/MultiTaskCampaignBuilder";
-import AdvertiserDashboard from "./pages/AdvertiserDashboard";
+import AdvertiserDashboardLegacy from "./pages/AdvertiserDashboard";
 import CampaignAnalytics from "./pages/CampaignAnalytics";
-import TaskBuilder from "./pages/TaskBuilder";
+
 import CreateTask from "./pages/advertiser/CreateTask";
 import TaskReview from "./pages/advertiser/TaskReview";
 import CampaignPerformance from "./pages/advertiser/CampaignPerformance";
@@ -117,26 +141,13 @@ import Levels from "./pages/Levels";
 import Badges from "./pages/Badges";
 import PaymentMethodsPage from "./pages/PaymentMethodsPage";
 
-// Compliance & Privacy Pages
+// Compliance & Privacy Pages (eagerly loaded as they're lightweight)
 import ConsentPreferences from "./pages/ConsentPreferences";
 import ProfileTierQuestions from "./pages/ProfileTierQuestions";
-import PrivacyCenter from "./pages/PrivacyCenter";
-import KYCVerification from "./pages/KYCVerification";
-
-// Survey Framework Pages
-import SurveyBuilder from "./pages/SurveyBuilder";
-import CampaignLaunch from "./pages/CampaignLaunch";
-import TakeSurvey from "./pages/TakeSurvey";
 import AvailableSurveys from "./pages/AvailableSurveys";
-
-// Vote Framework Pages
-import VoteBuilder from "./pages/VoteBuilder";
-import VoteCampaignLaunch from "./pages/VoteCampaignLaunch";
-// Multi-Task Campaign Pages
 import Campaigns from "./pages/Campaigns";
-import CampaignDetail from "./pages/CampaignDetail";
-import TakeVote from "./pages/TakeVote";
 import AvailableVotes from "./pages/AvailableVotes";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -298,7 +309,10 @@ function App() {
         <AppProvider>
           <TooltipProvider>
             <Toaster />
-            <Router />
+            <DemoModeBanner />
+            <Suspense fallback={<PageLoader />}>
+              <Router />
+            </Suspense>
           </TooltipProvider>
         </AppProvider>
       </ThemeProvider>

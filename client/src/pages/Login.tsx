@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Mail, Lock, FlaskConical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { APP_LOGO, APP_TITLE } from '@/const';
+import { TK_USER_KEY } from '@/_core/hooks/useAuth';
 
 // ─── Demo Mode ──────────────────────────────────────────────────────────────
 // This creates a full mock user session stored entirely in localStorage.
@@ -30,7 +31,7 @@ const DEMO_USER = {
 };
 
 function activateDemoMode(setLocation: (path: string) => void) {
-  localStorage.setItem('manus-runtime-user-info', JSON.stringify(DEMO_USER));
+  localStorage.setItem(TK_USER_KEY, JSON.stringify(DEMO_USER));
   localStorage.setItem('isLoggedIn', 'true');
   localStorage.setItem('demo-mode', 'true');
   window.location.href = '/home';
@@ -63,7 +64,7 @@ export default function Login() {
 
       if (data.success && data.user) {
         // Store user info
-        localStorage.setItem('manus-runtime-user-info', JSON.stringify(data.user));
+        localStorage.setItem(TK_USER_KEY, JSON.stringify(data.user));
         localStorage.setItem('isLoggedIn', 'true');
         
         // Redirect to home

@@ -18,7 +18,7 @@ const cookieOptions = (req: any) => ({
 
 // Reusable Zod schemas
 const emailSchema = z.string().email().max(254);
-const passwordSchema = z.string().min(6).max(128);
+const passwordSchema = z.string().min(8).max(128);
 const nameSchema = z.string().min(1).max(100);
 
 export const authRouter = Router();
