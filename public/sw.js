@@ -6,7 +6,7 @@
    - API calls      → Network-Only (never cached)
    ============================================================ */
 
-const CACHE_VERSION = 'taskkash-v5';
+const CACHE_VERSION = 'taskkash-v6';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
