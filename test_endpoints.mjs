@@ -23,14 +23,14 @@ function request(options, postData) {
 
 async function run() {
   console.log('Testing GET /api/csrf-token');
-  const csrfRes = await request({ method: 'GET', host: 'localhost', port: 3000, path: '/api/csrf-token' });
+  const csrfRes = await request({ method: 'GET', host: 'localhost', port: 3001, path: '/api/csrf-token' });
   console.log('CSRF Status:', csrfRes.status);
   const cookie = csrfRes.headers['set-cookie'] ? csrfRes.headers['set-cookie'][0].split(';')[0] : '';
   const csrfToken = csrfRes.data.csrfToken || csrfRes.headers['x-csrf-token'];
   console.log('Got cookie:', cookie, 'token:', csrfToken);
 
   console.log('\nTesting GET /api/advertisers');
-  const advRes = await request({ method: 'GET', host: 'localhost', port: 3000, path: '/api/advertisers' });
+  const advRes = await request({ method: 'GET', host: 'localhost', port: 3001, path: '/api/advertisers' });
   console.log('Advertisers Status:', advRes.status);
   console.log('Data sample:', Array.isArray(advRes.data) ? advRes.data.slice(0, 1) : advRes.data);
 
@@ -43,7 +43,7 @@ async function run() {
     'Cookie': cookie,
     'x-csrf-token': csrfToken
   };
-  const regRes = await request({ method: 'POST', host: 'localhost', port: 3000, path: '/api/auth/register', headers: regHeaders }, regData);
+  const regRes = await request({ method: 'POST', host: 'localhost', port: 3001, path: '/api/auth/register', headers: regHeaders }, regData);
   console.log('Register Status:', regRes.status);
   console.log('Register Data:', regRes.data);
 
@@ -55,7 +55,7 @@ async function run() {
     'Cookie': cookie,
     'x-csrf-token': csrfToken
   };
-  const loginRes = await request({ method: 'POST', host: 'localhost', port: 3000, path: '/api/auth/login', headers: loginHeaders }, loginData);
+  const loginRes = await request({ method: 'POST', host: 'localhost', port: 3001, path: '/api/auth/login', headers: loginHeaders }, loginData);
   console.log('Login Status:', loginRes.status);
   console.log('Login Data:', loginRes.data);
 }

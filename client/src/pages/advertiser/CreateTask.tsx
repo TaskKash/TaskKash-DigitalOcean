@@ -360,6 +360,8 @@ export default function CreateTask() {
                     Difficulty *
                   </label>
                   <select
+                    id="difficulty"
+                    title="Task Difficulty"
                     value={difficulty}
                     onChange={(e) => setDifficulty(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -375,6 +377,9 @@ export default function CreateTask() {
                     Estimated Duration (minutes) *
                   </label>
                   <input
+                    id="duration"
+                    title="Estimated Duration"
+                    placeholder="Enter duration in minutes"
                     type="number"
                     value={duration}
                     onChange={(e) => setDuration(parseInt(e.target.value))}
@@ -419,6 +424,8 @@ export default function CreateTask() {
                       Minimum Watch Percentage: {minWatchPercentage}%
                     </label>
                     <input
+                      id="minWatchPercentage"
+                      title="Minimum Watch Percentage"
                       type="range"
                       value={minWatchPercentage}
                       onChange={(e) => setMinWatchPercentage(parseInt(e.target.value))}
@@ -458,6 +465,7 @@ export default function CreateTask() {
                           <button
                             onClick={() => removeQuestion(index)}
                             className="text-red-600 hover:text-red-700"
+                            title="Remove Question"
                           >
                             <Trash2 className="w-5 h-5" />
                           </button>
@@ -509,6 +517,8 @@ export default function CreateTask() {
                             Correct Answer
                           </label>
                           <select
+                            id={`correctAnswer-${index}`}
+                            title="Correct Answer"
                             value={q.correctAnswer}
                             onChange={(e) => updateQuestion(index, 'correctAnswer', e.target.value)}
                             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -531,6 +541,8 @@ export default function CreateTask() {
                   Passing Score: {passingScore}%
                 </label>
                 <input
+                  id="passingScore"
+                  title="Passing Score Percentage"
                   type="range"
                   value={passingScore}
                   onChange={(e) => setPassingScore(parseInt(e.target.value))}
@@ -558,6 +570,9 @@ export default function CreateTask() {
                     Reward per Completion (ج.م) *
                   </label>
                   <input
+                    id="reward"
+                    title="Reward per Completion"
+                    placeholder="Enter reward amount"
                     type="number"
                     value={reward}
                     onChange={(e) => setReward(parseFloat(e.target.value))}
@@ -572,6 +587,9 @@ export default function CreateTask() {
                     Number of Completions Needed *
                   </label>
                   <input
+                    id="completionsNeeded"
+                    title="Number of Completions"
+                    placeholder="Enter number of completions"
                     type="number"
                     value={completionsNeeded}
                     onChange={(e) => setCompletionsNeeded(parseInt(e.target.value))}
@@ -629,6 +647,8 @@ export default function CreateTask() {
                   Target Gender
                 </label>
                 <select
+                  id="targetGender"
+                  title="Target Gender"
                   value={targetGender}
                   onChange={(e) => setTargetGender(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -660,6 +680,9 @@ export default function CreateTask() {
                     Daily Limit per User (0 = no limit)
                   </label>
                   <input
+                    id="dailyLimit"
+                    title="Daily Limit per User"
+                    placeholder="Enter daily limit (0 for no limit)"
                     type="number"
                     value={dailyLimitPerUser}
                     onChange={(e) => setDailyLimitPerUser(parseInt(e.target.value))}
@@ -673,6 +696,8 @@ export default function CreateTask() {
                     Minimum Tier Required
                   </label>
                   <select
+                    id="minTier"
+                    title="Minimum Tier Required"
                     value={requiresMinimumTier}
                     onChange={(e) => setRequiresMinimumTier(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"

@@ -73,6 +73,17 @@ export default function Profile() {
   };
 
   const currentTierInfo = getTierInfo((user?.tier ?? ""));
+  const tierProgress = Math.round(((user?.completedTasks ?? 0) / (Math.max(1, (user?.completedTasks ?? 0) + currentTierInfo.tasksNeeded))) * 100);
+  const progressBarRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (progressBarRef.current) {
+      progressBarRef.current.style.setProperty('--progress-width', `${tierProgress}%`);
+      progressBarRef.current.setAttribute('aria-valuenow', tierProgress.toString());
+      progressBarRef.current.setAttribute('aria-valuemin', '0');
+      progressBarRef.current.setAttribute('aria-valuemax', '100');
+    }
+  }, [tierProgress]);
 
   const menuSections = [
     {
@@ -183,10 +194,11 @@ export default function Profile() {
               </p>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
-              {/* @ts-ignore - dynamic width requires inline styles, IDE warning can be safely ignored */}
               <div
-                className={`${currentTierInfo.color} h-2 rounded-full transition-all`}
-                style={{ width: `${Math.round(((user?.completedTasks ?? 0) / (Math.max(1, (user?.completedTasks ?? 0) + currentTierInfo.tasksNeeded))) * 100)}%` }}
+                ref={progressBarRef}
+                role="progressbar"
+                title="Tier Progress"
+                className={`${currentTierInfo.color} h-2 rounded-full transition-all progress-fill`}
               />
             </div>
           </Card>

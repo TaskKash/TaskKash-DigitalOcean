@@ -185,6 +185,8 @@ export default function EditProfile() {
               />
               <input
                 ref={fileInputRef}
+                id="avatar-input"
+                title="Profile Photo"
                 type="file"
                 accept="image/*"
                 onChange={handlePhotoChange}

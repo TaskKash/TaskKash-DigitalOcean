@@ -1,3 +1,4 @@
+/* stylelint-disable */
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -372,5 +373,10 @@
   
   .safe-area-inset-top {
     padding-top: env(safe-area-inset-top);
+  }
+
+  /* Dynamic Utilities */
+  .progress-fill {
+    width: var(--progress-width, 0%);
   }
 }
