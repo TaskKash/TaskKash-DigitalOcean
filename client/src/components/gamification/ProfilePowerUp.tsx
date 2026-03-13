@@ -68,19 +68,12 @@ export default function ProfilePowerUp({ userId, language = 'en' }: ProfilePower
       const data = await response.json();
       
       if (data.success) {
-        toast({
-          title: language === 'ar' ? '🎉 تم إكمال القسم!' : '🎉 Section Completed!',
-          description: language === 'ar' 
-            ? `حصلت على ${data.bonusAwarded} جنيه + ${(data.multiplierAwarded * 100).toFixed(0)}% زيادة في الأرباح!`
-            : `You earned ${data.bonusAwarded} EGP + ${(data.multiplierAwarded * 100).toFixed(0)}% earnings boost!`,
-        });
+        toast.success(language === 'ar' 
+          ? `🎉 تم إكمال القسم! حصلت على ${data.bonusAwarded} جنيه!`
+          : `🎉 Section Completed! You earned ${data.bonusAwarded} EGP!`);
         fetchProfileSections();
       } else {
-        toast({
-          title: language === 'ar' ? 'خطأ' : 'Error',
-          description: data.error,
-          variant: 'destructive'
-        });
+        toast.error(data.error);
       }
     } catch (error) {
       console.error('Error completing section:', error);

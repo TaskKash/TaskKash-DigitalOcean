@@ -73,20 +73,13 @@ export default function TargetingTiers({ userId, language = 'en' }: TargetingTie
       const data = await response.json();
       
       if (data.success) {
-        toast({
-          title: language === 'ar' ? '🎉 تم فتح المستوى!' : '🎉 Tier Unlocked!',
-          description: language === 'ar' 
-            ? `تم فتح ${data.tier.nameAr} بنجاح!`
-            : `${data.tier.nameEn} unlocked successfully!`,
-        });
+        toast.success(language === 'ar' 
+          ? `🎉 تم فتح المستوى! تم فتح ${data.tier.nameAr} بنجاح!`
+          : `🎉 Tier Unlocked! ${data.tier.nameEn} unlocked successfully!`);
         setSelectedTier(null);
         fetchTargetingTiers();
       } else {
-        toast({
-          title: language === 'ar' ? 'خطأ' : 'Error',
-          description: data.error,
-          variant: 'destructive'
-        });
+        toast.error(data.error);
       }
     } catch (error) {
       console.error('Error unlocking tier:', error);

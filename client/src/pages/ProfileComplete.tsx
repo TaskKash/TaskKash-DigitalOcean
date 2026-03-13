@@ -28,9 +28,9 @@ export default function ProfileComplete() {
   const [currentStep, setCurrentStep] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const submitKYCMutation = trpc.userProfile.submitKYC.useMutation();
-  const connectSocialMutation = trpc.userProfile.connectSocial.useMutation();
-  const saveAnswerMutation = trpc.userProfile.saveProfileAnswer.useMutation();
+  const submitKYCMutation = trpc.user.submitKYC.useMutation();
+  const connectSocialMutation = trpc.user.connectSocial.useMutation();
+  const saveAnswerMutation = trpc.user.saveProfileAnswer.useMutation();
 
   const steps: ProfileStep[] = [
     {
@@ -366,7 +366,7 @@ function SocialConnectStep({ onConnect, isLoading, onBack }: { onConnect: (provi
 function PreferencesStep({ userId, onComplete }: { userId: number; onComplete: () => void }) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<string[]>([]);
-  const saveAnswerMutation = trpc.userProfile.saveProfileAnswer.useMutation();
+  const saveAnswerMutation = trpc.user.saveProfileAnswer.useMutation();
 
   const categories = [
     { id: 'electronics', label: t('profileComplete.cat.electronics'), emoji: '📱' },

@@ -56,7 +56,7 @@ export async function sendNotification(
     try {
       switch (channel) {
         case 'email':
-          await sendEmailNotification(user[0].email, message.subject, message.body);
+          await sendEmailNotification(user[0].email ?? '', message.subject, message.body);
           break;
         case 'sms':
           if (user[0].phone) {

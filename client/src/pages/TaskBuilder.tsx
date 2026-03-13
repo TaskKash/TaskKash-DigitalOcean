@@ -12,7 +12,22 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { apiRequest } from "@/lib/queryClient";
+// Basic API request helper
+async function apiRequest(url: string, init?: RequestInit) {
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...init?.headers,
+    },
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'API request failed');
+  }
+  return res.json();
+}
 import { 
   ArrowLeft,
   Plus,

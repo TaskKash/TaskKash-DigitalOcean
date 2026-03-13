@@ -1318,27 +1318,22 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
-    lng: 'en', // Set English as default language
-    // Remove hardcoded lng to enable automatic detection
+    lng: 'en', 
     supportedLngs: ['en', 'ar'],
     interpolation: {
       escapeValue: false
     },
     detection: {
-      // Check localStorage first to persist user's language choice, then browser language
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
       lookupLocalStorage: 'i18nextLng',
-      // Map browser language codes to our supported languages
       lookupNavigator: true,
       convertDetectedLanguage: (lng: string) => {
-        // If browser language is Arabic (ar, ar-SA, ar-EG, etc.), use 'ar'
         if (lng.startsWith('ar')) return 'ar';
-        // Otherwise default to English
         return 'en';
       }
     }
-  });
+  } as any);
 
 // Update HTML direction and lang attribute when language changes
 i18n.on('languageChanged', (lng) => {

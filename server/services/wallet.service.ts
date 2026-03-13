@@ -61,14 +61,12 @@ export async function addFunds(
   // Create transaction record
   await db.insert(transactions).values({
     userId,
-    type: 'credit',
+    type: 'earning',
     amount,
-    balanceBefore: currentBalance,
-    balanceAfter: newBalance,
+    currency: 'EGP',
     description,
     taskId: relatedTaskId,
     status: 'completed',
-    createdAt: new Date(),
   });
 
   return newBalance;
@@ -112,14 +110,12 @@ export async function deductFunds(
 
   await db.insert(transactions).values({
     userId,
-    type: 'debit',
+    type: 'withdrawal',
     amount,
-    balanceBefore,
-    balanceAfter: newBalance,
+    currency: 'EGP',
     description,
     taskId: relatedTaskId,
     status: 'completed',
-    createdAt: new Date(),
   });
 
   return newBalance;
@@ -161,15 +157,12 @@ export async function requestWithdrawal(
     userId,
     type: 'withdrawal',
     amount,
-    balanceBefore: currentBalance,
-    balanceAfter: currentBalance, // Balance not updated until withdrawal is processed
+    currency: 'EGP',
     description: `Withdrawal request via ${method}`,
     status: 'pending',
-    metadata: JSON.stringify({ method, accountDetails }),
-    createdAt: new Date(),
   });
 
-  return result.insertId;
+  return (result as any)[0]?.insertId ?? 0;
 }
 
 /**
@@ -219,36 +212,20 @@ export async function processWithdrawal(
       // User no longer has sufficient balance — auto-reject
       await db
         .update(transactions)
-        .set({
-          status: 'cancelled',
-          processedAt: new Date(),
-          note: 'Auto-cancelled: insufficient balance at approval time',
-        })
+        .set({ status: 'cancelled' })
         .where(eq(transactions.id, transactionId));
       throw new Error('Insufficient balance — withdrawal auto-rejected');
     }
 
-    // Read back new balance
-    const updated = await db.select({ balance: users.balance }).from(users).where(eq(users.id, txn.userId)).limit(1);
-    const newBalance = updated[0]?.balance ?? 0;
-
     await db
       .update(transactions)
-      .set({
-        status: 'completed',
-        processedAt: new Date(),
-        note,
-      })
+      .set({ status: 'completed' })
       .where(eq(transactions.id, transactionId));
   } else {
     // Reject withdrawal
     await db
       .update(transactions)
-      .set({
-        status: 'cancelled',
-        processedAt: new Date(),
-        note,
-      })
+      .set({ status: 'cancelled' })
       .where(eq(transactions.id, transactionId));
   }
 

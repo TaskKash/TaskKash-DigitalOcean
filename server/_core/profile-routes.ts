@@ -11,14 +11,26 @@ import fs from 'fs';
 
 // Configure multer for avatar upload
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = '/var/www/taskkash/dist/public/uploads/avatars';
+  destination: (req: any, file: any, cb: any) => {
+    // Dynamic path resolution based on environment to support local Windows development
+    const isDev = process.env.NODE_ENV === 'development';
+    const basePublicDir = isDev 
+      ? path.join(process.cwd(), 'client', 'public') // Use client/public so Vite picks it up in dev
+      : '/var/www/taskkash/dist/public';
+    
+    // Check if dist/public exists in dev, if so use that too for safety (sometimes we run dev after build)
+    const activePublicDir = (isDev && fs.existsSync(path.join(process.cwd(), 'dist', 'public'))) 
+      ? path.join(process.cwd(), 'dist', 'public')
+      : basePublicDir;
+
+    const uploadDir = path.join(activePublicDir, 'uploads', 'avatars');
+    
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
-  filename: (req, file, cb) => {
+  filename: (req: any, file: any, cb: any) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
   }
@@ -27,7 +39,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: any, cb: any) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
@@ -65,7 +77,7 @@ router.post('/complete', async (req, res) => {
     const users = await query(
       'SELECT id, balance, profileStrength FROM users WHERE openId = ?',
       [openId]
-    ) as any[];
+    ) as any;
 
     if (users.length === 0) {
       return res.status(404).json({ error: 'User not found' });
@@ -318,7 +330,7 @@ router.post('/answers', async (req, res) => {
     );
 
     // Get user balance before crediting
-    const userBefore = await query("SELECT balance FROM users WHERE id = ?", [userId]) as any[];
+    const userBefore = await query("SELECT balance FROM users WHERE id = ?", [userId]) as any;
     const balanceBefore = userBefore[0]?.balance || 0;
     const balanceAfter = parseFloat(balanceBefore) + parseFloat(section.bonusAmount);
 
@@ -457,7 +469,16 @@ router.post("/avatar", upload.single("avatar"), async (req, res) => {
 
     // Delete old avatar if exists
     if (user.avatar && user.avatar.startsWith('/uploads/avatars/')) {
-      const oldAvatarPath = path.join('/var/www/taskkash/dist/public', user.avatar);
+      const isDev = process.env.NODE_ENV === 'development';
+      const basePublicDir = isDev 
+        ? path.join(process.cwd(), 'client', 'public')
+        : '/var/www/taskkash/dist/public';
+      
+      const activePublicDir = (isDev && fs.existsSync(path.join(process.cwd(), 'dist', 'public'))) 
+        ? path.join(process.cwd(), 'dist', 'public')
+        : basePublicDir;
+
+      const oldAvatarPath = path.join(activePublicDir, user.avatar);
       if (fs.existsSync(oldAvatarPath)) {
         fs.unlinkSync(oldAvatarPath);
       }

@@ -14,10 +14,10 @@ router.get('/my-code', async (req, res) => {
 
     const userId = authUser.id;
     
-    const users = await mysqlQuery(
+    const users = (await mysqlQuery(
       'SELECT referralCode, totalReferrals, referralEarnings FROM users WHERE id = ?',
       [userId]
-    );
+    )) as any;
 
     if (!users || users.length === 0) {
       return res.status(404).json({ error: 'User not found' });
@@ -26,10 +26,10 @@ router.get('/my-code', async (req, res) => {
     const user = users[0];
     
     // Get referral stats
-    const referrals = await mysqlQuery(
+    const referrals = (await mysqlQuery(
       'SELECT COUNT(*) as total, SUM(referrerReward) as totalRewards FROM referrals WHERE referrerId = ?',
       [userId]
-    );
+    )) as any;
 
     res.json({
       referralCode: user.referralCode,
@@ -53,14 +53,14 @@ router.get('/list', async (req, res) => {
 
     const userId = authUser.id;
     
-    const referrals = await mysqlQuery(
+    const referrals = (await mysqlQuery(
       `SELECT r.*, u.email, u.name, u.completedTasks 
        FROM referrals r 
        JOIN users u ON r.refereeId = u.id 
        WHERE r.referrerId = ? 
        ORDER BY r.createdAt DESC`,
       [userId]
-    );
+    )) as any;
 
     res.json({ referrals });
   } catch (error) {
@@ -85,20 +85,20 @@ router.post('/apply', async (req, res) => {
     }
 
     // Check if user already used a referral code
-    const user = await mysqlQuery(
+    const user = (await mysqlQuery(
       'SELECT referredBy FROM users WHERE id = ?',
       [userId]
-    );
+    )) as any;
 
     if (user[0]?.referredBy) {
       return res.status(400).json({ error: 'You have already used a referral code' });
     }
 
     // Find referrer
-    const referrer = await mysqlQuery(
+    const referrer = (await mysqlQuery(
       'SELECT id FROM users WHERE referralCode = ?',
       [referralCode]
-    );
+    )) as any;
 
     if (!referrer || referrer.length === 0) {
       return res.status(404).json({ error: 'Invalid referral code' });

@@ -160,7 +160,7 @@ router.post('/request', isUser, async (req, res) => {
     }
 
     // Get user's current balance
-    const users = await mysqlQuery('SELECT balance FROM users WHERE id = ?', [userId]) as any[];
+    const users = await mysqlQuery('SELECT balance FROM users WHERE id = ?', [userId]) as any;
     if (!users || users.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -180,7 +180,7 @@ router.post('/request', isUser, async (req, res) => {
     const pendingWithdrawals = await mysqlQuery(
       'SELECT COUNT(*) as count FROM withdrawal_requests WHERE userId = ? AND status = ?',
       [userId, 'pending']
-    ) as any[];
+    ) as any;
 
     if (pendingWithdrawals[0].count > 0) {
       return res.status(400).json({ 
@@ -189,7 +189,7 @@ router.post('/request', isUser, async (req, res) => {
     }
 
     // Get user tier for commission calculation
-    const userData = await mysqlQuery('SELECT tier FROM users WHERE id = ?', [userId]) as any[];
+    const userData = await mysqlQuery('SELECT tier FROM users WHERE id = ?', [userId]) as any;
     const userTier = userData[0]?.tier || 'tier1';
     
     // Calculate withdrawal commission
@@ -272,7 +272,7 @@ router.get('/', isUser, async (req, res) => {
       LEFT JOIN transactions t ON wr.transactionId = t.id
       WHERE wr.userId = ?
       ORDER BY wr.requestedAt DESC
-    `, [req.userId]) as any[];
+    `, [req.userId]) as any;
 
     // Parse accountDetails JSON
     const formattedWithdrawals = withdrawals.map((w: any) => ({
@@ -306,7 +306,7 @@ router.get('/:id', isUser, async (req, res) => {
       FROM withdrawal_requests wr
       LEFT JOIN transactions t ON wr.transactionId = t.id
       WHERE wr.id = ? AND wr.userId = ?
-    `, [withdrawalId, req.userId]) as any[];
+    `, [withdrawalId, req.userId]) as any;
 
     if (!withdrawals || withdrawals.length === 0) {
       return res.status(404).json({ error: 'Withdrawal request not found' });
@@ -337,7 +337,7 @@ router.post('/:id/cancel', isUser, async (req, res) => {
     const withdrawals = await mysqlQuery(
       'SELECT * FROM withdrawal_requests WHERE id = ? AND userId = ?',
       [withdrawalId, req.userId]
-    ) as any[];
+    ) as any;
 
     if (!withdrawals || withdrawals.length === 0) {
       return res.status(404).json({ error: 'Withdrawal request not found' });

@@ -66,7 +66,7 @@ adminRouter.post("/users", verifyAdmin, async (req, res) => {
     const connection = getPool();
     
     // Check if email already exists
-    const [existing] = await connection.execute(
+    const [existing]: any = await connection.execute(
       "SELECT id FROM users WHERE email = ?",
       [email]
     );
@@ -79,7 +79,7 @@ adminRouter.post("/users", verifyAdmin, async (req, res) => {
     }
     
     // Insert new user
-    const [result] = await connection.execute(
+    const [result]: any = await connection.execute(
       `INSERT INTO users (openId, name, email, password, phone, role, balance, tier, isVerified, profileStrength, completedTasks, totalEarnings, createdAt, updatedAt) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
@@ -99,7 +99,7 @@ adminRouter.post("/users", verifyAdmin, async (req, res) => {
     );
     
     // Get the created user
-    const [users] = await connection.execute(
+    const [users]: any = await connection.execute(
       "SELECT id, openId, name, email, phone, role, balance, tier, isVerified FROM users WHERE id = ?",
       [(result as any).insertId]
     );
@@ -125,7 +125,7 @@ adminRouter.get("/users", verifyAdmin, async (req, res) => {
   try {
     const connection = getPool();
     
-    const [users] = await connection.execute(
+    const [users]: any = await connection.execute(
       "SELECT id, openId, name, email, phone, role, balance, completedTasks, totalEarnings, tier, profileStrength, countryId, isVerified, createdAt, updatedAt, lastSignedIn FROM users ORDER BY createdAt DESC"
     );
 
@@ -150,7 +150,7 @@ adminRouter.get("/users/:id", verifyAdmin, async (req, res) => {
     const mysql = await import("mysql2/promise");
     const connection = await mysql.createConnection(process.env.DATABASE_URL!);
     
-    const [users] = await connection.execute(
+    const [users]: any = await connection.execute(
       "SELECT id, openId, name, email, phone, role, balance, completedTasks, totalEarnings, tier, profileStrength, countryId, isVerified, createdAt, updatedAt, lastSignedIn FROM users WHERE id = ?",
       [id]
     );
@@ -230,7 +230,7 @@ adminRouter.put("/users/:id", verifyAdmin, async (req, res) => {
     );
     
     // Get updated user
-    const [users] = await connection.execute(
+    const [users]: any = await connection.execute(
       "SELECT id, openId, name, email, phone, role, balance, completedTasks, totalEarnings, tier, profileStrength, countryId, isVerified, createdAt, updatedAt FROM users WHERE id = ?",
       [id]
     );
@@ -339,7 +339,7 @@ adminRouter.post("/advertisers", verifyAdmin, async (req, res) => {
     const connection = getPool();
     
     // Check if email already exists
-    const [existing] = await connection.execute(
+    const [existing]: any = await connection.execute(
       "SELECT id FROM advertisers WHERE email = ? OR slug = ?",
       [email, finalSlug]
     );
@@ -352,7 +352,7 @@ adminRouter.post("/advertisers", verifyAdmin, async (req, res) => {
     }
     
     // Insert new advertiser
-    const [result] = await connection.execute(
+    const [result]: any = await connection.execute(
       `INSERT INTO advertisers (email, password, nameEn, nameAr, slug, isActive, countryId, createdAt, updatedAt) 
        VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
@@ -367,7 +367,7 @@ adminRouter.post("/advertisers", verifyAdmin, async (req, res) => {
     );
     
     // Get the created advertiser
-    const [advertisers] = await connection.execute(
+    const [advertisers]: any = await connection.execute(
       "SELECT id, email, nameEn, nameAr, slug, isActive FROM advertisers WHERE id = ?",
       [(result as any).insertId]
     );
@@ -393,7 +393,7 @@ adminRouter.get("/advertisers", verifyAdmin, async (req, res) => {
   try {
     const connection = getPool();
     
-    const [advertisers] = await connection.execute(
+    const [advertisers]: any = await connection.execute(
       "SELECT id, email, nameEn, nameAr, slug, isActive, createdAt, updatedAt FROM advertisers ORDER BY createdAt DESC"
     );
     
@@ -418,7 +418,7 @@ adminRouter.get("/advertisers/:id", verifyAdmin, async (req, res) => {
     const { id } = req.params;
     const connection = getPool();
     
-    const [advertisers] = await connection.execute(
+    const [advertisers]: any = await connection.execute(
       "SELECT id, email, nameEn, nameAr, slug, isActive, createdAt, updatedAt FROM advertisers WHERE id = ?",
       [id]
     );
@@ -487,7 +487,7 @@ adminRouter.put("/advertisers/:id", verifyAdmin, async (req, res) => {
     );
     
     // Get updated advertiser
-    const [advertisers] = await connection.execute(
+    const [advertisers]: any = await connection.execute(
       "SELECT id, email, nameEn, nameAr, slug, isActive, createdAt, updatedAt FROM advertisers WHERE id = ?",
       [id]
     );
@@ -576,9 +576,9 @@ adminRouter.get("/stats", verifyAdmin, async (req, res) => {
   try {
     const connection = getPool();
     
-    const [userCount] = await connection.execute("SELECT COUNT(*) as count FROM users");
-    const [advertiserCount] = await connection.execute("SELECT COUNT(*) as count FROM advertisers WHERE isActive = 1");
-    const [verifiedUsers] = await connection.execute("SELECT COUNT(*) as count FROM users WHERE isVerified = 1");
+    const [userCount]: any = await connection.execute("SELECT COUNT(*) as count FROM users");
+    const [advertiserCount]: any = await connection.execute("SELECT COUNT(*) as count FROM advertisers WHERE isActive = 1");
+    const [verifiedUsers]: any = await connection.execute("SELECT COUNT(*) as count FROM users WHERE isVerified = 1");
     
 
 

@@ -69,11 +69,7 @@ export default function DataBounties({ userId, language = 'en' }: DataBountiesPr
       : answer;
 
     if (!finalAnswer || (Array.isArray(finalAnswer) && finalAnswer.length === 0)) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: language === 'ar' ? 'الرجاء تقديم إجابة' : 'Please provide an answer',
-        variant: 'destructive'
-      });
+      toast.error(language === 'ar' ? 'الرجاء تقديم إجابة' : 'Please provide an answer');
       return;
     }
 
@@ -92,22 +88,15 @@ export default function DataBounties({ userId, language = 'en' }: DataBountiesPr
       const data = await response.json();
       
       if (data.success) {
-        toast({
-          title: language === 'ar' ? '🎉 تم الإرسال بنجاح!' : '🎉 Response Submitted!',
-          description: language === 'ar' 
-            ? `حصلت على ${data.rewardAwarded} جنيه!`
-            : `You earned ${data.rewardAwarded} EGP!`,
-        });
+        toast.success(language === 'ar' 
+          ? `🎉 تم الإرسال بنجاح! حصلت على ${data.rewardAwarded} جنيه!`
+          : `🎉 Response Submitted! You earned ${data.rewardAwarded} EGP!`);
         setSelectedBounty(null);
         setAnswer('');
         setMultipleChoiceAnswers([]);
         fetchDataBounties();
       } else {
-        toast({
-          title: language === 'ar' ? 'خطأ' : 'Error',
-          description: data.error,
-          variant: 'destructive'
-        });
+        toast.error(data.error);
       }
     } catch (error) {
       console.error('Error submitting bounty response:', error);

@@ -112,7 +112,11 @@ export default function SocialTask() {
 
   const handleActionClick = (action: SocialAction) => {
     window.open(action.url, '_blank');
-    setCompletedActions(prev => new Set([...prev, action.id]));
+    setCompletedActions(prev => {
+      const next = new Set(prev);
+      next.add(action.id);
+      return next;
+    });
     toast.success(isArabic ? 'تم فتح الرابط' : 'Link opened');
   };
 

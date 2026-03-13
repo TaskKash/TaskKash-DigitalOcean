@@ -213,7 +213,7 @@ router.post('/api/daily-login', async (req, res) => {
 });
 
 // Helper function to award badge
-async function awardBadge(userId: number, badgeId: number) {
+async function awardBadge(userId: number | string, badgeId: number) {
   try {
     // Check if user already has this badge
     const existing = await mysqlQuery(

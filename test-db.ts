@@ -1,0 +1,1 @@
+import 'dotenv/config'; import { checkDatabaseHealth } from './server/db'; checkDatabaseHealth().then(res => { console.log('Database Health:', res ? 'OK' : 'FAILED'); process.exit(res ? 0 : 1); }).catch(err => { console.error(err); process.exit(1); });

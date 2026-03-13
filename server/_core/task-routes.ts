@@ -522,7 +522,7 @@ router.get('/tasks', async (req, res) => {
 
     query += ' ORDER BY t.createdAt DESC';
 
-    const tasks = await mysqlQuery(query, params) as any[];
+    const tasks = await mysqlQuery(query, params) as any;
 
     // If user is logged in, check which tasks they've already completed successfully
     let completedTaskIds: number[] = [];
@@ -530,7 +530,7 @@ router.get('/tasks', async (req, res) => {
       const completed = await mysqlQuery(`
         SELECT DISTINCT taskId FROM task_submissions 
         WHERE userId = ? AND status IN ('completed', 'approved')
-      `, [userId]) as any[];
+      `, [userId]) as any;
       completedTaskIds = completed.map((c: any) => c.taskId);
     }
 
@@ -570,7 +570,7 @@ router.get('/tasks', async (req, res) => {
 
     // Get user tier if logged in
     let userTier = null; if (userId) {
-      const userResult = await mysqlQuery('SELECT tier FROM users WHERE id = ?', [userId]) as any[];
+      const userResult = await mysqlQuery('SELECT tier FROM users WHERE id = ?', [userId]) as any;
       if (userResult && userResult.length > 0) {
         userTier = userResult[0].tier;
       }
@@ -621,7 +621,7 @@ router.get('/tasks/my-submissions', isUser, async (req, res) => {
       JOIN advertisers a ON t.advertiserId = a.id
       WHERE s.userId = ? AND s.status IN ('approved', 'completed')
       ORDER BY s.createdAt DESC
-    `, [req.userId]) as any[];
+    `, [req.userId]) as any;
 
     res.json({ submissions });
   } catch (error: any) {
@@ -641,7 +641,7 @@ router.get('/tasks/:id', async (req, res) => {
     // Get task
     const tasks = await mysqlQuery(`
       SELECT * FROM tasks WHERE id = ?
-    `, [taskId]) as any[];
+    `, [taskId]) as any;
 
     if (!tasks || tasks.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
@@ -657,14 +657,14 @@ router.get('/tasks/:id', async (req, res) => {
       FROM task_questions
       WHERE taskId = ?
       ORDER BY questionOrder
-    `, [taskId]) as any[];
+    `, [taskId]) as any;
 
     // Get survey questions if this is a survey task
     let surveyQuestions: any[] = [];
     if (task.type === 'survey') {
       const rawSurveyQuestions = await mysqlQuery(`
         SELECT * FROM survey_questions WHERE taskId = ? ORDER BY questionOrder
-      `, [taskId]) as any[];
+      `, [taskId]) as any;
 
       surveyQuestions = rawSurveyQuestions.map((q: any) => ({
         ...q,
@@ -704,7 +704,7 @@ router.post('/tasks/:id/start', isUser, async (req, res) => {
 
   try {
     // Check if task exists and is active in MySQL
-    const tasks = await mysqlQuery('SELECT * FROM tasks WHERE id = ? AND status = ?', [taskId, 'active']) as any[];
+    const tasks = await mysqlQuery('SELECT * FROM tasks WHERE id = ? AND status = ?', [taskId, 'active']) as any;
 
     if (!tasks || tasks.length === 0) {
       return res.status(404).json({ error: 'Task not found or not active' });
@@ -717,7 +717,7 @@ router.post('/tasks/:id/start', isUser, async (req, res) => {
       const existing = await mysqlQuery(`
         SELECT * FROM task_submissions 
         WHERE taskId = ? AND userId = ? AND status IN ('approved', 'completed')
-      `, [taskId, req.userId]) as any[];
+      `, [taskId, req.userId]) as any;
 
       if (existing && existing.length > 0) {
         return res.status(400).json({ error: 'You have already completed this task' });
@@ -751,7 +751,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
 
   try {
     // Get task with questions from MySQL
-    const tasks = await mysqlQuery('SELECT * FROM tasks WHERE id = ?', [taskId]) as any[];
+    const tasks = await mysqlQuery('SELECT * FROM tasks WHERE id = ?', [taskId]) as any;
 
     if (!tasks || tasks.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
@@ -764,7 +764,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
     try {
       questions = await mysqlQuery(`
         SELECT * FROM task_questions WHERE taskId = ? ORDER BY questionOrder
-      `, [taskId]) as any[];
+      `, [taskId]) as any;
     } catch (err: any) {
       if (err.code === 'ER_NO_SUCH_TABLE') {
         console.warn(`[Submit Task] task_questions table missing, proceeding with 0 questions.`);
@@ -791,7 +791,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
 
     const parsedConfig = task.config ? (typeof task.config === 'string' ? JSON.parse(task.config) : task.config) : {};
     const effectivePassingScore = parsedConfig.passingScore || 80;
-    const score = Math.round((correctCount / questions.length) * 100);
+    const score = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 100;
     const passed = score >= effectivePassingScore;
 
     console.log('[Submit Task] Correct Count:', correctCount);
@@ -857,7 +857,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
       const existingCompletion = await mysqlQuery(
         `SELECT id FROM task_submissions WHERE userId = ? AND taskId = ? AND status = 'approved'`,
         [req.userId, taskId]
-      ) as any[];
+      ) as any;
 
       if (existingCompletion && existingCompletion.length > 1) { // 1 because we just inserted the current one
         console.log(`[DUPLICATE] User ${req.userId} already completed task ${taskId}`);
@@ -888,12 +888,9 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
           [req.userId, taskId]
         );
 
-        // Get advertiser tier for commission calculation
-        const advertiserData = await mysqlQuery(
-          `SELECT tier FROM advertisers WHERE id = ?`,
-          [task.advertiserId]
-        ) as any[];
-        const advertiserTier = advertiserData[0]?.tier || 'basic';
+        // Advertisers table doesn't have a tier column in the current schema
+        // Default to 'basic' tier for commission calculation
+        const advertiserTier = 'basic';
 
         // Calculate advertiser commission
         const commission = calculateAdvertiserCommission(parseFloat(task.reward), advertiserTier);
@@ -902,7 +899,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
         const userBalanceData = await mysqlQuery(
           `SELECT balance FROM users WHERE id = ?`,
           [req.userId]
-        ) as any[];
+        ) as any;
         const balanceBefore = userBalanceData[0]?.balance || 0;
         const balanceAfter = parseFloat(balanceBefore) + parseFloat(task.reward);
 
@@ -934,7 +931,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
       `SELECT COUNT(*) as count FROM task_submissions 
        WHERE taskId = ? AND userId = ? AND status = 'rejected'`,
       [taskId, req.userId]
-    ) as any[];
+    ) as any;
     const attemptNumber = (previousAttempts[0]?.count || 0) + 1;
     const canRetry = attemptNumber < 3; // Allow up to 3 attempts
 
@@ -980,7 +977,7 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
 
   try {
     // Get task from MySQL
-    const tasks = await mysqlQuery('SELECT * FROM tasks WHERE id = ? AND type = ?', [taskId, 'survey']) as any[];
+    const tasks = await mysqlQuery('SELECT * FROM tasks WHERE id = ? AND type = ?', [taskId, 'survey']) as any;
     if (!tasks || tasks.length === 0) {
       return res.status(404).json({ error: 'Survey task not found' });
     }
@@ -989,7 +986,7 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
     // Get survey questions
     const questions = await mysqlQuery(`
       SELECT * FROM survey_questions WHERE taskId = ? ORDER BY questionOrder
-    `, [taskId]) as any[];
+    `, [taskId]) as any;
 
     if (!questions || questions.length === 0) {
       return res.status(404).json({ error: 'Survey questions not found' });
@@ -1011,7 +1008,7 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
     const existingSubmissions = await mysqlQuery(`
       SELECT * FROM task_submissions 
       WHERE taskId = ? AND userId = ? AND status = 'approved'
-    `, [taskId, req.userId]) as any[];
+    `, [taskId, req.userId]) as any;
 
     if (existingSubmissions && existingSubmissions.length > 0) {
       return res.status(400).json({ error: 'You have already completed this survey' });
@@ -1047,7 +1044,7 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
       `, [submissionId, answer.questionId, JSON.stringify(answer.selectedOptions)]);
     }
     // Get user balance before crediting
-    const userBefore = await mysqlQuery("SELECT balance FROM users WHERE id = ?", [req.userId]) as any[];
+    const userBefore = await mysqlQuery("SELECT balance FROM users WHERE id = ?", [req.userId]) as any;
     const balanceBefore = userBefore[0]?.balance || 0;
     const balanceAfter = parseFloat(balanceBefore) + parseFloat(task.reward);
 
@@ -1060,7 +1057,7 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
     const advertiserData = await mysqlQuery(
       `SELECT tier FROM advertisers WHERE id = ?`,
       [task.advertiserId]
-    ) as any[];
+    ) as any;
     const advertiserTier = advertiserData[0]?.tier || 'basic';
 
     // Calculate advertiser commission
@@ -1151,7 +1148,7 @@ router.get('/weekly-earnings', isUser, async (req, res) => {
 	        AND DATE(createdAt) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
 	      GROUP BY DATE(createdAt)
 	      ORDER BY DATE(createdAt) ASC
-	    `, [req.userId]) as any[];
+	    `, [req.userId]) as any;
 
     // Get previous week's total for comparison (7-13 days ago)
     const prevWeekEarnings = await mysqlQuery(`
@@ -1162,7 +1159,7 @@ router.get('/weekly-earnings', isUser, async (req, res) => {
 	        AND status = 'completed'
 	        AND DATE(createdAt) >= DATE_SUB(CURDATE(), INTERVAL 13 DAY)
 	        AND DATE(createdAt) <= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-	    `, [req.userId]) as any[];
+	    `, [req.userId]) as any;
 
     // Create a map of all 7 days with 0 as default
     const today = new Date();
@@ -1227,13 +1224,13 @@ router.get('/profile/strength', isUser, async (req, res) => {
     const kycResult = await mysqlQuery(`
       SELECT COUNT(*) as count FROM user_verifications 
       WHERE userId = ? AND verificationType = 'national_id' AND status = 'verified'
-    `, [req.userId]) as any[];
+    `, [req.userId]) as any;
     if (kycResult[0]?.count > 0) strength += 20;
 
     // Check social profiles = 10%
     const socialResult = await mysqlQuery(`
       SELECT COUNT(*) as count FROM user_social_profiles WHERE userId = ?
-    `, [req.userId]) as any[];
+    `, [req.userId]) as any;
     if (socialResult[0]?.count > 0) strength += 10;
 
     // Profile questions answered = up to 40%
@@ -1241,7 +1238,7 @@ router.get('/profile/strength', isUser, async (req, res) => {
     try {
       const profileDataResult = await mysqlQuery(`
         SELECT COUNT(*) as count FROM user_profile_data WHERE userId = ?
-      `, [req.userId]) as any[];
+      `, [req.userId]) as any;
       questionCount = profileDataResult[0]?.count || 0;
     } catch (e: any) {
       if (e.code === 'ER_NO_SUCH_TABLE') {

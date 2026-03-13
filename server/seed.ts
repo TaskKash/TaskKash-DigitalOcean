@@ -250,7 +250,7 @@ async function seed() {
 
     for (const task of tasksData) {
       try {
-        await db.insert(tasks).values(task);
+        await db.insert(tasks).values(task as any);
       } catch (e: any) {
         if (!String(e).includes('Duplicate entry') && !String(e.message).includes('Duplicate entry') && e.code !== 'ER_DUP_ENTRY') throw e;
       }

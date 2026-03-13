@@ -67,15 +67,12 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription |
     }
 
     // Subscribe to push notifications
-    // Note: In production, you'll need to generate VAPID keys and use them here
-    // For now, this is the infrastructure setup
+    const vapidKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib37J8xQmrZJzLfDgEONJmEWbvVQzBOPiOXbQqXQjQmWXdBJQPEbXPXNqJo';
+    const convertedVapidKey = urlBase64ToUint8Array(vapidKey);
+
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        // This is a placeholder VAPID public key
-        // In production, replace with your actual VAPID public key
-        'BEl62iUYgUivxIkv69yViEuiBIa-Ib37J8xQmrZJzLfDgEONJmEWbvVQzBOPiOXbQqXQjQmWXdBJQPEbXPXNqJo'
-      ),
+      applicationServerKey: convertedVapidKey as any,
     });
 
     console.log('Subscribed to push notifications:', subscription);

@@ -13,7 +13,7 @@ import { useApp } from '@/contexts/AppContext';
 // بيانات وهمية للمهام قيد المراجعة (يمكن ربطها بـ advertiserTasks لاحقاً)
 const generatePendingTasks = (advertiserId: string, campaigns: any[]) => {
   const users = ['أحمد محمد', 'فاطمة علي', 'محمد سعيد', 'نورة خالد', 'عبدالله أحمد', 'سارة محمود', 'خالد عمر', 'منى سالم'];
-  const pendingTasks = [];
+  const pendingTasks: any[] = [];
   
   campaigns.forEach((campaign, campaignIndex) => {
     const tasksCount = Math.min(3, Math.floor(Math.random() * 4) + 1); // 1-3 مهام لكل حملة

@@ -51,26 +51,11 @@ export default function Profile() {
   };
 
   React.useEffect(() => {
-    // Calculate profile strength based on user data
-    let strength = 30; // Base strength
-    
-    // Add points for completed tasks (up to 40 points)
-    if (user.completedTasks > 0) {
-      strength += Math.min(40, Math.floor(user.completedTasks / 5) * 10);
-    }
-    
-    // Add points for verified status (30 points)
-    if (user.verified) {
-      strength += 30;
-    }
-    
-    // Cap at 100%
-    strength = Math.min(100, strength);
-    
-    setProfileStrength(strength);
+    // Use profile strength directly from user object (updated from DB)
+    setProfileStrength((user?.profileStrength ?? "") || 30);
     const savedCountry = localStorage.getItem('selectedCountry') || 'EG';
     setSelectedCountry(savedCountry);
-  }, [user.completedTasks, user.verified]);
+  }, [(user?.completedTasks ?? ""), (user?.verified ?? "")]);
 
   const handleCountryChange = (countryCode: string) => {
     setSelectedCountry(countryCode);
@@ -87,7 +72,7 @@ export default function Profile() {
     return tierMap[tier] || tierMap.bronze;
   };
 
-  const currentTierInfo = getTierInfo(user.tier);
+  const currentTierInfo = getTierInfo((user?.tier ?? ""));
 
   const menuSections = [
     {
@@ -118,14 +103,14 @@ export default function Profile() {
         <Card className="p-6">
           <div className="flex items-start gap-4 mb-4">
             <img 
-              src={user.avatar} 
-              alt={user.name}
+              src={(user?.avatar ?? "")} 
+              alt={(user?.name ?? "")}
               className="w-20 h-20 rounded-full border-4 border-primary"
             />
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-xl font-bold">{user.name}</h2>
-                {user.verified && (
+                <h2 className="text-xl font-bold">{(user?.name ?? "")}</h2>
+                {(user?.verified ?? "") && (
                   <Badge className="bg-primary text-white border-0">
                     ✓ {t('profile.verified')}
                   </Badge>
@@ -134,18 +119,18 @@ export default function Profile() {
               <Badge className={`${currentTierInfo.color} text-white border-0 mb-2`}>
                 {currentTierInfo.name}
               </Badge>
-              <p className="text-sm text-muted-foreground">{t('profile.memberSince')} {user.joinDate ? new Date(user.joinDate).toLocaleDateString() : ''}</p>
+              <p className="text-sm text-muted-foreground">{t('profile.memberSince')} {((user?.createdAt ?? "") || (user?.joinDate ?? "")) ? new Date((user?.createdAt ?? "") || (user?.joinDate ?? "")).toLocaleDateString() : ''}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-muted-foreground" />
-              <span className="truncate">{user.email}</span>
+              <span className="truncate">{(user?.email ?? "")}</span>
             </div>
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-muted-foreground" />
-              <span>{user.phone}</span>
+              <span>{(user?.phone ?? "")}</span>
             </div>
           </div>
         </Card>
@@ -176,7 +161,7 @@ export default function Profile() {
               <Award className="w-4 h-4 text-primary" />
               <p className="text-xs text-muted-foreground">{t('home.stats.completedTasks')}</p>
             </div>
-            <p className="text-2xl font-bold">{user.completedTasks}</p>
+            <p className="text-2xl font-bold">{(user?.completedTasks ?? "")}</p>
           </Card>
 
           <Card className="p-4">
@@ -184,7 +169,7 @@ export default function Profile() {
               <TrendingUp className="w-4 h-4 text-primary" />
               <p className="text-xs text-muted-foreground">{t('home.stats.totalEarnings')}</p>
             </div>
-            <p className="text-2xl font-bold">{user.totalEarnings.toFixed(0)}</p>
+            <p className="text-2xl font-bold">{(user?.totalEarnings ?? 0).toFixed(0)}</p>
           </Card>
         </div>
 
@@ -198,11 +183,10 @@ export default function Profile() {
               </p>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
-              {/* Dynamic width must use inline style — value is computed at runtime */}
-              {/* eslint-disable-next-line react/forbid-component-props */}
+              {/* @ts-ignore - dynamic width requires inline styles, IDE warning can be safely ignored */}
               <div
                 className={`${currentTierInfo.color} h-2 rounded-full transition-all`}
-                style={{ width: `${Math.round((user.completedTasks / (user.completedTasks + currentTierInfo.tasksNeeded)) * 100)}%` }}
+                style={{ width: `${Math.round(((user?.completedTasks ?? 0) / (Math.max(1, (user?.completedTasks ?? 0) + currentTierInfo.tasksNeeded))) * 100)}%` }}
               />
             </div>
           </Card>
@@ -238,7 +222,7 @@ export default function Profile() {
                 ) : (
                   <button
                     key={itemIndex}
-                    onClick={() => setLocation(item.path)}
+                    onClick={() => setLocation((item.path ?? ""))}
                     className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">

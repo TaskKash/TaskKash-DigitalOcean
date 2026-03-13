@@ -47,11 +47,11 @@ router.get('/campaigns', async (req: Request, res: Response) => {
         FROM userCampaignProgress
         WHERE userId = ${userId}
       `);
-      userProgress = progressResult[0] as any[];
+      userProgress = progressResult[0] as any;
     }
 
     // Merge user progress with campaigns
-    const campaignsWithProgress = (campaigns[0] as any[]).map((campaign: any) => {
+    const campaignsWithProgress = (campaigns[0] as any).map((campaign: any) => {
       const progress = userProgress.find((p: any) => p.campaignId === campaign.id);
       return {
         ...campaign,
@@ -93,11 +93,11 @@ router.get('/campaigns/:id', async (req: Request, res: Response) => {
       WHERE c.id = ${campaignId}
     `);
 
-    if ((campaignResult[0] as any[]).length === 0) {
+    if ((campaignResult[0] as any).length === 0) {
       return res.status(404).json({ error: 'Campaign not found' });
     }
 
-    const campaign = (campaignResult[0] as any[])[0];
+    const campaign = (campaignResult[0] as any)[0];
 
     // Get campaign tasks in sequence order
     const tasksResult = await db.execute(sql`
@@ -132,8 +132,8 @@ router.get('/campaigns/:id', async (req: Request, res: Response) => {
         SELECT * FROM userCampaignProgress
         WHERE userId = ${userId} AND campaignId = ${campaignId}
       `);
-      if ((progressResult[0] as any[]).length > 0) {
-        userProgress = (progressResult[0] as any[])[0];
+      if ((progressResult[0] as any).length > 0) {
+        userProgress = (progressResult[0] as any)[0];
       }
     }
 
@@ -173,8 +173,8 @@ router.post('/campaigns/:id/start', async (req: Request, res: Response) => {
       WHERE userId = ${userId} AND campaignId = ${campaignId}
     `);
 
-    if ((existingProgress[0] as any[]).length > 0) {
-      const progress = (existingProgress[0] as any[])[0];
+    if ((existingProgress[0] as any).length > 0) {
+      const progress = (existingProgress[0] as any)[0];
       if (progress.status === 'completed') {
         return res.status(400).json({ error: 'You have already completed this campaign' });
       }
@@ -190,11 +190,11 @@ router.post('/campaigns/:id/start', async (req: Request, res: Response) => {
       SELECT * FROM campaigns WHERE id = ${campaignId} AND status = 'active'
     `);
 
-    if ((campaignResult[0] as any[]).length === 0) {
+    if ((campaignResult[0] as any).length === 0) {
       return res.status(404).json({ error: 'Campaign not found or not active' });
     }
 
-    const campaign = (campaignResult[0] as any[])[0];
+    const campaign = (campaignResult[0] as any)[0];
 
     // Check user qualification
     const qualificationResult = await checkUserQualification(db, userId, campaignId);
@@ -215,7 +215,7 @@ router.post('/campaigns/:id/start', async (req: Request, res: Response) => {
     const tasksCountResult = await db.execute(sql`
       SELECT COUNT(*) as count FROM campaignTasks WHERE campaignId = ${campaignId}
     `);
-    const totalTasks = (tasksCountResult[0] as any[])[0].count;
+    const totalTasks = (tasksCountResult[0] as any)[0].count;
 
     // Get first task
     const firstTaskResult = await db.execute(sql`
@@ -226,20 +226,20 @@ router.post('/campaigns/:id/start', async (req: Request, res: Response) => {
       LIMIT 1
     `);
 
-    if ((firstTaskResult[0] as any[]).length === 0) {
+    if ((firstTaskResult[0] as any).length === 0) {
       return res.status(400).json({ error: 'Campaign has no tasks' });
     }
 
-    const firstTask = (firstTaskResult[0] as any[])[0];
+    const firstTask = (firstTaskResult[0] as any)[0];
 
     // Assign persona to user (if personas exist)
     let personaId = null;
     const personasResult = await db.execute(sql`
       SELECT * FROM campaignPersonas WHERE campaignId = ${campaignId}
     `);
-    if ((personasResult[0] as any[]).length > 0) {
+    if ((personasResult[0] as any).length > 0) {
       // For now, assign the first persona. In production, this would use targeting criteria
-      personaId = (personasResult[0] as any[])[0].id;
+      personaId = (personasResult[0] as any)[0].id;
     }
 
     // Create user campaign progress
@@ -296,11 +296,11 @@ router.post('/campaigns/:id/complete-task', async (req: Request, res: Response) 
       WHERE userId = ${userId} AND campaignId = ${campaignId}
     `);
 
-    if ((progressResult[0] as any[]).length === 0) {
+    if ((progressResult[0] as any).length === 0) {
       return res.status(400).json({ error: 'You have not started this campaign' });
     }
 
-    const progress = (progressResult[0] as any[])[0];
+    const progress = (progressResult[0] as any)[0];
 
     if (progress.status !== 'in_progress') {
       return res.status(400).json({ error: 'Campaign is not in progress' });
@@ -313,11 +313,11 @@ router.post('/campaigns/:id/complete-task', async (req: Request, res: Response) 
       WHERE ct.campaignId = ${campaignId} AND ct.sequence = ${progress.currentSequence}
     `);
 
-    if ((currentTaskResult[0] as any[]).length === 0) {
+    if ((currentTaskResult[0] as any).length === 0) {
       return res.status(400).json({ error: 'Current task not found' });
     }
 
-    const currentTask = (currentTaskResult[0] as any[])[0];
+    const currentTask = (currentTaskResult[0] as any)[0];
 
     // Validate task completion based on gating rules
     const validationResult = validateTaskCompletion(currentTask, taskData);
@@ -362,7 +362,7 @@ router.post('/campaigns/:id/complete-task', async (req: Request, res: Response) 
       WHERE ct.campaignId = ${campaignId} AND ct.sequence = ${progress.currentSequence + 1}
     `);
 
-    if ((nextTaskResult[0] as any[]).length === 0) {
+    if ((nextTaskResult[0] as any).length === 0) {
       // Campaign completed!
       await db.execute(sql`
         UPDATE userCampaignProgress 
@@ -376,7 +376,7 @@ router.post('/campaigns/:id/complete-task', async (req: Request, res: Response) 
       const campaignResult = await db.execute(sql`
         SELECT reward FROM campaigns WHERE id = ${campaignId}
       `);
-      const reward = (campaignResult[0] as any[])[0].reward;
+      const reward = (campaignResult[0] as any)[0].reward;
 
       // Add reward to user's balance
       await db.execute(sql`
@@ -409,7 +409,7 @@ router.post('/campaigns/:id/complete-task', async (req: Request, res: Response) 
     }
 
     // Advance to next task
-    const nextTask = (nextTaskResult[0] as any[])[0];
+    const nextTask = (nextTaskResult[0] as any)[0];
     await db.execute(sql`
       UPDATE userCampaignProgress 
       SET currentTaskId = ${nextTask.taskId},
@@ -459,11 +459,11 @@ router.get('/campaigns/:id/progress', async (req: Request, res: Response) => {
       WHERE ucp.userId = ${userId} AND ucp.campaignId = ${campaignId}
     `);
 
-    if ((progressResult[0] as any[]).length === 0) {
+    if ((progressResult[0] as any).length === 0) {
       return res.json({ started: false });
     }
 
-    const progress = (progressResult[0] as any[])[0];
+    const progress = (progressResult[0] as any)[0];
 
     // Get journey logs
     const logsResult = await db.execute(sql`
@@ -507,7 +507,7 @@ router.post('/campaigns/:id/book-visit', async (req: Request, res: Response) => 
       WHERE userId = ${userId} AND campaignId = ${campaignId} AND currentTaskId = ${taskId}
     `);
 
-    if ((progressResult[0] as any[]).length === 0) {
+    if ((progressResult[0] as any).length === 0) {
       return res.status(400).json({ error: 'You are not at this task in the campaign' });
     }
 
@@ -559,11 +559,11 @@ router.post('/campaigns/:id/verify-visit', async (req: Request, res: Response) =
       ORDER BY createdAt DESC LIMIT 1
     `);
 
-    if ((visitResult[0] as any[]).length === 0) {
+    if ((visitResult[0] as any).length === 0) {
       return res.status(400).json({ error: 'No visit booking found' });
     }
 
-    const visit = (visitResult[0] as any[])[0];
+    const visit = (visitResult[0] as any)[0];
 
     if (visit.status === 'verified') {
       return res.status(400).json({ error: 'Visit already verified' });
@@ -646,11 +646,11 @@ router.get('/campaigns/:id/kpis', async (req: Request, res: Response) => {
       FROM campaigns WHERE id = ${campaignId}
     `);
 
-    if ((campaignResult[0] as any[]).length === 0) {
+    if ((campaignResult[0] as any).length === 0) {
       return res.status(404).json({ error: 'Campaign not found' });
     }
 
-    const campaign = (campaignResult[0] as any[])[0];
+    const campaign = (campaignResult[0] as any)[0];
 
     // Calculate KPIs
     const videoCompletionRate = await db.execute(sql`
@@ -687,9 +687,9 @@ router.get('/campaigns/:id/kpis', async (req: Request, res: Response) => {
       conversionRate: campaign.totalParticipants > 0
         ? ((campaign.completedParticipants / campaign.totalParticipants) * 100).toFixed(2)
         : 0,
-      videoCompletionRate: (videoCompletionRate[0] as any[])[0]?.rate?.toFixed(2) || 0,
-      filterPassRate: (filterPassRate[0] as any[])[0]?.rate?.toFixed(2) || 0,
-      visitAttendanceRate: (visitAttendanceRate[0] as any[])[0]?.rate?.toFixed(2) || 0,
+      videoCompletionRate: (videoCompletionRate[0] as any)[0]?.rate?.toFixed(2) || 0,
+      filterPassRate: (filterPassRate[0] as any)[0]?.rate?.toFixed(2) || 0,
+      visitAttendanceRate: (visitAttendanceRate[0] as any)[0]?.rate?.toFixed(2) || 0,
       totalSpent,
       costPerVisit: costPerVisit.toFixed(2),
       budgetRemaining: campaign.budget - totalSpent
@@ -713,18 +713,18 @@ async function checkUserQualification(db: any, userId: number, campaignId: numbe
     SELECT * FROM users WHERE id = ${userId}
   `);
 
-  if ((userResult[0] as any[]).length === 0) {
+  if ((userResult[0] as any).length === 0) {
     return { qualified: false, reason: 'User not found' };
   }
 
-  const user = (userResult[0] as any[])[0];
+  const user = (userResult[0] as any)[0];
 
   // Get campaign qualifications
   const qualificationsResult = await db.execute(sql`
     SELECT * FROM campaignQualifications WHERE campaignId = ${campaignId}
   `);
 
-  const qualifications = qualificationsResult[0] as any[];
+  const qualifications = qualificationsResult[0] as any;
 
   for (const qual of qualifications) {
     const userValue = user[qual.criteriaKey];
@@ -808,7 +808,7 @@ function validateTaskCompletion(task: any, taskData: any): { valid: boolean; rea
       // Check for disqualifying answers (e.g., financial filter)
       if (gatingRules.disqualifyingAnswers) {
         for (const [questionId, disqualifyingValues] of Object.entries(gatingRules.disqualifyingAnswers)) {
-          if ((disqualifyingValues as any[]).includes(taskData.answers[questionId])) {
+          if ((disqualifyingValues as any).includes(taskData.answers[questionId])) {
             return { valid: false, reason: 'You do not meet the requirements for this campaign', disqualify: true };
           }
         }

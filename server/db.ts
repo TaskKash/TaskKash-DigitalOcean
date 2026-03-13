@@ -53,7 +53,7 @@ export async function getDb() {
   // Always create a fresh drizzle instance with the pool
   // This ensures we use pooled connections that auto-reconnect
   if (!_db) {
-    _db = drizzle(pool);
+    _db = (drizzle as any)(pool);
     console.log('[Database] Drizzle ORM initialized with connection pool');
   }
   

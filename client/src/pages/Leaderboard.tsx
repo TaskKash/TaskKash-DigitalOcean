@@ -57,43 +57,43 @@ export default function Leaderboard() {
       <div className="space-y-3">
         {topUsers.map((user) => (
           <Card
-            key={user.rank}
-            className={`p-4 ${user.rank <= 3 ? 'border-2 border-primary' : ''}`}
+            key={user?.rank}
+            className={`p-4 ${user?.rank <= 3 ? 'border-2 border-primary' : ''}`}
           >
             <div className="flex items-center gap-3">
               {/* Rank */}
               <div className="w-10 text-center">
-                {getRankIcon(user.rank) || (
+                {getRankIcon(user?.rank) || (
                   <span className="text-lg font-bold text-muted-foreground">
-                    {user.rank}
+                    {user?.rank}
                   </span>
                 )}
               </div>
 
               {/* Avatar */}
               <img
-                src={user.avatar}
-                alt={user.name}
+                src={user?.avatar}
+                alt={user?.name}
                 className="w-12 h-12 rounded-full border-2 border-primary"
               />
 
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="font-semibold truncate">{user.name}</p>
-                  <Badge className={`${tierColors[user.tier]} text-white border-0 text-xs`}>
-                    {user.tier}
+                  <p className="font-semibold truncate">{user?.name}</p>
+                  <Badge className={`${tierColors[user?.tier]} text-white border-0 text-xs`}>
+                    {user?.tier}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span>{user.tasks} مهمة</span>
+                  <span>{user?.tasks} مهمة</span>
                   <span>•</span>
-                  <span className="text-primary font-semibold">{user.earnings} ج.م</span>
+                  <span className="text-primary font-semibold">{user?.earnings} ج.م</span>
                 </div>
               </div>
 
               {/* Trend */}
-              {user.rank <= 5 && (
+              {user?.rank <= 5 && (
                 <TrendingUp className="w-5 h-5 text-primary" />
               )}
             </div>
@@ -110,27 +110,27 @@ export default function Leaderboard() {
               <div className="flex items-center gap-3">
                 <div className="w-10 text-center">
                   <span className="text-lg font-bold text-primary">
-                    {currentUser.rank}
+                    {currentUser?.rank}
                   </span>
                 </div>
 
                 <img
-                  src={currentUser.avatar}
-                  alt={currentUser.name}
+                  src={currentUser?.avatar}
+                  alt={currentUser?.name}
                   className="w-12 h-12 rounded-full border-2 border-primary"
                 />
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="font-semibold truncate">{currentUser.name}</p>
-                    <Badge className={`${tierColors[currentUser.tier]} text-white border-0 text-xs`}>
-                      {currentUser.tier}
+                    <p className="font-semibold truncate">{currentUser?.name}</p>
+                    <Badge className={`${tierColors[currentUser?.tier ?? 'silver']} text-white border-0 text-xs`}>
+                      {currentUser?.tier}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <span>{currentUser.tasks} مهمة</span>
+                    <span>{currentUser?.tasks} مهمة</span>
                     <span>•</span>
-                    <span className="text-primary font-semibold">{currentUser.earnings} ج.م</span>
+                    <span className="text-primary font-semibold">{currentUser?.earnings} ج.م</span>
                   </div>
                 </div>
               </div>

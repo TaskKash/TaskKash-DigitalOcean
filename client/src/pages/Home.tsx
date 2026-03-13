@@ -18,7 +18,7 @@ export default function Home() {
   const { user, tasks } = useApp();
   const getLocalizedField = useLocalizedFieldGetter();
   const [, setLocation] = useLocation();
-  const [profileStrength, setProfileStrength] = React.useState(user.profileStrength || 30);
+  const [profileStrength, setProfileStrength] = React.useState(user?.profileStrength || 30);
 
   React.useEffect(() => {
     // Fetch profile strength from API
@@ -29,27 +29,27 @@ export default function Home() {
         });
         if (response.ok) {
           const data = await response.json();
-          setProfileStrength(data.strength || user.profileStrength || 30);
+          setProfileStrength(data.strength || user?.profileStrength || 30);
           // Also update localStorage for offline access
           localStorage.setItem('profileStrength', String(data.strength || 30));
         } else {
           // Fallback to user object or localStorage
           const localStrength = parseInt(localStorage.getItem('profileStrength') || '30');
-          setProfileStrength(user.profileStrength || localStrength);
+          setProfileStrength(user?.profileStrength || localStrength);
         }
       } catch (error) {
         // Fallback to user object or localStorage on error
         const localStrength = parseInt(localStorage.getItem('profileStrength') || '30');
-        setProfileStrength(user.profileStrength || localStrength);
+        setProfileStrength(user?.profileStrength || localStrength);
       }
     };
     fetchProfileStrength();
-  }, [user.profileStrength]);
+  }, [user?.profileStrength]);
 
   const availableTasks = tasks.filter(t => t.status === 'available').slice(0, 5);
   const quickStats = [
-    { label: t('home.stats.completedTasks'), value: user.completedTasks, icon: Star },
-    { label: t('home.stats.totalEarnings'), value: `${user.totalEarnings.toFixed(2)} ${t('currency')}`, icon: TrendingUp },
+    { label: t('home.stats.completedTasks'), value: user?.completedTasks, icon: Star },
+    { label: t('home.stats.totalEarnings'), value: `${user?.totalEarnings.toFixed(2)} ${t('currency')}`, icon: TrendingUp },
   ];
 
   const tierColors = {
@@ -86,17 +86,17 @@ export default function Home() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm opacity-90">{t('home.greeting')}</p>
-              <h2 className="text-2xl font-bold">{user.name}</h2>
+              <h2 className="text-2xl font-bold">{user?.name}</h2>
             </div>
-            <Badge className={`${tierColors[user.tier]} text-white border-0`}>
-              {getTierName(user.tier)}
+            <Badge className={`${tierColors[(user?.tier || 'bronze') as keyof typeof tierColors]} text-white border-0`}>
+              {getTierName(user?.tier || 'bronze')}
             </Badge>
           </div>
 
           <div className="mt-6">
             <p className="text-sm opacity-90">{t('home.currentBalance')}</p>
             <div className="flex items-baseline gap-2">
-              <h1 className="text-4xl font-bold">{user.balance.toFixed(2)}</h1>
+              <h1 className="text-4xl font-bold">{user?.balance.toFixed(2)}</h1>
               <span className="text-xl">{t('currency')}</span>
             </div>
           </div>

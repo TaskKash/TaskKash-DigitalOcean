@@ -42,7 +42,7 @@ const pool = mysql.createPool({
 /**
  * Execute a query and return results
  */
-export async function query(sql: string, params?: any[]) {
+export async function query(sql: string, params?: any[]): Promise<any> {
   const [results] = await pool.execute(sql, params);
   return results;
 }

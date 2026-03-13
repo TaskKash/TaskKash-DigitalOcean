@@ -309,7 +309,7 @@ export const appRouter = router({
           query = query.where(eq(tasks.advertiserId, input.advertiserId)) as any;
         }
         if (input?.status) {
-          query = query.where(eq(tasks.status, input.status)) as any;
+          query = query.where(eq(tasks.status, input.status as any)) as any;
         }
         
         return await query;

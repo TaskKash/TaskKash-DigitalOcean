@@ -8,7 +8,7 @@ interface ProfileStrengthBarProps {
   showDetails?: boolean;
 }
 
-const getBadgeInfo = (strength: number, t: ReturnType<typeof useTranslation>) => {
+const getBadgeInfo = (strength: number, t: any) => {
   if (strength >= 100) {
     return {
       name: t('profileStrength.badges.platinum'),

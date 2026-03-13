@@ -18,7 +18,7 @@ interface User {
   balance: number;
   completedTasks: number;
   isVerified: number;
-  createdAt: string;
+  createdAt: any;
 }
 
 export default function AdminUsers() {

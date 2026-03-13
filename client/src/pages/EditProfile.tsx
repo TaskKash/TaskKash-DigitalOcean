@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useApp } from '@/contexts/AppContext';
-import { Camera, User, Mail, Phone, Calendar, AlertTriangle } from 'lucide-react';
+import { Camera, User as UserIcon, Mail, Phone, Calendar, AlertTriangle } from 'lucide-react';
+import type { User } from '@/contexts/AppContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,13 +26,13 @@ export default function EditProfile() {
   const { user, setUser } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
-    name: user.name,
-    email: user.email,
-    phone: user.phone || ''
+    name: user?.name,
+    email: user?.email,
+    phone: user?.phone || ''
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [previewAvatar, setPreviewAvatar] = useState(user.avatar);
+  const [previewAvatar, setPreviewAvatar] = useState(user?.avatar);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
@@ -126,14 +127,14 @@ export default function EditProfile() {
 
       const data = await response.json();
       
-      if (data.success) {
-        setUser({ ...user, avatar: data.avatarUrl });
+      if (data.success && user) {
+        setUser({ ...user, avatar: data.avatarUrl } as User);
         toast.success(t('editProfile.photoUpdated', 'Profile photo updated successfully!'));
       }
     } catch (error) {
       console.error('Error uploading photo:', error);
       toast.error(t('editProfile.photoUploadFailed', 'Failed to upload photo'));
-      setPreviewAvatar(user.avatar); // Revert preview on error
+      setPreviewAvatar(user?.avatar); // Revert preview on error
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -157,9 +158,9 @@ export default function EditProfile() {
 
       const data = await response.json();
       
-      if (data.success) {
+      if (data.success && user) {
         // Update local user state
-        setUser({ ...user, ...formData });
+        setUser({ ...user, ...formData } as User);
         toast.success(t('profileUpdated'));
       }
     } catch (error) {
@@ -179,7 +180,7 @@ export default function EditProfile() {
             <div className="relative">
               <img
                 src={previewAvatar || '/default-avatar.png'}
-                alt={user.name}
+                alt={user?.name}
                 className="w-24 h-24 rounded-full border-4 border-primary object-cover"
               />
               <input
@@ -218,7 +219,7 @@ export default function EditProfile() {
               {t('fullName')}
             </Label>
             <div className="relative">
-              <User className="absolute right-3 top-3 w-5 h-5 text-muted-foreground" />
+              <UserIcon className="absolute right-3 top-3 w-5 h-5 text-muted-foreground" />
               <Input
                 id="name"
                 value={formData.name}
@@ -265,7 +266,7 @@ export default function EditProfile() {
             <div className="relative">
               <Calendar className="absolute right-3 top-3 w-5 h-5 text-muted-foreground" />
               <Input
-                value={formatJoinDate(user.createdAt)}
+                value={formatJoinDate(user?.createdAt || user?.joinDate)}
                 disabled
                 className="pr-10 bg-muted"
               />
@@ -278,11 +279,11 @@ export default function EditProfile() {
           <h3 className="font-semibold mb-4">{t('accountStats')}</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{user.completedTasks}</div>
+              <div className="text-2xl font-bold text-primary">{user?.completedTasks}</div>
               <div className="text-sm text-muted-foreground">{t('completedTasks')}</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{user.totalEarnings}</div>
+              <div className="text-2xl font-bold text-primary">{user?.totalEarnings}</div>
               <div className="text-sm text-muted-foreground">{t('totalEarnings')}</div>
             </div>
           </div>
@@ -310,7 +311,7 @@ export default function EditProfile() {
 
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2">
-              <User className="w-5 h-5 text-gray-400" />
+              <UserIcon className="w-5 h-5 text-gray-400" />
               <span className="text-sm">{t('nationalId')}</span>
             </div>
             <Button variant="outline" size="sm">{t('verify')}</Button>

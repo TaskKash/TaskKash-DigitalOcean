@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, Plus, Trash2, Eye, Save, Send } from 'lucide-react';
 

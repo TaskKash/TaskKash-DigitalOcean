@@ -90,7 +90,7 @@ export default function UserProfile() {
       {/* Cover Image */}
       <div className="relative h-48 bg-gradient-to-r from-primary to-secondary">
         <img 
-          src={user.coverImage} 
+          src={user?.coverImage} 
           alt="Cover" 
           className="w-full h-full object-cover opacity-50"
         />
@@ -110,11 +110,11 @@ export default function UserProfile() {
           <div className="flex items-start gap-4">
             <div className="relative">
               <img 
-                src={user.avatar} 
-                alt={user.name}
+                src={user?.avatar} 
+                alt={user?.name}
                 className="w-24 h-24 rounded-full border-4 border-background"
               />
-              {user.verified && (
+              {user?.verified && (
                 <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
                   <CheckCircle2 className="h-5 w-5 text-white" />
                 </div>
@@ -123,24 +123,24 @@ export default function UserProfile() {
             
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">{user.name}</h1>
-                {user.verified && (
+                <h1 className="text-2xl font-bold">{user?.name}</h1>
+                {user?.verified && (
                   <Badge variant="secondary" className="gap-1">
                     <CheckCircle2 className="h-3 w-3" />
                     موثق
                   </Badge>
                 )}
               </div>
-              <p className="text-muted-foreground">@{user.username}</p>
+              <p className="text-muted-foreground">@{user?.username}</p>
               
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
-                  {user.location}
+                  {user?.location}
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  انضم {user.joinedDate}
+                  انضم {user?.joinedDate}
                 </span>
               </div>
             </div>
@@ -157,8 +157,8 @@ export default function UserProfile() {
             </div>
           </div>
 
-          {user.bio && (
-            <p className="mt-4 text-muted-foreground">{user.bio}</p>
+          {user?.bio && (
+            <p className="mt-4 text-muted-foreground">{user?.bio}</p>
           )}
         </Card>
       </div>
@@ -167,22 +167,22 @@ export default function UserProfile() {
       <div className="container mt-6">
         <div className="grid grid-cols-4 gap-4">
           <Card className="p-4 text-center">
-            <div className="text-2xl font-bold text-primary">{user.stats.tasksCompleted}</div>
+            <div className="text-2xl font-bold text-primary">{user?.stats.tasksCompleted}</div>
             <div className="text-sm text-muted-foreground">مهمة مكتملة</div>
           </Card>
           <Card className="p-4 text-center">
-            <div className="text-2xl font-bold text-secondary">{user.stats.totalEarnings.toLocaleString()} ج.م</div>
+            <div className="text-2xl font-bold text-secondary">{user?.stats.totalEarnings.toLocaleString()} ج.م</div>
             <div className="text-sm text-muted-foreground">إجمالي الأرباح</div>
           </Card>
           <Card className="p-4 text-center">
             <div className="flex items-center justify-center gap-1 text-2xl font-bold">
               <Star className="h-6 w-6 fill-yellow-400 text-yellow-400" />
-              {user.stats.rating}
+              {user?.stats.rating}
             </div>
             <div className="text-sm text-muted-foreground">التقييم</div>
           </Card>
           <Card className="p-4 text-center">
-            <div className="text-2xl font-bold">{user.stats.reviewsCount}</div>
+            <div className="text-2xl font-bold">{user?.stats.reviewsCount}</div>
             <div className="text-sm text-muted-foreground">مراجعة</div>
           </Card>
         </div>
@@ -196,7 +196,7 @@ export default function UserProfile() {
             الشارات والإنجازات
           </h2>
           <div className="grid grid-cols-4 gap-4">
-            {user.badges.map((badge) => (
+            {user?.badges.map((badge) => (
               <div 
                 key={badge.id}
                 className={`text-center p-4 rounded-lg border-2 transition-all ${
@@ -221,7 +221,7 @@ export default function UserProfile() {
             قصص النجاح
           </h2>
           <div className="space-y-4">
-            {user.successStories.map((story) => (
+            {user?.successStories.map((story) => (
               <Card key={story.id} className="p-4 hover:shadow-md transition-shadow">
                 {story.image && (
                   <img 
@@ -257,7 +257,7 @@ export default function UserProfile() {
             تقييمات المعلنين
           </h2>
           <div className="space-y-4">
-            {user.reviews.map((review) => (
+            {user?.reviews.map((review) => (
               <Card key={review.id} className="p-4">
                 <div className="flex items-start gap-3">
                   <img 

@@ -28,6 +28,8 @@ export interface User {
   profileStrength: number;
   countryId: number | null;
   role: string;
+  createdAt?: string;
+  advertiserId?: number;
 }
 
 interface AppContextType {

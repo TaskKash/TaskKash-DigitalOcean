@@ -5,17 +5,18 @@
  * based on user tier (instant, weekly, monthly)
  */
 
-import { db } from '../db';
-import { WalletService } from '../services/wallet.service';
-import MockEmailService from '../services/mock/email.mock.service';
-import MockSMSService from '../services/mock/sms.mock.service';
+import { getDb } from '../db';
+import { addFunds } from '../services/wallet.service';
+import { sql } from 'drizzle-orm';
 
 export async function processScheduledPayments() {
   console.log('⏰ [CRON] Starting scheduled payments processing...');
 
   try {
-    // Get all tasks that are scheduled for payment
-    const tasksToProcess = await db.query(`
+    const db = await getDb();
+    if (!db) throw new Error('Database not available');
+
+    const [tasksToProcess] = (await db.execute(sql`
       SELECT 
         ut.*,
         u.email,
@@ -30,7 +31,7 @@ export async function processScheduledPayments() {
         AND ut.paidAt IS NULL
         AND ut.scheduledPaymentAt <= NOW()
       LIMIT 100
-    `);
+    `)) as any;
 
     if (tasksToProcess.length === 0) {
       console.log('✅ [CRON] No payments to process');
@@ -45,41 +46,26 @@ export async function processScheduledPayments() {
     for (const task of tasksToProcess) {
       try {
         // Add earnings to user wallet
-        const result = await WalletService.addBalance(
-          task.userId,
-          task.userEarnings,
-          'earning',
-          `Payment for task: ${task.titleEn}`,
-          task.taskId
+        await addFunds(
+          (task as any).userId,
+          (task as any).userEarnings,
+          `Payment for task: ${(task as any).titleEn}`,
+          (task as any).taskId
         );
 
-        if (result.success) {
+        if (true) {
           // Update task as paid
-          await db.query(`
+          await db.execute(sql`
             UPDATE userTasks
             SET paidAt = NOW()
-            WHERE id = ?
-          `, [task.id]);
+            WHERE id = ${(task as any).id}
+          `);
 
-          // Send notification
-          await MockEmailService.sendPaymentReceivedEmail(
-            task.email,
-            task.name,
-            task.userEarnings
-          );
-
-          if (task.phone) {
-            await MockSMSService.sendPaymentNotification(
-              task.phone,
-              task.userEarnings
-            );
-          }
+          // Send notification (placeholder)
+          console.log(`[Notification] Payment of ${(task as any).userEarnings} sent to ${(task as any).email}`);
 
           successCount++;
-          console.log(`✅ [CRON] Processed payment for task ${task.id}: $${task.userEarnings}`);
-        } else {
-          failedCount++;
-          console.log(`❌ [CRON] Failed to process payment for task ${task.id}`);
+          console.log(`✅ [CRON] Processed payment for task ${(task as any).id}: $${(task as any).userEarnings}`);
         }
       } catch (error) {
         failedCount++;

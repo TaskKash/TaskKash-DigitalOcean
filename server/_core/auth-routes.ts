@@ -331,7 +331,7 @@ authRouter.post("/advertiser/register", async (req, res) => {
       return res.status(500).json({ success: false, error: "Failed to create advertiser account" });
     }
 
-    const advertiser = (advertisers as any[])[0];
+    const advertiser = (advertisers as any)[0];
     const token = await sdk.createSessionToken(`advertiser_${advertiser.id}`, { name: advertiser.nameEn || advertiser.email });
 
     res.cookie(COOKIE_NAME, token, {
@@ -379,7 +379,7 @@ authRouter.post("/advertiser/login", async (req, res) => {
       });
     }
 
-    const advertiser = (advertisers as any[])[0];
+    const advertiser = (advertisers as any)[0];
 
     // Check if advertiser has a password set
     if (!advertiser.password) {
@@ -477,7 +477,7 @@ authRouter.get("/advertiser/me", async (req, res) => {
       });
     }
 
-    const advertiser = (advertisers as any[])[0];
+    const advertiser = (advertisers as any)[0];
 
     // Return advertiser data (without password)
     const { password: _, ...advertiserWithoutPassword } = advertiser;

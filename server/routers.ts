@@ -46,10 +46,10 @@ async function recalculateProfileStrength(userId: number) {
 
   // Phone verified = 20%
   const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  if (user[0]?.phoneVerified) strength += 20;
+  if ((user[0] as any)?.phoneVerified || user[0]?.isVerified) strength += 20;
 
   // Email verified = 10%
-  if (user[0]?.emailVerified) strength += 10;
+  if ((user[0] as any)?.emailVerified || user[0]?.email) strength += 10;
 
   // KYC verified = 20%
   const kycVerification = await db.execute(sql`SELECT * FROM user_verifications WHERE userId = ${userId} AND verificationType = 'national_id' AND status = 'verified'`);
@@ -157,11 +157,9 @@ export const appRouter = router({
           await db.insert(users).values({
             openId,
             phone: input.phone,
-            phoneVerified: true,
-            kycLevel: 1,
+            isVerified: 1,
             profileStrength: 40,
-            referralCode,
-            nationality: 'Egypt',
+            countryId: 1, // Egypt
           });
 
           const newUserResult = await db.select().from(users).where(eq(users.phone, input.phone)).limit(1);
@@ -179,7 +177,7 @@ export const appRouter = router({
               (${user.id}, 'analytics', TRUE, NOW(), ${(ctx.req as any).ip || 'unknown'})
           `);
         } else {
-          await db.update(users).set({ phoneVerified: true, lastSignedIn: new Date() }).where(eq(users.id, user.id));
+          await db.update(users).set({ isVerified: 1, lastSignedIn: new Date() }).where(eq(users.id, user.id));
         }
 
         // Log device info
@@ -206,8 +204,32 @@ export const appRouter = router({
     }),
   }),
 
-  // User Profile & Verification API
-  userProfile: router({
+  // User & Admin Management API
+  user: router({
+    listAll: publicProcedure.query(async ({ ctx }) => {
+      if (!ctx.user || ctx.user.role !== 'admin') throw new Error('Unauthorized');
+      const db = await getDb();
+      if (!db) throw new Error('Database not available');
+      return await db.select().from(users);
+    }),
+    updateUser: publicProcedure
+      .input(z.object({
+        userId: z.number(),
+        name: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        role: z.enum(['user', 'admin']).optional(),
+        tier: z.enum(['bronze', 'silver', 'gold', 'platinum']).optional(),
+        isVerified: z.number().min(0).max(1).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user || ctx.user.role !== 'admin') throw new Error('Unauthorized');
+        const db = await getDb();
+        if (!db) throw new Error('Database not available');
+        const { userId, ...updateData } = input;
+        await db.update(users).set({ ...updateData, updatedAt: new Date() }).where(eq(users.id, userId));
+        return { success: true };
+      }),
     getProfile: publicProcedure
       .input(z.object({ userId: z.number() }))
       .query(async ({ input }) => {
@@ -273,13 +295,8 @@ export const appRouter = router({
         `);
 
         await db.update(users).set({
-          kycLevel: 2,
           isVerified: 1,
-          fullName: extractedData.fullName,
-          dateOfBirth: extractedData.dateOfBirth,
           gender: extractedData.gender as any,
-          nationality: extractedData.nationality,
-          lastKycAt: new Date(),
         }).where(eq(users.id, input.userId));
 
         await recalculateProfileStrength(input.userId);
@@ -311,7 +328,7 @@ export const appRouter = router({
         `);
 
         if (profile.email) {
-          await db.update(users).set({ email: profile.email, emailVerified: true }).where(eq(users.id, input.userId));
+          await db.update(users).set({ email: profile.email, isVerified: 1 }).where(eq(users.id, input.userId));
         }
 
         await recalculateProfileStrength(input.userId);
@@ -415,12 +432,12 @@ export const appRouter = router({
         targetTier: z.string(),
       }))
       .mutation(async ({ input }) => {
-        return await upgradeUserTier(input.userId, input.targetTier);
+        return await upgradeUserTier(input.userId, input.targetTier as any);
       }),
     checkAdvertiserEligibility: publicProcedure
       .input(z.object({ advertiserId: z.string() }))
       .query(async ({ input }) => {
-        return await checkAdvertiserTierEligibility(input.advertiserId);
+        return await checkAdvertiserTierEligibility(Number(input.advertiserId));
       }),
     upgradeAdvertiser: publicProcedure
       .input(z.object({
@@ -428,12 +445,12 @@ export const appRouter = router({
         targetTier: z.string(),
       }))
       .mutation(async ({ input }) => {
-        return await upgradeAdvertiserTier(input.advertiserId, input.targetTier);
+        return await upgradeAdvertiserTier(Number(input.advertiserId), input.targetTier as any);
       }),
     getInfo: publicProcedure
       .input(z.object({ tier: z.string() }))
       .query(({ input }) => {
-        return getTierInfo(input.tier);
+        return getTierInfo(input.tier, 'user');
       }),
   }),
 
@@ -461,7 +478,7 @@ export const appRouter = router({
         adminNotes: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await processWithdrawal(input.withdrawalId, input.status, input.adminNotes);
+        return await processWithdrawal(Number(input.withdrawalId), input.status === 'approved' ? 'completed' : 'rejected', input.adminNotes);
       }),
     getTransactions: protectedProcedure
       .input(z.object({
@@ -470,7 +487,7 @@ export const appRouter = router({
         offset: z.number().optional(),
       }))
       .query(async ({ input }) => {
-        return await getTransactionHistory(input.userId, input.limit, input.offset);
+        return await getTransactionHistory(input.userId, input.limit);
       }),
     getPendingWithdrawals: protectedProcedure.query(async () => {
       return await getPendingWithdrawals();
@@ -498,9 +515,17 @@ export const appRouter = router({
         reward: z.number(),
         requirements: z.any().optional(),
         maxCompletions: z.number().optional(),
+        countryId: z.number().optional().default(1),
       }))
       .mutation(async ({ input }) => {
-        return await createTask(input);
+        const advertiserId = Number(input.advertiserId);
+        const { advertiserId: _, ...taskData } = input;
+        return await createTask(advertiserId, { 
+          ...taskData, 
+          value: input.reward, 
+          maxAssignments: input.maxCompletions || 100,
+          countryId: input.countryId
+        });
       }),
     getAvailable: publicProcedure
       .input(z.object({
@@ -509,7 +534,7 @@ export const appRouter = router({
         limit: z.number().optional(),
       }))
       .query(async ({ input }) => {
-        return await getAvailableTasks(input.userId, input.type, input.limit);
+        return await getAvailableTasks(input.userId as number, { type: input.type });
       }),
     assign: protectedProcedure
       .input(z.object({
@@ -526,7 +551,15 @@ export const appRouter = router({
         proof: z.any().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await submitTaskCompletion(input.taskId, input.userId, input.proof);
+        // In this version, we use taskId as userTaskId for simplicity if they match, 
+        // or we should ideally look up the userTask record.
+        // Given current router structure, we'll try to use taskId as userTaskId or look it up.
+        const db = await getDb();
+        if (!db) throw new Error('Database not available');
+        const utRows = await db.execute(sql`SELECT id FROM userTasks WHERE taskId = ${input.taskId} AND userId = ${input.userId} LIMIT 1`);
+        const userTaskId = (utRows as any)[0]?.[0]?.id;
+        if (!userTaskId) throw new Error('Task not assigned to user');
+        return await submitTaskCompletion(userTaskId, { proof: input.proof });
       }),
     verify: protectedProcedure
       .input(z.object({
@@ -535,7 +568,7 @@ export const appRouter = router({
         reviewNotes: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await verifyTaskCompletion(input.submissionId, input.status, input.reviewNotes);
+        return await verifyTaskCompletion(Number(input.submissionId), input.status === 'approved', 5, input.reviewNotes);
       }),
     getUserTasks: publicProcedure
       .input(z.object({
@@ -551,7 +584,7 @@ export const appRouter = router({
         status: z.string().optional(),
       }))
       .query(async ({ input }) => {
-        return await getAdvertiserTasks(input.advertiserId, input.status);
+        return await getAdvertiserTasks(Number(input.advertiserId), input.status);
       }),
   }),
 
@@ -833,7 +866,8 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new Error('Database not available');
 
-        const ipAddress = ctx.req?.headers?.['x-forwarded-for']?.split(',')[0] || 'unknown';
+        const xff = ctx.req?.headers?.['x-forwarded-for'];
+        const ipAddress = (Array.isArray(xff) ? xff[0] : xff)?.split(',')[0] || 'unknown';
         const userAgent = ctx.req?.headers?.['user-agent'] || 'unknown';
 
         const [currentRows] = await db.execute(sql`
@@ -913,19 +947,19 @@ export const appRouter = router({
             JOIN profile_tier_questions ptq ON upta.questionId = ptq.id
             WHERE upta.userId = ${input.userId} AND ptq.tier = ${input.tier}
           `);
-          (answerRows as any[]).forEach((row: any) => {
+          (answerRows as any).forEach((row: any) => {
             answers[row.questionKey] = row.answerValue;
           });
         }
 
         return {
           tier: input.tier,
-          questions: (questions as any[]).map(q => ({
+          questions: (questions as any).map((q: any) => ({
             ...q,
             options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
             currentAnswer: answers[q.questionKey] || null
           })),
-          totalQuestions: (questions as any[]).length
+          totalQuestions: (questions as any).length
         };
       }),
 
@@ -986,7 +1020,7 @@ export const appRouter = router({
         const t1 = (tier1Count as any)[0]?.count || 0;
         const t2 = (tier2Count as any)[0]?.count || 0;
         const t3 = (tier3Count as any)[0]?.count || 0;
-        const kycApproved = (kycStatus as any[]).length > 0;
+        const kycApproved = (kycStatus as any).length > 0;
 
         let newTier = 'bronze';
         let profileStrength = 30;
@@ -1049,7 +1083,7 @@ export const appRouter = router({
           tier2: { completed: (tier2 as any)[0]?.count || 0, total: 10, isComplete: (tier2 as any)[0]?.count >= 10 },
           tier3: { completed: (tier3 as any)[0]?.count || 0, total: 10, isComplete: (tier3 as any)[0]?.count >= 10 },
           kyc: { status: (kycRows as any)[0]?.status || 'not_started', isComplete: (kycRows as any)[0]?.status === 'approved' },
-          income: { provided: (incomeRows as any[]).length > 0 }
+          income: { provided: (incomeRows as any).length > 0 }
         };
       }),
   }),
@@ -1078,7 +1112,8 @@ export const appRouter = router({
           throw new Error('All consent checkboxes must be checked');
         }
 
-        const ipAddress = ctx.req?.headers?.['x-forwarded-for']?.split(',')[0] || 'unknown';
+        const xff_1082 = ctx.req?.headers?.['x-forwarded-for'];
+        const ipAddress = (Array.isArray(xff_1082) ? xff_1082[0] : xff_1082)?.split(',')[0] || 'unknown';
         const expiresAt = new Date();
         expiresAt.setFullYear(expiresAt.getFullYear() + 3);
 
@@ -1114,7 +1149,8 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const db = await getDb();
         if (!db) throw new Error('Database not available');
-        const ipAddress = ctx.req?.headers?.['x-forwarded-for']?.split(',')[0] || 'unknown';
+        const xff_1118 = ctx.req?.headers?.['x-forwarded-for'];
+        const ipAddress = (Array.isArray(xff_1118) ? xff_1118[0] : xff_1118)?.split(',')[0] || 'unknown';
         await db.execute(sql`DELETE FROM user_income_spi WHERE userId = ${input.userId}`);
         await db.execute(sql`
           INSERT INTO user_consent_audit (userId, consentType, previousValue, newValue, ipAddress, legalBasis)
@@ -1156,9 +1192,9 @@ export const appRouter = router({
         return {
           personalInfo: (userRows as any)[0] || null,
           profileData: {
-            tier1Responses: (profileRows as any[]).filter(r => r.tier === 'tier1'),
-            tier2Responses: (profileRows as any[]).filter(r => r.tier === 'tier2'),
-            tier3Responses: (profileRows as any[]).filter(r => r.tier === 'tier3'),
+            tier1Responses: (profileRows as any).filter((r: any) => r.tier === 'tier1'),
+            tier2Responses: (profileRows as any).filter((r: any) => r.tier === 'tier2'),
+            tier3Responses: (profileRows as any).filter((r: any) => r.tier === 'tier3'),
           },
           incomeData: (incomeRows as any)[0] || null,
           kycData: (kycRows as any)[0] || null,
@@ -1239,7 +1275,8 @@ export const appRouter = router({
           throw new Error('Biometric consent required for fast verification');
         }
 
-        const ipAddress = ctx.req?.headers?.['x-forwarded-for']?.split(',')[0] || 'unknown';
+        const xff_1243 = ctx.req?.headers?.['x-forwarded-for'];
+        const ipAddress = (Array.isArray(xff_1243) ? xff_1243[0] : xff_1243)?.split(',')[0] || 'unknown';
 
         const [result] = await db.execute(sql`
           INSERT INTO kyc_verifications (userId, verificationMethod, status, biometricConsentGiven, biometricConsentTimestamp)

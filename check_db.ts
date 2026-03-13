@@ -1,22 +1,15 @@
+import { mysqlQuery } from './server/_core/db';
 
-import "dotenv/config";
-import { query } from './server/_core/mysql-db';
-
-async function check() {
-    try {
-        console.log('--- Samsung Advertiser Check ---');
-        const samsung = await query("SELECT id, nameEn, slug, logoUrl, isActive FROM advertisers WHERE nameEn LIKE '%Samsung%'");
-        console.log(JSON.stringify(samsung, null, 2));
-
-        console.log('\n--- Tasks Check (Active) ---');
-        const activeTasks = await query("SELECT id, advertiserId, titleEn, status FROM tasks WHERE status IN ('active', 'published')");
-        console.log(JSON.stringify(activeTasks, null, 2));
-
-        process.exit(0);
-    } catch (err) {
-        console.error('Check failed:', err);
-        process.exit(1);
-    }
+async function checkDb() {
+  try {
+    const adv = await mysqlQuery('DESCRIBE advertisers');
+    console.log('advertisers columns:', adv.map((c: any) => c.Field));
+    
+    const ts = await mysqlQuery('DESCRIBE task_submissions');
+    console.log('task_submissions columns:', ts.map((c: any) => c.Field));
+  } catch(e) {
+    console.error(e);
+  }
+  process.exit();
 }
-
-check();
+checkDb();

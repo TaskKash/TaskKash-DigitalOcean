@@ -53,7 +53,7 @@ export default function Wallet() {
       setIsLoadingTransactions(false);
     };
     fetchLatest();
-  }, [user?.id, refreshTransactions]);
+  }, [(user?.id ?? 0), refreshTransactions]);
 
   const getTransactionName = (type: string) => {
     const typeMap: Record<string, string> = {
@@ -80,7 +80,7 @@ export default function Wallet() {
       toast.error(t('wallet.errors.invalidAmount'));
       return;
     }
-    if (amount > user.balance) {
+    if (amount > (user?.balance ?? 0)) {
       toast.error(t('wallet.errors.insufficientBalance'));
       return;
     }
@@ -102,7 +102,7 @@ export default function Wallet() {
   const bonusTransactions = transactions.filter(t => t.type === 'bonus' || t.type === 'refund');
   
   // Use totalEarnings from user data (database)
-  const totalEarnings = user.totalEarnings || 0;
+  const totalEarnings = (user?.totalEarnings ?? 0) || 0;
 
   const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
     const Icon = transactionIcons[transaction.type] || WalletIcon;
@@ -149,7 +149,7 @@ export default function Wallet() {
           </div>
           
           <div className="flex items-baseline gap-2 mb-6">
-            <h1 className="text-4xl font-bold">{user.balance.toFixed(2)}</h1>
+            <h1 className="text-4xl font-bold">{(user?.balance ?? 0).toFixed(2)}</h1>
             <span className="text-xl">{t('currency')}</span>
           </div>
 
@@ -164,7 +164,7 @@ export default function Wallet() {
             <WithdrawDialog
               isOpen={isDialogOpen}
               onClose={() => setIsDialogOpen(false)}
-              userBalance={user.balance}
+              userBalance={(user?.balance ?? 0)}
               onSuccess={async () => {
                 // Refresh data via API contexts instead of a hard reload
                 await refreshUser();

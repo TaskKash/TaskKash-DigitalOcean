@@ -31,7 +31,6 @@ export default function PhoneLogin() {
     try {
       const result = await sendOTPMutation.mutateAsync({ phone });
       if (result.success) {
-        setMockCode(result.mockCode || '');
         setStep('otp');
       }
     } catch (err: any) {
