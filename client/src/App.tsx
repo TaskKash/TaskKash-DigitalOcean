@@ -117,13 +117,14 @@ import UsersManagementNew from "./pages/admin/UsersManagementNew";
 import AdvertisersManagementNew from "./pages/admin/AdvertisersManagementNew";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
 import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
+import AdvertiserLayout from "./components/layout/AdvertiserLayout";
+import { AdvertiserProtectedRoute } from "./components/AdvertiserProtectedRoute";
 import Referrals from "./pages/Referrals";
 import Levels from "./pages/Levels";
 import Badges from "./pages/Badges";
 import PaymentMethodsPage from "./pages/PaymentMethodsPage";
 
 // Compliance & Privacy Pages
-import ConsentPreferences from "./pages/ConsentPreferences";
 import ProfileTierQuestions from "./pages/ProfileTierQuestions";
 import PrivacyCenter from "./pages/PrivacyCenter";
 import KYCVerification from "./pages/KYCVerification";
@@ -208,7 +209,7 @@ function Router() {
       <Route path="/user/:userId" component={UserProfile} />
       <Route path="/faq" component={FAQ} />
       <Route path="/terms" component={Terms} />
-      <Route path="/privacy" component={Privacy} />
+      <Route path="/privacy" component={PrivacyCenter} />
       <Route path="/withdraw-success" component={WithdrawSuccess} />
       <Route path="/platform-dashboard" component={PlatformDashboard} />
       <Route path="/how-it-works" component={HowItWorks} />
@@ -218,7 +219,7 @@ function Router() {
       <Route path="/profile/payment-methods" component={PaymentMethodsPage} />
 
       {/* Compliance & Privacy Routes */}
-      <Route path="/settings/consent" component={ConsentPreferences} />
+      <Route path="/privacy" component={PrivacyCenter} />
       <Route path="/profile/tier-questions" component={ProfileTierQuestions} />
       <Route path="/privacy-center" component={PrivacyCenter} />
       <Route path="/kyc-verification" component={KYCVerification} />
@@ -265,35 +266,35 @@ function Router() {
       {/* Advertiser Routes */}
       <Route path="/advertiser/login" component={AdvertiserLogin} />
       <Route path="/advertiser/register" component={AdvertiserRegister} />
-      <Route path="/advertiser/dashboard" component={AdvertiserDashboard} />
-      <Route path="/advertiser/campaigns" component={CampaignList} />
-      <Route path="/advertiser/campaigns/new" component={CreateCampaign} />
-      <Route path="/advertiser/campaign-builder" component={CampaignBuilder} />
-      <Route path="/advertiser/analytics-dashboard" component={AnalyticsDashboard} />
-      <Route path="/advertiser/new-dashboard" component={NewDashboard} />
-      <Route path="/advertiser/campaigns/:id" component={CampaignDetails} />
-      <Route path="/advertiser/campaigns/multi-task/new" component={MultiTaskCampaignBuilder} />
-      <Route path="/advertiser/tasks" component={AdvertiserTasks} />
-      <Route path="/advertiser/tasks/create" component={CreateTask} />
-      <Route path="/advertiser/tasks/:id/submissions" component={TaskReview} />
-      <Route path="/advertiser/tasks/review" component={TaskReviewQueue} />
-      <Route path="/advertiser/profile" component={AdvertiserProfile} />
-      <Route path="/advertiser/analytics" component={Analytics} />
-      <Route path="/advertiser/reports" component={Reports} />
-      <Route path="/advertiser/billing" component={Billing} />
-      <Route path="/advertiser/payment-methods" component={PaymentMethods} />
-      <Route path="/advertiser/team" component={TeamManagement} />
-      <Route path="/advertiser/settings" component={AccountSettings} />
-      <Route path="/advertiser/audience" component={AudienceInsights} />
-      <Route path="/advertiser/campaigns/:id/edit" component={EditCampaign} />
-      <Route path="/advertiser/campaigns/:id/performance" component={CampaignPerformance} />
-      <Route path="/advertiser/tasks/:id/review" component={TaskDetailReview} />
-      <Route path="/advertiser/tasks/rejected" component={RejectedTasks} />
-      <Route path="/advertiser/transactions" component={TransactionHistory} />
-      <Route path="/advertiser/invoices/:id" component={InvoiceDetail} />
-      <Route path="/advertiser/support" component={SupportCenter} />
-      <Route path="/advertiser/competitors" component={CompetitorAnalysis} />
-      <Route path="/advertiser/success-stories" component={SuccessStories} />
+      <Route path="/advertiser/dashboard"><AdvertiserProtectedRoute><AdvertiserLayout><AdvertiserDashboard /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/campaigns"><AdvertiserProtectedRoute><AdvertiserLayout><CampaignList /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/campaigns/new"><AdvertiserProtectedRoute><AdvertiserLayout><CreateCampaign /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/campaign-builder"><AdvertiserProtectedRoute><AdvertiserLayout><CampaignBuilder /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/analytics-dashboard"><AdvertiserProtectedRoute><AdvertiserLayout><AnalyticsDashboard /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/new-dashboard"><AdvertiserProtectedRoute><AdvertiserLayout><NewDashboard /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/campaigns/:id"><AdvertiserProtectedRoute><AdvertiserLayout><CampaignDetails /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/campaigns/multi-task/new"><AdvertiserProtectedRoute><AdvertiserLayout><MultiTaskCampaignBuilder /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/tasks"><AdvertiserProtectedRoute><AdvertiserLayout><AdvertiserTasks /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/tasks/create"><AdvertiserProtectedRoute><AdvertiserLayout><CreateTask /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/tasks/:id/submissions"><AdvertiserProtectedRoute><AdvertiserLayout><TaskReview /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/tasks/review"><AdvertiserProtectedRoute><AdvertiserLayout><TaskReviewQueue /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/profile"><AdvertiserProtectedRoute><AdvertiserLayout><AdvertiserProfile /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/analytics"><AdvertiserProtectedRoute><AdvertiserLayout><Analytics /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/reports"><AdvertiserProtectedRoute><AdvertiserLayout><Reports /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/billing"><AdvertiserProtectedRoute><AdvertiserLayout><Billing /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/payment-methods"><AdvertiserProtectedRoute><AdvertiserLayout><PaymentMethods /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/team"><AdvertiserProtectedRoute><AdvertiserLayout><TeamManagement /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/settings"><AdvertiserProtectedRoute><AdvertiserLayout><AccountSettings /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/audience"><AdvertiserProtectedRoute><AdvertiserLayout><AudienceInsights /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/campaigns/:id/edit"><AdvertiserProtectedRoute><AdvertiserLayout><EditCampaign /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/campaigns/:id/performance"><AdvertiserProtectedRoute><AdvertiserLayout><CampaignPerformance /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/tasks/:id/review"><AdvertiserProtectedRoute><AdvertiserLayout><TaskDetailReview /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/tasks/rejected"><AdvertiserProtectedRoute><AdvertiserLayout><RejectedTasks /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/transactions"><AdvertiserProtectedRoute><AdvertiserLayout><TransactionHistory /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/invoices/:id"><AdvertiserProtectedRoute><AdvertiserLayout><InvoiceDetail /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/support"><AdvertiserProtectedRoute><AdvertiserLayout><SupportCenter /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/competitors"><AdvertiserProtectedRoute><AdvertiserLayout><CompetitorAnalysis /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/success-stories"><AdvertiserProtectedRoute><AdvertiserLayout><SuccessStories /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
       <Route path="/advertiser/:advertiserId" component={AdvertiserPage} />
 
       {/* Survey Framework Routes */}

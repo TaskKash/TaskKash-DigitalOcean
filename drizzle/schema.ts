@@ -25,6 +25,8 @@ export const users = mysqlTable("users", {
   completedTasks: int("completedTasks", { unsigned: true }).default(0).notNull(),
   totalEarnings: int("totalEarnings", { unsigned: true }).default(0).notNull(), // in smallest currency unit
   tier: mysqlEnum("tier", ["bronze", "silver", "gold", "platinum"]).default("bronze").notNull(),
+  // Virtual generated column for easy >= tier filtering
+  tierRank: int("tierRank"),
   profileStrength: int("profileStrength", { unsigned: true }).default(30).notNull(), // percentage 0-100
   countryId: int("countryId"), // foreign key to countries table
   avatar: varchar("avatar", { length: 500 }),
@@ -34,7 +36,21 @@ export const users = mysqlTable("users", {
   age: int("age"),
   gender: varchar("gender", { length: 10 }),
   city: varchar("city", { length: 100 }),
+  district: varchar("district", { length: 100 }),
   incomeLevel: varchar("incomeLevel", { length: 50 }),
+
+  // KYC and Trust Layer (Sprint 1a)
+  kycStatus: mysqlEnum("kycStatus", ["pending", "submitted", "verified", "rejected"]).default("pending").notNull(),
+  kycVerifiedAt: timestamp("kycVerifiedAt"),
+  kycProvider: varchar("kycProvider", { length: 50 }),
+  kycRejectionReason: varchar("kycRejectionReason", { length: 255 }),
+
+  // Device context freshness (Sprint 2)
+  deviceTierLastUpdated: timestamp("deviceTierLastUpdated"),
+
+  // Soft-delete (Sprint 5)
+  pendingDeletion: int("pendingDeletion").default(0).notNull(), // 0 = active, 1 = pending deletion
+  deletionRequestedAt: timestamp("deletionRequestedAt"),
 
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -43,6 +59,88 @@ export const users = mysqlTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+/**
+ * User Consents table - Append-only audit log for GDPR compliance (Sprint 1b)
+ */
+export const userConsents = mysqlTable("userConsents", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  consentType: varchar("consentType", { length: 100 }).notNull(), // e.g., 'personalisation', 'marketing'
+  consentVersion: varchar("consentVersion", { length: 50 }).notNull(),
+  eventType: mysqlEnum("eventType", ["granted", "revoked", "updated", "refreshed", "exported"]).notNull(),
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(), // When this consent event occurred
+});
+
+export type UserConsent = typeof userConsents.$inferSelect;
+export type InsertUserConsent = typeof userConsents.$inferInsert;
+
+/**
+ * User Profile table - Psychographic, behavioral, and device DNA (Sprint 2)
+ */
+export const userProfiles = mysqlTable("userProfiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(), // One-to-one with users
+
+  // Passive Device Layer
+  deviceModel: varchar("deviceModel", { length: 100 }),
+  deviceOs: varchar("deviceOs", { length: 50 }),
+  deviceOsVersion: varchar("deviceOsVersion", { length: 50 }),
+  deviceTier: mysqlEnum("deviceTier", ["A", "B", "C"]),
+  networkCarrier: varchar("networkCarrier", { length: 100 }),
+  connectionType: varchar("connectionType", { length: 50 }), // WiFi, 4G, 5G
+
+  // Psychographic Data
+  interests: json("interests"),
+  brandAffinity: json("brandAffinity"),
+  lifeStage: mysqlEnum("lifeStage", ["single", "engaged", "married", "parent"]),
+  nextPurchaseIntent: json("nextPurchaseIntent"),
+  shoppingFrequency: mysqlEnum("shoppingFrequency", ["daily", "weekly", "monthly", "rarely"]),
+  preferredStores: json("preferredStores"),
+  householdSize: int("householdSize"),
+  values: json("values"),
+
+  // Professional Data
+  industry: varchar("industry", { length: 100 }),
+  jobTitle: varchar("jobTitle", { length: 100 }),
+  workType: mysqlEnum("workType", ["remote", "office", "hybrid"]),
+
+  // Mobility & Home
+  hasVehicle: int("hasVehicle", { unsigned: true }).default(0).notNull(), // boolean 0/1
+  vehicleBrand: varchar("vehicleBrand", { length: 100 }),
+  vehicleModel: varchar("vehicleModel", { length: 100 }),
+  homeOwnership: mysqlEnum("homeOwnership", ["owner", "renter"]),
+
+  // Behavioral Scoring
+  urgencyScore: int("urgencyScore").default(0),
+  impulseScore: int("impulseScore").default(0),
+  influenceScore: int("influenceScore").default(0),
+  activityPattern: mysqlEnum("activityPattern", ["night_owl", "commuter", "daytime"]),
+
+  profileUpdatedAt: timestamp("profileUpdatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = typeof userProfiles.$inferInsert;
+
+/**
+ * User KYC Vault - Isolated highly-sensitive personal data (Sprint 1a)
+ * Stored separately from the main users table.
+ */
+export const userKycVault = mysqlTable("user_kyc_vault", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique().references(() => users.id, { onDelete: "restrict" }),
+  idNumber: varchar("idNumber", { length: 100 }).notNull(),
+  dateOfBirth: timestamp("dateOfBirth"),
+  fullAddress: text("fullAddress"),
+  livenessToken: varchar("livenessToken", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserKycVault = typeof userKycVault.$inferSelect;
+export type InsertUserKycVault = typeof userKycVault.$inferInsert;
 
 /**
  * Countries table - stores supported countries with their currencies

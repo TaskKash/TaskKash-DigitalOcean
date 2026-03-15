@@ -24,17 +24,22 @@ export default function ProfileQuestions4() {
     }
 
     try {
+      // Get accumulated answers from previous steps
+      const currentDraft = JSON.parse(sessionStorage.getItem('profileDraft') || '{}');
+      const finalPayload = {
+        ...currentDraft,
+        maritalStatus,
+        carType,
+        housingType,
+      };
+
       // Call API to complete profile and credit wallet
       const response = await fetch('/api/profile/complete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          maritalStatus,
-          carType,
-          housingType,
-        }),
+        body: JSON.stringify(finalPayload),
       });
 
       const data = await response.json();
@@ -61,6 +66,9 @@ export default function ProfileQuestions4() {
         spread: 70,
         origin: { y: 0.6 }
       });
+
+      // Clear the draft from memory
+      sessionStorage.removeItem('profileDraft');
 
       toast.success(t('profileQuestions.success', { reward: 8 }));
 

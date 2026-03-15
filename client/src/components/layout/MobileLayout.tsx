@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import BottomNav from './BottomNav';
 import Header from './Header';
+import { Link } from 'wouter';
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -26,9 +27,19 @@ export default function MobileLayout({
       <main className={`flex-1 overflow-y-auto ${showBottomNav ? 'pb-20' : ''} ${showHeader ? 'pt-16' : ''}`}>
         {children}
       </main>
-      
+
+      {/* Privacy compliance footer — visible on every page */}
+      <footer className={`text-center py-2 ${showBottomNav ? 'mb-16' : ''}`}>
+        <Link href="/privacy">
+          <a className="text-[10px] text-muted-foreground underline-offset-2 hover:underline">
+            Privacy & Data Rights
+          </a>
+        </Link>
+        <span className="text-[10px] text-muted-foreground mx-1">·</span>
+        <span className="text-[10px] text-muted-foreground">GDPR · CCPA · Egypt Law 2023/82</span>
+      </footer>
+
       {showBottomNav && <BottomNav />}
     </div>
   );
 }
-

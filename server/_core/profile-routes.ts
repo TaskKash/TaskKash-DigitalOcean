@@ -68,10 +68,15 @@ router.post('/complete', async (req, res) => {
 
     const openId = authUser.openId;
 
-    const { maritalStatus, carType, housingType } = req.body;
+    const { 
+      gender, ageRange, education, 
+      employment, income, industry, 
+      shopping, tech, interests, 
+      maritalStatus, carType, housingType 
+    } = req.body;
 
     console.log('[Profile] Completing profile for user:', openId);
-    console.log('[Profile] Lifestyle data:', { maritalStatus, carType, housingType });
+    console.log('[Profile] Collected profile data:', req.body);
 
     // Get current user
     const users = await query(
@@ -90,14 +95,55 @@ router.post('/complete', async (req, res) => {
       return res.status(409).json({ error: 'Profile already completed' });
     }
 
+    // Map frontend data to DB Format
+    let age = null;
+    if (ageRange) {
+      const match = ageRange.match(/(\d+)/);
+      if (match) age = parseInt(match[1]);
+    }
+
+    let hasVehicle = 0;
+    let vehicleBrand = null;
+    if (carType && carType !== 'none') {
+      hasVehicle = 1;
+      vehicleBrand = carType; // Use the value directly as brand
+    }
+    
+    // 1. Upsert into userProfiles
+    await query(
+      `INSERT INTO userProfiles (
+        userId, industry, workType, shoppingFrequency, interests, lifeStage, hasVehicle, vehicleBrand, homeOwnership
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE 
+        industry = VALUES(industry),
+        workType = VALUES(workType),
+        shoppingFrequency = VALUES(shoppingFrequency),
+        interests = VALUES(interests),
+        lifeStage = VALUES(lifeStage),
+        hasVehicle = VALUES(hasVehicle),
+        vehicleBrand = VALUES(vehicleBrand),
+        homeOwnership = VALUES(homeOwnership)`,
+      [
+        user.id, 
+        industry || null, 
+        employment || null, 
+        shopping || null, 
+        interests && interests.length > 0 ? JSON.stringify(interests) : null, 
+        maritalStatus || null, 
+        hasVehicle, 
+        vehicleBrand, 
+        housingType || null
+      ]
+    );
+
     // Profile completion reward
     const PROFILE_REWARD = 8.00;
     const newBalance = parseFloat(user.balance) + PROFILE_REWARD;
 
-    // Update user profile strength and balance
+    // 2. Update users table with profileStrength, balance, and core demographic fields
     await query(
-      'UPDATE users SET profileStrength = 100, balance = ? WHERE id = ?',
-      [newBalance, user.id]
+      'UPDATE users SET profileStrength = 100, balance = ?, gender = ?, age = ?, incomeLevel = ? WHERE id = ?',
+      [newBalance, gender || null, age, income || null, user.id]
     );
 
     // Create transaction record using correct schema columns
@@ -107,7 +153,7 @@ router.post('/complete', async (req, res) => {
       [user.id, PROFILE_REWARD]
     );
 
-    console.log('[Profile] Profile completed successfully');
+    console.log('[Profile] Profile completed & data persisted successfully');
     console.log('[Profile] Credited:', PROFILE_REWARD, 'EGP');
     console.log('[Profile] New balance:', newBalance, 'EGP');
 
@@ -322,6 +368,52 @@ router.post('/answers', async (req, res) => {
         [userId, questionKey, JSON.stringify(answerValue)]
       );
     }
+
+    // Attempt to sync known psychographic fields into userProfiles
+    try {
+      // Map section answers to userProfiles columns where possible
+      let syncUpdates: Record<string, any> = {};
+      
+      // Basic heuristic mapper
+      for (const [key, val] of Object.entries(answers)) {
+        const valueStr = String(val).toLowerCase();
+        
+        if (key.toLowerCase().includes('industry')) syncUpdates.industry = val;
+        if (key.toLowerCase().includes('job')) syncUpdates.jobTitle = val;
+        if (key.toLowerCase().includes('work_type') || key.toLowerCase().includes('employment')) syncUpdates.workType = val;
+        
+        if (key.toLowerCase().includes('marital') || key.toLowerCase().includes('lifestage')) syncUpdates.lifeStage = val;
+        if (key.toLowerCase().includes('household')) syncUpdates.householdSize = parseInt(valueStr) || null;
+        
+        if (key.toLowerCase().includes('vehicle') || key.toLowerCase().includes('car')) {
+           syncUpdates.hasVehicle = valueStr === 'none' || valueStr === 'no' ? 0 : 1;
+           if (syncUpdates.hasVehicle === 1) syncUpdates.vehicleBrand = val;
+        }
+
+        if (key.toLowerCase().includes('housing') || key.toLowerCase().includes('home')) {
+           syncUpdates.homeOwnership = valueStr.includes('rent') ? 'renter' : 'owner';
+        }
+      }
+
+      if (Object.keys(syncUpdates).length > 0) {
+        // Build dynamic SET string for ON DUPLICATE KEY UPDATE
+        const setClauses = Object.keys(syncUpdates).map(k => `${k} = VALUES(${k})`).join(', ');
+        const keys = Object.keys(syncUpdates);
+        const values = Object.values(syncUpdates);
+        
+        const placeholders = keys.map(() => '?').join(', ');
+        
+        await query(
+          `INSERT INTO userProfiles (userId, ${keys.join(', ')}) 
+           VALUES (?, ${placeholders})
+           ON DUPLICATE KEY UPDATE ${setClauses}`,
+          [userId, ...values]
+        );
+      }
+    } catch (syncErr) {
+      console.warn('[Profile Sync] Failed to sync to userProfiles:', syncErr);
+    }
+
 
     // Mark section as completed
     await query(

@@ -21,6 +21,16 @@ export default function ProfileQuestions3() {
       toast.error(t('profileQuestions.fillAllFields'));
       return;
     }
+
+    // Append to sessionStorage
+    const currentDraft = JSON.parse(sessionStorage.getItem('profileDraft') || '{}');
+    sessionStorage.setItem('profileDraft', JSON.stringify({
+      ...currentDraft,
+      shopping,
+      tech,
+      interests: [interests] // backend expects array
+    }));
+
     setLocation('/profile-questions-4');
   };
 

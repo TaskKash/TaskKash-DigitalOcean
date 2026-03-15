@@ -179,6 +179,9 @@ importers:
       csurf:
         specifier: ^1.11.0
         version: 1.11.0
+      csv-parser:
+        specifier: ^3.2.0
+        version: 3.2.0
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -3121,6 +3124,11 @@ packages:
     resolution: {integrity: sha512-UCtehyEExKTxgiu8UHdGvHj4tnpE/Qctue03Giq5gPgMQ9cg/ciod5blZQ5a4uCEenNQjxyGuzygLdKUmee/bQ==}
     engines: {node: '>= 0.8.0'}
     deprecated: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
+
+  csv-parser@3.2.0:
+    resolution: {integrity: sha512-fgKbp+AJbn1h2dcAHKIdKNSSjfp43BZZykXsCjzALjKy80VXQNHPFJ6T9Afwdzoj24aMkq8GwDS7KGcDPpejrA==}
+    engines: {node: '>= 10'}
+    hasBin: true
 
   cytoscape-cose-bilkent@4.1.0:
     resolution: {integrity: sha512-wgQlVIUJF13Quxiv5e1gstZ08rnZj2XaLHGoFMYXz7SkNfCDOOteKBE6SYRfA9WxxI/iBc3ajfDoc6hb/MRAHQ==}
@@ -8747,6 +8755,8 @@ snapshots:
       cookie-signature: 1.0.6
       csrf: 3.1.0
       http-errors: 1.7.3
+
+  csv-parser@3.2.0: {}
 
   cytoscape-cose-bilkent@4.1.0(cytoscape@3.33.1):
     dependencies:

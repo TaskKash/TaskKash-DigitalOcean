@@ -68,11 +68,17 @@ export function verifyCsrfToken(sessionId: string, token: string): boolean {
 }
 
 /**
- * Middleware to generate CSRF token and attach to response
+ * Middleware to generate CSRF token and attach to response.
+ * Reuses existing token for the session to avoid invalidating it.
  */
 export function csrfTokenMiddleware(req: Request, res: Response, next: NextFunction) {
   const sessionId = getCsrfSessionId(req, res);
-  const token = generateCsrfToken(sessionId);
+  // Reuse existing valid token rather than generating a new one every request
+  const existing = csrfTokens.get(sessionId);
+  const now = Date.now();
+  const token = (existing && (now - existing.createdAt < TOKEN_EXPIRATION))
+    ? existing.token
+    : generateCsrfToken(sessionId);
   res.locals.csrfToken = token;
   res.setHeader('X-CSRF-Token', token);
   next();

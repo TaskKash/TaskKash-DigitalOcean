@@ -52,6 +52,16 @@ export default function AdvertisersManagementNew() {
     fetchAdvertisers();
   }, []);
 
+  const getCsrfToken = async (): Promise<string> => {
+    try {
+      const r = await fetch('/api/csrf-token', { credentials: 'include' });
+      const data = await r.json();
+      return data.csrfToken || '';
+    } catch {
+      return '';
+    }
+  };
+
   const fetchAdvertisers = async () => {
     try {
       const response = await fetch('/api/admin/advertisers', {
@@ -78,9 +88,10 @@ export default function AdvertisersManagementNew() {
     if (!selectedAdvertiser) return;
 
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/admin/advertisers/${selectedAdvertiser.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
         credentials: 'include',
         body: JSON.stringify(editForm),
       });
@@ -108,8 +119,10 @@ export default function AdvertisersManagementNew() {
     if (!selectedAdvertiser) return;
 
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/admin/advertisers/${selectedAdvertiser.id}`, {
         method: 'DELETE',
+        headers: { 'x-csrf-token': csrfToken },
         credentials: 'include',
       });
 
@@ -157,9 +170,10 @@ export default function AdvertisersManagementNew() {
     }
 
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch('/api/admin/advertisers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
         credentials: 'include',
         body: JSON.stringify(createForm),
       });
@@ -183,9 +197,10 @@ export default function AdvertisersManagementNew() {
     if (!selectedAdvertiser || !newPassword) return;
 
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/admin/advertisers/${selectedAdvertiser.id}/reset-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
         credentials: 'include',
         body: JSON.stringify({ newPassword }),
       });
@@ -381,14 +396,16 @@ export default function AdvertisersManagementNew() {
                 />
               </div>
               <div className="col-span-2">
-                <Label className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
+                    id="edit-isActive"
                     checked={editForm.isActive === 1}
                     onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked ? 1 : 0 })}
+                    title="Active Advertiser"
                   />
-                  Active Advertiser
-                </Label>
+                  <Label htmlFor="edit-isActive">Active Advertiser</Label>
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -478,14 +495,16 @@ export default function AdvertisersManagementNew() {
                 />
               </div>
               <div className="col-span-2">
-                <Label className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
+                    id="create-isActive"
                     checked={createForm.isActive === 1}
                     onChange={(e) => setCreateForm({ ...createForm, isActive: e.target.checked ? 1 : 0 })}
+                    title="Active Advertiser"
                   />
-                  Active Advertiser
-                </Label>
+                  <Label htmlFor="create-isActive">Active Advertiser</Label>
+                </div>
               </div>
             </div>
             <DialogFooter>

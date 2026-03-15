@@ -20,6 +20,16 @@ export default function ProfileQuestions2() {
       toast.error(t('profileQuestions.fillAllFields'));
       return;
     }
+
+    // Append to sessionStorage
+    const currentDraft = JSON.parse(sessionStorage.getItem('profileDraft') || '{}');
+    sessionStorage.setItem('profileDraft', JSON.stringify({
+      ...currentDraft,
+      employment,
+      income,
+      industry
+    }));
+
     setLocation('/profile-questions-3');
   };
 

@@ -24,6 +24,7 @@ import { adminRouter } from "./admin-routes";
 import taskRouter from "./task-routes";
 import profileRouter from "./profile-routes";
 import advertiserRouter from "./advertiser-routes";
+import advertiserSegmentsRouter from "./advertiser-segments";
 import withdrawalRouter from "./withdrawal-routes";
 import adminWithdrawalRouter from "./admin-withdrawal-routes";
 import referralRouter from "./referral-routes";
@@ -32,6 +33,7 @@ import gamificationFeaturesRouter from "./gamification-features-routes";
 import pushNotificationRouter from "./push-notification-routes";
 import notificationRouter from "./notification-routes";
 import campaignRouter from "./campaign-routes";
+import privacyRouter from "./privacy-routes";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -111,6 +113,7 @@ async function startServer() {
   app.use("/api/profile", profileRouter);
   // Advertiser endpoints
   app.use("/api", advertiserRouter);
+  app.use("/api/advertiser", advertiserSegmentsRouter);
   // Withdrawal endpoints (with CSRF protection)
   app.use("/api/withdrawals", csrfProtection, withdrawalRouter);
   // Admin withdrawal management endpoints (with CSRF protection)
@@ -127,6 +130,8 @@ async function startServer() {
   app.use("/api/notifications", notificationRouter);
   // Campaign management endpoints
   app.use("/api", campaignRouter);
+  // Privacy & Data Rights endpoints (GDPR/CCPA/Egypt Law 2023/82)
+  app.use("/api/privacy", privacyRouter);
   // tRPC API (tRPC handles its own body parsing)
   app.use(
     "/api/trpc",

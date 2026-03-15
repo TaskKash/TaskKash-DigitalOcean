@@ -1,14 +1,6 @@
 import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { mockTasks, mockTransactions, mockNotifications, type Task, type Transaction, type Notification } from '@/lib/mockData';
-import {
-  getAdvertiserById,
-  getAdvertiserCampaigns,
-  getAdvertiserTasks,
-  type Advertiser,
-  type AdvertiserCampaign,
-  type AdvertiserTask
-} from '@/lib/advertiserMockData';
 import { requestNotificationPermission } from '@/lib/pushNotifications';
 
 // Define User type based on database schema
@@ -40,9 +32,9 @@ interface AppContextType {
   notifications: Notification[];
 
   // بيانات المعلنين
-  currentAdvertiser: Advertiser | null;
-  advertiserCampaigns: AdvertiserCampaign[];
-  advertiserTasks: AdvertiserTask[];
+  currentAdvertiser: any;
+  advertiserCampaigns: any[];
+  advertiserTasks: any[];
 
   // نوع المستخدم
   userType: 'user' | 'advertiser';
@@ -78,9 +70,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // حالة المعلنين
-  const [currentAdvertiser, setCurrentAdvertiser] = useState<Advertiser | null>(null);
-  const [advertiserCampaigns, setAdvertiserCampaigns] = useState<AdvertiserCampaign[]>([]);
-  const [advertiserTasks, setAdvertiserTasks] = useState<AdvertiserTask[]>([]);
+  const [currentAdvertiser, setCurrentAdvertiser] = useState<any>(null);
+  const [advertiserCampaigns, setAdvertiserCampaigns] = useState<any[]>([]);
+  const [advertiserTasks, setAdvertiserTasks] = useState<any[]>([]);
 
   // نوع المستخدم
   const [userType, setUserType] = useState<'user' | 'advertiser'>('user');
@@ -230,35 +222,63 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // استعادة حالة تسجيل الدخول عند تحميل التطبيق
   useEffect(() => {
+    const fetchAdvertiserData = async (advertiserData: any) => {
+      try {
+        // Fetch real dashboard stats and tasks
+        const [dashboardRes, tasksRes] = await Promise.all([
+          fetch('/api/advertiser/dashboard', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          }),
+          fetch('/api/advertiser/tasks', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          })
+        ]);
+
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json();
+          // Map DB tasks to the UI's Campaign model since the Video Builder creates Tasks
+          const mappedCampaigns = tasksData.map((t: any) => {
+             let loc = 'All';
+             try { if(t.targetLocations) { const parsed = JSON.parse(t.targetLocations); loc = Array.isArray(parsed) ? parsed.join(', ') : 'All'; } } catch(e){}
+             return {
+             id: t.id.toString(),
+             name: t.titleEn || t.titleAr || 'Untitled Campaign',
+             status: t.status,
+             budget: Number(t.totalBudget || 0),
+             spent: Number(t.reward || 0) * Number(t.currentCompletions || 0),
+             tasksCompleted: t.currentCompletions || 0,
+             tasksTotal: t.completionsNeeded || t.maxCompletions || 1000,
+             startDate: t.createdAt,
+             endDate: new Date(new Date(t.createdAt).getTime() + (t.duration || 30)*24*60*60*1000).toISOString(),
+             targetAudience: { location: loc },
+             performance: {
+               impressions: (t.currentCompletions || 0) * 2,
+               clicks: Math.floor((t.currentCompletions || 0) * 1.5),
+               conversions: t.currentCompletions || 0,
+               ctr: 5.4,
+               roi: 120
+             }
+          }});
+          setAdvertiserCampaigns(mappedCampaigns);
+          setAdvertiserTasks(tasksData);
+        }
+      } catch (err) {
+         console.error('Failed to fetch real advertiser data', err);
+      }
+    };
+
     // Try to load advertiser from localStorage (from API login)
     const savedAdvertiserInfo = localStorage.getItem('advertiser-info');
     if (savedAdvertiserInfo) {
       try {
         const advertiserData = JSON.parse(savedAdvertiserInfo);
         setCurrentAdvertiser(advertiserData);
-        // Load campaigns and tasks from mock data if available
-        const savedAdvertiserId = localStorage.getItem('currentAdvertiserId');
-        if (savedAdvertiserId) {
-          setAdvertiserCampaigns(getAdvertiserCampaigns(savedAdvertiserId));
-          setAdvertiserTasks(getAdvertiserTasks(savedAdvertiserId));
-        }
         setUserType('advertiser');
+        fetchAdvertiserData(advertiserData);
       } catch (error) {
         console.error('Failed to parse advertiser info:', error);
         localStorage.removeItem('advertiser-info');
         localStorage.removeItem('currentAdvertiserId');
-      }
-    } else {
-      // Fallback: try old method with mock data
-      const savedAdvertiserId = localStorage.getItem('currentAdvertiserId');
-      if (savedAdvertiserId) {
-        const advertiser = getAdvertiserById(savedAdvertiserId);
-        if (advertiser) {
-          setCurrentAdvertiser(advertiser);
-          setAdvertiserCampaigns(getAdvertiserCampaigns(savedAdvertiserId));
-          setAdvertiserTasks(getAdvertiserTasks(savedAdvertiserId));
-          setUserType('advertiser');
-        }
       }
     }
     setIsInitialized(true);
@@ -309,13 +329,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   // دوال المعلنين
-  const loginAdvertiser = (advertiserId: string) => {
-    const advertiser = getAdvertiserById(advertiserId);
-    if (advertiser) {
-      setCurrentAdvertiser(advertiser);
-      setAdvertiserCampaigns(getAdvertiserCampaigns(advertiserId));
-      setAdvertiserTasks(getAdvertiserTasks(advertiserId));
-      setUserType('advertiser');
+  const loginAdvertiser = async (advertiserId: string) => {
+    // Note: Assuming advertiser authentication is handled before this sets context
+    try {
+        const [dashboardRes, tasksRes] = await Promise.all([
+          fetch('/api/advertiser/dashboard', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          }),
+          fetch('/api/advertiser/tasks', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          })
+        ]);
+
+        if (dashboardRes.ok && tasksRes.ok) {
+          const dashboardData = await dashboardRes.json();
+          const tasksData = await tasksRes.json();
+          
+          setCurrentAdvertiser(dashboardData.advertiser);
+          localStorage.setItem('advertiser-info', JSON.stringify(dashboardData.advertiser));
+          localStorage.setItem('currentAdvertiserId', dashboardData.advertiser.id.toString());
+          
+          // Map DB tasks to the UI's Campaign model since the Video Builder creates Tasks
+          const mappedCampaigns = tasksData.map((t: any) => {
+             let loc = 'All';
+             try { if(t.targetLocations) { const parsed = JSON.parse(t.targetLocations); loc = Array.isArray(parsed) ? parsed.join(', ') : 'All'; } } catch(e){}
+             return {
+             id: t.id.toString(),
+             name: t.titleEn || t.titleAr || 'Untitled Campaign',
+             status: t.status,
+             budget: Number(t.totalBudget || 0),
+             spent: Number(t.reward || 0) * Number(t.currentCompletions || 0),
+             tasksCompleted: t.currentCompletions || 0,
+             tasksTotal: t.completionsNeeded || t.maxCompletions || 1000,
+             startDate: t.createdAt,
+             endDate: new Date(new Date(t.createdAt).getTime() + (t.duration || 30)*24*60*60*1000).toISOString(),
+             targetAudience: { location: loc },
+             performance: {
+               impressions: (t.currentCompletions || 0) * 2,
+               clicks: Math.floor((t.currentCompletions || 0) * 1.5),
+               conversions: t.currentCompletions || 0,
+               ctr: 5.4,
+               roi: 120
+             }
+          }});
+          
+          setAdvertiserCampaigns(mappedCampaigns);
+          setAdvertiserTasks(tasksData);
+          setUserType('advertiser');
+        }
+    } catch (err) {
+      console.error('Failed to parse advertiser login info', err);
     }
   };
 

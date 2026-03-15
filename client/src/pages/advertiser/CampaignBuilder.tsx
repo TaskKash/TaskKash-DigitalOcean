@@ -6,24 +6,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { toast } from 'sonner';
-import { trpc } from '@/lib/trpc';
 import { 
   ArrowLeft, ArrowRight, Check, Target, Users, FileText, Rocket,
-  Lock, Crown, Zap, Info, DollarSign, Calendar, Clock
+  Lock, Crown, Zap, Info, DollarSign, Calendar, Clock, AlertTriangle, Monitor,
+  Activity, Briefcase, Tag 
 } from 'lucide-react';
 
-// Targeting options
 const DEVICE_BRANDS = ['Samsung', 'Apple', 'Xiaomi', 'Huawei', 'Google', 'Oppo', 'Vivo', 'Realme'];
 const CARRIERS = ['Vodafone', 'Orange', 'Etisalat', 'WE'];
-const INTERESTS = ['Technology', 'Fashion', 'Sports', 'Gaming', 'Travel', 'Food', 'Health', 'Finance'];
-const PURCHASE_INTENTS = ['Smartphone', 'TV', 'Laptop', 'Car', 'Home Appliances', 'Fashion', 'Travel'];
+const INTERESTS = ['Technology', 'Fashion', 'Sports', 'Gaming', 'Travel', 'Food', 'Health', 'Finance', 'Automotive', 'Beauty'];
+const PURCHASE_INTENTS = ['Smartphone', 'TV', 'Laptop', 'Car', 'Home Appliances', 'Fashion', 'Travel', 'Real Estate'];
 const LIFE_EVENTS = ['Getting Married', 'Having a Baby', 'Moving Home', 'Starting a Job', 'Graduating'];
+const CITIES = ['Cairo', 'Alexandria', 'Giza', 'Shubra El-Kheima', 'Port Said', 'Suez', 'Mansoura'];
+const COUNTRIES = ['Egypt']; // Hardcoded for simplified mock for now
+const INCOME_LEVELS = ['low', 'lower_mid', 'mid', 'upper_mid', 'high'];
 
 const STEPS = [
   { id: 1, title: 'Basics', icon: FileText },
   { id: 2, title: 'Audience', icon: Target },
-  { id: 3, title: 'Content', icon: Users },
+  { id: 3, title: 'Content', icon: FileText },
   { id: 4, title: 'Review', icon: Rocket },
 ];
 
@@ -31,558 +35,466 @@ export default function CampaignBuilder() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [advertiserTier, setAdvertiserTier] = useState('basic');
-  const [estimatedReach, setEstimatedReach] = useState(0);
   
-  // Form data
+  // Real-time API reach states
+  const [reachData, setReachData] = useState({
+    totalReach: 0,
+    rawCount: 0,
+    meetsMinimum: true,
+    breakdown: {
+      byTier: { bronze: 0, silver: 0, gold: 0, platinum: 0 },
+      byGender: { male: 0, female: 0 },
+      byDeviceTier: { A: 0, B: 0, C: 0 }
+    }
+  });
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  // Deep Targeting State
   const [campaign, setCampaign] = useState({
-    // Step 1: Basics
-    titleEn: '',
-    titleAr: '',
-    descriptionEn: '',
-    descriptionAr: '',
-    type: 'survey',
-    reward: 10,
-    totalBudget: 1000,
-    completionsNeeded: 100,
-    // Step 2: Targeting
+    titleEn: '', titleAr: '', descriptionEn: '', descriptionAr: '',
+    type: 'survey', reward: 10, totalBudget: 1000, completionsNeeded: 100,
     targeting: {
-      ageMin: 18,
-      ageMax: 65,
-      gender: 'all' as 'male' | 'female' | 'all',
-      countries: ['Egypt'],
-      cities: [] as string[],
-      deviceBrands: [] as string[],
-      carriers: [] as string[],
-      interests: [] as string[],
-      requireKYCVerified: false,
-      minKYCLevel: 0,
-      purchaseIntent: [] as string[],
-      userTiers: [] as string[],
-      minProfileStrength: 0,
+      // 1: Demographics
+      ageMin: 18, ageMax: 65, gender: 'all' as 'all'|'male'|'female',
+      countries: ['Egypt'], cities: [] as string[], districts: [] as string[],
+      // 2: Financial
+      incomeLevels: [] as string[], homeOwnership: '' as ''|'owner'|'renter',
+      // 3: Device & Connectivity
+      deviceTiers: [] as string[], deviceOs: '' as ''|'iOS'|'Android', 
+      deviceModels: [] as string[], networkCarriers: [] as string[], connectionTypes: [] as string[],
+      // 4: Psychographics
+      interests: [] as string[], interestsMatchAll: false,
+      brandAffinity: [] as string[], brandAffinityMatchAll: false,
+      values: [] as string[], valuesMatchAll: false,
+      lifeStages: [] as string[],
+      // 5: Behavioral
+      shoppingFrequencies: [] as string[],
+      preferredStores: [] as string[], preferredStoresMatchAll: false,
+      nextPurchaseIntent: [] as string[], nextPurchaseIntentMatchAll: false,
+      activityPatterns: [] as string[],
+      // 6: Mobility & Household
+      hasVehicle: undefined as boolean | undefined, vehicleBrands: [] as string[],
+      workTypes: [] as string[], householdSizeMin: 1, householdSizeMax: 10,
+      // 7: Engagement Quality
+      tierMin: '' as ''|'bronze'|'silver'|'gold'|'platinum',
+      tiers: [] as string[],
+      profileStrengthMin: 60,
+      completedTasksMin: 0
     },
-    // Step 3: Content
     taskData: {} as any,
   });
 
-  // Load advertiser info
   useEffect(() => {
     const info = localStorage.getItem('advertiser-info');
     if (info) {
-      const advertiser = JSON.parse(info);
-      setAdvertiserTier(advertiser.tier || 'basic');
+      setAdvertiserTier(JSON.parse(info).tier || 'basic');
     }
   }, []);
 
-  // Calculate estimated reach when targeting changes
+  // 800ms Debounced Reach Evaluator
   useEffect(() => {
-    // Simulate reach calculation
-    let reach = 10000;
-    if (campaign.targeting.minProfileStrength > 50) reach *= 0.5;
-    if (campaign.targeting.minKYCLevel > 1) reach *= 0.4;
-    if (campaign.targeting.deviceBrands.length > 0) reach *= 0.6;
-    if (campaign.targeting.interests.length > 0) reach *= 0.7;
-    if (campaign.targeting.purchaseIntent.length > 0) reach *= 0.3;
-    setEstimatedReach(Math.round(reach));
+    setIsCalculating(true);
+    const timer = setTimeout(async () => {
+      try {
+        const payload: any = { ...campaign.targeting };
+        // Clean out empty arrays from payload to save bytes
+        Object.keys(payload).forEach(key => {
+          if (Array.isArray(payload[key]) && payload[key].length === 0) {
+            delete payload[key];
+          }
+          if (payload[key] === '' || payload[key] === undefined) {
+            delete payload[key];
+          }
+        });
+
+        const res = await fetch('/api/advertiser/segments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setReachData(data);
+        }
+      } catch (err) {
+        console.error('Failed to evaluate segments:', err);
+      } finally {
+        setIsCalculating(false);
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
   }, [campaign.targeting]);
 
-  const handleNext = () => {
-    if (step < 4) setStep(step + 1);
+  // Generic toggle helper for arrays
+  const toggleArrayItem = (key: keyof typeof campaign.targeting, value: string) => {
+    setCampaign(prev => {
+      const arr = prev.targeting[key] as string[];
+      const nextArr = arr.includes(value) ? arr.filter(i => i !== value) : [...arr, value];
+      return { ...prev, targeting: { ...prev.targeting, [key]: nextArr } };
+    });
   };
 
-  const handleBack = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
+  const handleNext = () => setStep(prev => Math.min(prev + 1, 4));
+  const handleBack = () => setStep(prev => Math.max(prev - 1, 1));
   const handleSubmit = async () => {
-    try {
-      const advertiserId = JSON.parse(localStorage.getItem('advertiser-info') || '{}').id;
-      if (!advertiserId) {
-        toast.error('Please login first');
-        return;
-      }
-
-      // Mock API call - in production this would use trpc
-      toast.success('Campaign created successfully!');
-      setTimeout(() => {
-        setLocation('/advertiser/campaigns');
-      }, 1000);
-    } catch (err) {
-      toast.error('Failed to create campaign');
+    if (!reachData.meetsMinimum) {
+      toast.error('Cannot launch: Audience is below the 500 minimum threshold.');
+      return;
     }
+    toast.success('Campaign launched successfully! (Mocked)');
+    setTimeout(() => setLocation('/advertiser/campaigns'), 1000);
   };
-
-  const isFeatureLocked = (feature: 'device' | 'interests' | 'kyc' | 'intent') => {
-    if (feature === 'device' || feature === 'interests' || feature === 'kyc') {
-      return advertiserTier === 'basic';
-    }
-    if (feature === 'intent') {
-      return advertiserTier !== 'enterprise';
-    }
-    return false;
-  };
-
-  const LockedFeature = ({ tier }: { tier: string }) => (
-    <div className="flex items-center gap-2 text-amber-600 text-sm bg-amber-50 p-2 rounded">
-      <Lock className="w-4 h-4" />
-      <span>Upgrade to {tier} to unlock</span>
-    </div>
-  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Sticky Top Header */}
+      <div className="bg-white border-b sticky top-0 z-20">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <button onClick={() => setLocation('/advertiser/new-dashboard')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
             <ArrowLeft className="w-5 h-5" />
-            <span>Back to Dashboard</span>
+            <span>Dashboard</span>
           </button>
-          <h1 className="text-xl font-bold">Create Campaign</h1>
-          <div className="w-24" />
-        </div>
-      </div>
-
-      {/* Progress Steps */}
-      <div className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            {STEPS.map((s, idx) => {
-              const Icon = s.icon;
-              const isActive = step === s.id;
-              const isComplete = step > s.id;
-              return (
-                <div key={s.id} className="flex items-center">
-                  <div className={`flex items-center gap-2 ${isActive ? 'text-primary' : isComplete ? 'text-green-600' : 'text-gray-400'}`}>
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isActive ? 'bg-primary text-white' : isComplete ? 'bg-green-100' : 'bg-gray-100'}`}>
-                      {isComplete ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                    </div>
-                    <span className="font-medium hidden sm:block">{s.title}</span>
-                  </div>
-                  {idx < STEPS.length - 1 && (
-                    <div className={`w-12 sm:w-24 h-1 mx-2 ${step > s.id ? 'bg-green-500' : 'bg-gray-200'}`} />
-                  )}
-                </div>
-              );
-            })}
+          <h1 className="text-xl font-bold hidden sm:block">Advanced Audience Builder</h1>
+          
+          {/* Always Visible Sticky Reach KPI Widget */}
+          <div className="flex items-center gap-3 bg-primary/5 px-4 py-2 rounded-lg border border-primary/20 shadow-sm group relative">
+            <Target className={`w-5 h-5 text-primary ${isCalculating ? 'animate-spin' : ''}`} />
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground leading-none mb-1">Estimated Reach 
+                <Info className="inline w-3 h-3 ml-1 text-gray-400 cursor-help" />
+              </p>
+              <p className={`text-xl font-bold font-mono text-primary transition-opacity ${isCalculating ? 'opacity-50' : 'opacity-100'}`}>
+                {reachData.totalReach.toLocaleString()}
+              </p>
+            </div>
+            
+            {/* Tooltip on hover */}
+            <div className="absolute right-0 top-14 w-64 p-3 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-30 pointer-events-none">
+              Reach estimates represent strictly verified, active users only to ensure high-quality leads. Due to privacy controls, numbers are rounded. Minimum viable segment size is 500.
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        {step === 2 && (
+          <div className="mb-6 bg-blue-50 text-blue-800 p-4 rounded-lg flex items-start gap-4 border border-blue-200">
+            <Info className="w-5 h-5 mt-0.5 shrink-0" />
+            <div>
+              <h4 className="font-semibold">Granular Audience Targeting</h4>
+              <p className="text-sm mt-1">
+                Narrow down your exact audience utilizing 7 distinct psychological, behavioral, and demographic silos. 
+                Our engine silently filters for KYC-verified users with &gt;60% profile strength arrays baseline.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Step 1: Basics */}
         {step === 1 && (
           <Card className="p-6">
-            <h2 className="text-xl font-bold mb-6">Campaign Basics</h2>
-            
-            <div className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
+            <h2 className="text-xl font-bold mb-6">Campaign Fundamentals</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
                 <div>
                   <Label>Campaign Title (English) *</Label>
-                  <Input
-                    value={campaign.titleEn}
-                    onChange={(e) => setCampaign({ ...campaign, titleEn: e.target.value })}
-                    placeholder="e.g., Samsung Customer Survey"
-                  />
+                  <Input value={campaign.titleEn} onChange={e => setCampaign({...campaign, titleEn: e.target.value})} />
                 </div>
                 <div>
                   <Label>Campaign Title (Arabic)</Label>
-                  <Input
-                    value={campaign.titleAr}
-                    onChange={(e) => setCampaign({ ...campaign, titleAr: e.target.value })}
-                    placeholder="e.g., استبيان عملاء سامسونج"
-                    dir="rtl"
-                  />
+                  <Input dir="rtl" value={campaign.titleAr} onChange={e => setCampaign({...campaign, titleAr: e.target.value})} />
                 </div>
               </div>
-
-              <div>
-                <Label>Description (English) *</Label>
-                <Textarea
-                  value={campaign.descriptionEn}
-                  onChange={(e) => setCampaign({ ...campaign, descriptionEn: e.target.value })}
-                  placeholder="Describe what users will do in this campaign..."
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <Label>Campaign Type *</Label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-2">
-                  {['survey', 'video', 'app', 'social', 'referral'].map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setCampaign({ ...campaign, type })}
-                      className={`p-3 rounded-lg border text-center capitalize ${campaign.type === type ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 hover:border-gray-300'}`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <Label>Reward per Completion (EGP) *</Label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      value={campaign.reward}
-                      onChange={(e) => setCampaign({ ...campaign, reward: Number(e.target.value) })}
-                      className="pl-10"
-                      min={1}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Total Budget (EGP) *</Label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      value={campaign.totalBudget}
-                      onChange={(e) => setCampaign({ ...campaign, totalBudget: Number(e.target.value) })}
-                      className="pl-10"
-                      min={100}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Target Completions</Label>
-                  <div className="relative">
-                    <Users className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      value={campaign.completionsNeeded}
-                      onChange={(e) => setCampaign({ ...campaign, completionsNeeded: Number(e.target.value) })}
-                      className="pl-10"
-                      min={1}
-                    />
-                  </div>
+                  <Label>Description (English) *</Label>
+                  <Textarea value={campaign.descriptionEn} onChange={e => setCampaign({...campaign, descriptionEn: e.target.value})} rows={5} />
                 </div>
               </div>
             </div>
           </Card>
         )}
 
-        {/* Step 2: Audience Targeting */}
+        {/* Step 2: Advanced Targeting Accordions */}
         {step === 2 && (
-          <div className="space-y-6">
-            {/* Estimated Reach */}
-            <Card className="p-4 bg-primary/5 border-primary/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Estimated Reach</p>
-                  <p className="text-2xl font-bold text-primary">{estimatedReach.toLocaleString()} users</p>
-                </div>
-                <Target className="w-10 h-10 text-primary/50" />
+          <div className="space-y-4">
+            {!reachData.meetsMinimum && (
+              <div className="bg-red-50 text-red-700 p-4 rounded-lg flex gap-3 border border-red-200">
+                <AlertTriangle className="w-5 h-5 shrink-0" />
+                <p className="text-sm font-medium">Your audience is too narrow (under 500 users). Broaden your filters or remove constraints to launch.</p>
               </div>
-            </Card>
+            )}
 
-            {/* Demographics - Available to all */}
-            <Card className="p-6">
-              <h3 className="font-bold mb-4 flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Demographics
-                <span className="text-xs bg-gray-100 px-2 py-1 rounded">All Tiers</span>
-              </h3>
+            <Accordion type="single" collapsible defaultValue="cat-1" className="bg-white rounded-lg shadow-sm border">
               
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Age Range</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={campaign.targeting.ageMin}
-                        onChange={(e) => setCampaign({ ...campaign, targeting: { ...campaign.targeting, ageMin: Number(e.target.value) } })}
-                        min={18}
-                        max={65}
-                      />
-                      <span>to</span>
-                      <Input
-                        type="number"
-                        value={campaign.targeting.ageMax}
-                        onChange={(e) => setCampaign({ ...campaign, targeting: { ...campaign.targeting, ageMax: Number(e.target.value) } })}
-                        min={18}
-                        max={65}
+              {/* Category 1: Demographics */}
+              <AccordionItem value="cat-1" className="border-b-0 px-6">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded text-blue-600"><Users className="w-4 h-4" /></div>
+                    <span className="font-semibold text-lg">1. Demographics</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-6 space-y-6">
+                  <div className="grid md:grid-cols-2 gap-8 border-t pt-4">
+                    <div>
+                      <Label className="text-base mb-4 block">Age Range: {campaign.targeting.ageMin} - {campaign.targeting.ageMax}</Label>
+                      <Slider 
+                        defaultValue={[campaign.targeting.ageMin, campaign.targeting.ageMax]} 
+                        max={80} min={16} step={1}
+                        onValueChange={([min, max]) => setCampaign(p => ({...p, targeting: {...p.targeting, ageMin: min, ageMax: max}}))}
                       />
                     </div>
-                  </div>
-                  <div>
-                    <Label>Gender</Label>
-                    <div className="flex gap-2 mt-2">
-                      {['all', 'male', 'female'].map((g) => (
-                        <button
-                          key={g}
-                          onClick={() => setCampaign({ ...campaign, targeting: { ...campaign.targeting, gender: g as any } })}
-                          className={`px-4 py-2 rounded-lg border capitalize ${campaign.targeting.gender === g ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200'}`}
-                        >
-                          {g}
-                        </button>
-                      ))}
+                    <div>
+                      <Label className="text-base mb-2 block">Gender</Label>
+                      <div className="flex gap-2">
+                        {['all', 'male', 'female'].map(g => (
+                          <button key={g}
+                            onClick={() => setCampaign(p => ({...p, targeting: {...p.targeting, gender: g as any}}))}
+                            className={`px-4 py-2 border rounded-md capitalize ${campaign.targeting.gender === g ? 'bg-primary text-white border-primary' : 'bg-gray-50 border-gray-200'}`}
+                          >{g}</button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div>
-                  <Label>User Tiers</Label>
-                  <div className="flex gap-2 mt-2">
-                    {['tier1', 'tier2', 'tier3'].map((tier) => (
-                      <label key={tier} className="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer hover:bg-gray-50">
-                        <Checkbox
-                          checked={campaign.targeting.userTiers.includes(tier)}
-                          onCheckedChange={(checked) => {
-                            const newTiers = checked
-                              ? [...campaign.targeting.userTiers, tier]
-                              : campaign.targeting.userTiers.filter(t => t !== tier);
-                            setCampaign({ ...campaign, targeting: { ...campaign.targeting, userTiers: newTiers } });
-                          }}
-                        />
-                        <span className="capitalize">{tier.replace('tier', 'Tier ')}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Device & Carrier - Pro+ */}
-            <Card className="p-6">
-              <h3 className="font-bold mb-4 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-blue-500" />
-                Device & Carrier
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Pro+</span>
-              </h3>
-              
-              {isFeatureLocked('device') ? (
-                <LockedFeature tier="Pro" />
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <Label>Device Brands</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {DEVICE_BRANDS.map((brand) => (
-                        <label key={brand} className="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer hover:bg-gray-50">
-                          <Checkbox
-                            checked={campaign.targeting.deviceBrands.includes(brand)}
-                            onCheckedChange={(checked) => {
-                              const newBrands = checked
-                                ? [...campaign.targeting.deviceBrands, brand]
-                                : campaign.targeting.deviceBrands.filter(b => b !== brand);
-                              setCampaign({ ...campaign, targeting: { ...campaign.targeting, deviceBrands: newBrands } });
-                            }}
-                          />
-                          <span>{brand}</span>
+                  <div className="border-t pt-4">
+                    <Label className="text-base mb-2 block">Primary Cities</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {CITIES.map(city => (
+                        <label key={city} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors ${campaign.targeting.cities.includes(city) ? 'bg-primary/10 border-primary shadow-sm' : 'bg-white hover:bg-gray-50'}`}>
+                          <Checkbox checked={campaign.targeting.cities.includes(city)} onCheckedChange={() => toggleArrayItem('cities', city)} />
+                          <span>{city}</span>
                         </label>
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <Label>Mobile Carriers</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {CARRIERS.map((carrier) => (
-                        <label key={carrier} className="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer hover:bg-gray-50">
-                          <Checkbox
-                            checked={campaign.targeting.carriers.includes(carrier)}
-                            onCheckedChange={(checked) => {
-                              const newCarriers = checked
-                                ? [...campaign.targeting.carriers, carrier]
-                                : campaign.targeting.carriers.filter(c => c !== carrier);
-                              setCampaign({ ...campaign, targeting: { ...campaign.targeting, carriers: newCarriers } });
-                            }}
-                          />
-                          <span>{carrier}</span>
+                </AccordionContent>
+              </AccordionItem>
+
+            </Accordion>
+
+            <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
+              {/* Category 2: Financial */}
+              <AccordionItem value="cat-2" className="border-b-0 px-6">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 rounded text-green-600"><DollarSign className="w-4 h-4" /></div>
+                    <span className="font-semibold text-lg">2. Financial & Income</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-6 space-y-6">
+                  <div className="border-t pt-4">
+                    <Label className="text-base mb-2 block">Income Level Segments</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {INCOME_LEVELS.map(inc => (
+                        <label key={inc} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.incomeLevels.includes(inc) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
+                          <Checkbox checked={campaign.targeting.incomeLevels.includes(inc)} onCheckedChange={() => toggleArrayItem('incomeLevels', inc)} />
+                          <span className="capitalize">{inc.replace('_', ' ')}</span>
                         </label>
                       ))}
                     </div>
                   </div>
-                </div>
-              )}
-            </Card>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
-            {/* Interests - Pro+ */}
-            <Card className="p-6">
-              <h3 className="font-bold mb-4 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-blue-500" />
-                Interests & Behavior
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Pro+</span>
-              </h3>
-              
-              {isFeatureLocked('interests') ? (
-                <LockedFeature tier="Pro" />
-              ) : (
-                <div>
-                  <Label>Interests</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {INTERESTS.map((interest) => (
-                      <label key={interest} className="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer hover:bg-gray-50">
-                        <Checkbox
-                          checked={campaign.targeting.interests.includes(interest)}
-                          onCheckedChange={(checked) => {
-                            const newInterests = checked
-                              ? [...campaign.targeting.interests, interest]
-                              : campaign.targeting.interests.filter(i => i !== interest);
-                            setCampaign({ ...campaign, targeting: { ...campaign.targeting, interests: newInterests } });
-                          }}
-                        />
-                        <span>{interest}</span>
-                      </label>
-                    ))}
+            <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
+              {/* Category 3: Device */}
+              <AccordionItem value="cat-3" className="border-b-0 px-6">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded text-purple-600"><Monitor className="w-4 h-4" /></div>
+                    <span className="font-semibold text-lg">3. Device & Connectivity</span>
                   </div>
-                </div>
-              )}
-            </Card>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-6 space-y-6">
+                   <div className="grid md:grid-cols-2 gap-8 border-t pt-4">
+                      <div>
+                        <Label className="mb-2 block">Device Brands</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {DEVICE_BRANDS.map(brand => (
+                            <label key={brand} className="flex items-center gap-2 px-3 py-1.5 border rounded-full text-sm cursor-pointer shadow-sm">
+                              <Checkbox checked={campaign.targeting.deviceBrands.includes(brand)} onCheckedChange={() => toggleArrayItem('deviceBrands', brand)} />
+                              <span>{brand}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="mb-2 block">Network Carriers</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {CARRIERS.map(carrier => (
+                            <label key={carrier} className="flex items-center gap-2 px-3 py-1.5 border rounded-full text-sm cursor-pointer shadow-sm">
+                              <Checkbox checked={campaign.targeting.networkCarriers.includes(carrier)} onCheckedChange={() => toggleArrayItem('networkCarriers', carrier)} />
+                              <span>{carrier}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                   </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
-            {/* Purchase Intent - Enterprise */}
-            <Card className="p-6">
-              <h3 className="font-bold mb-4 flex items-center gap-2">
-                <Crown className="w-5 h-5 text-amber-500" />
-                Purchase Intent & Life Events
-                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">Enterprise</span>
-              </h3>
-              
-              {isFeatureLocked('intent') ? (
-                <LockedFeature tier="Enterprise" />
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <Label>Purchase Intent (Next 6 months)</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {PURCHASE_INTENTS.map((intent) => (
-                        <label key={intent} className="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer hover:bg-gray-50">
-                          <Checkbox
-                            checked={campaign.targeting.purchaseIntent.includes(intent)}
-                            onCheckedChange={(checked) => {
-                              const newIntents = checked
-                                ? [...campaign.targeting.purchaseIntent, intent]
-                                : campaign.targeting.purchaseIntent.filter(i => i !== intent);
-                              setCampaign({ ...campaign, targeting: { ...campaign.targeting, purchaseIntent: newIntents } });
-                            }}
-                          />
+            <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
+              {/* Category 4: Psychographics */}
+              <AccordionItem value="cat-4" className="border-b-0 px-6">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-pink-100 rounded text-pink-600"><Activity className="w-4 h-4" /></div>
+                    <span className="font-semibold text-lg">4. Psychographics & Interests</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-6 space-y-6">
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="text-base block">Primary Interests</Label>
+                      <div className="flex items-center gap-2 text-sm bg-gray-100 px-2 py-1 rounded">
+                        <span className={!campaign.targeting.interestsMatchAll ? 'font-bold' : 'text-gray-500'}>Match Any (OR)</span>
+                        <Checkbox 
+                          checked={campaign.targeting.interestsMatchAll} 
+                          onCheckedChange={(c) => setCampaign(p => ({...p, targeting: {...p.targeting, interestsMatchAll: !!c}}))} 
+                        />
+                        <span className={campaign.targeting.interestsMatchAll ? 'font-bold' : 'text-gray-500'}>Match All (AND)</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {INTERESTS.map(int => (
+                        <label key={int} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.interests.includes(int) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
+                          <Checkbox checked={campaign.targeting.interests.includes(int)} onCheckedChange={() => toggleArrayItem('interests', int)} />
+                          <span>{int}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
+              {/* Category 5: Behavioral & Intent */}
+              <AccordionItem value="cat-5" className="border-b-0 px-6">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 rounded text-orange-600"><Tag className="w-4 h-4" /></div>
+                    <span className="font-semibold text-lg">5. Behavioral & Purchase Intent</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-6 space-y-6">
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="text-base block">Next 6 Months Purchase Intent</Label>
+                      <div className="flex items-center gap-2 text-sm bg-gray-100 px-2 py-1 rounded">
+                        <span className={!campaign.targeting.nextPurchaseIntentMatchAll ? 'font-bold' : 'text-gray-500'}>Match Any (OR)</span>
+                        <Checkbox 
+                          checked={campaign.targeting.nextPurchaseIntentMatchAll} 
+                          onCheckedChange={(c) => setCampaign(p => ({...p, targeting: {...p.targeting, nextPurchaseIntentMatchAll: !!c}}))} 
+                        />
+                        <span className={campaign.targeting.nextPurchaseIntentMatchAll ? 'font-bold' : 'text-gray-500'}>Match All (AND)</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {PURCHASE_INTENTS.map(intent => (
+                        <label key={intent} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.nextPurchaseIntent.includes(intent) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
+                          <Checkbox checked={campaign.targeting.nextPurchaseIntent.includes(intent)} onCheckedChange={() => toggleArrayItem('nextPurchaseIntent', intent)} />
                           <span>{intent}</span>
                         </label>
                       ))}
                     </div>
                   </div>
-                </div>
-              )}
-            </Card>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
+              {/* Category 7: Engagement Quality */}
+              <AccordionItem value="cat-7" className="border-b-0 px-6">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 rounded text-yellow-600"><Crown className="w-4 h-4" /></div>
+                    <span className="font-semibold text-lg">7. Engagement & Trust Tiers</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-6 space-y-6">
+                  <div className="grid md:grid-cols-2 gap-8 border-t pt-4">
+                    <div>
+                      <Label className="mb-2 block">Isolate Specific Tiers</Label>
+                      <div className="flex gap-2">
+                        {['bronze', 'silver', 'gold', 'platinum'].map(t => (
+                          <label key={t} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.tiers.includes(t) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
+                            <Checkbox checked={campaign.targeting.tiers.includes(t)} onCheckedChange={() => toggleArrayItem('tiers', t)} />
+                            <span>{t}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         )}
 
-        {/* Step 3: Content */}
-        {step === 3 && (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold mb-6">Campaign Content</h2>
-            
-            <div className="bg-gray-50 p-8 rounded-lg text-center">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">
-                Content builder will be available based on campaign type ({campaign.type})
-              </p>
-              <p className="text-sm text-gray-500">
-                For surveys: Add questions<br />
-                For videos: Upload video URL<br />
-                For apps: Provide app store link
-              </p>
-            </div>
-          </Card>
-        )}
-
-        {/* Step 4: Review */}
+        {/* Step 4: Final Review */}
         {step === 4 && (
           <Card className="p-6">
-            <h2 className="text-xl font-bold mb-6">Review Campaign</h2>
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Rocket className="text-primary"/> Final Campaign Review</h2>
             
-            <div className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-semibold mb-3">Campaign Details</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-gray-500">Title</span>
-                      <span className="font-medium">{campaign.titleEn || 'Not set'}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-gray-500">Type</span>
-                      <span className="font-medium capitalize">{campaign.type}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-gray-500">Reward</span>
-                      <span className="font-medium">{campaign.reward} EGP</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-gray-500">Total Budget</span>
-                      <span className="font-medium">{campaign.totalBudget} EGP</span>
-                    </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-gray-500">Target Completions</span>
-                      <span className="font-medium">{campaign.completionsNeeded}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-3">Targeting Summary</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-gray-500">Age Range</span>
-                      <span className="font-medium">{campaign.targeting.ageMin} - {campaign.targeting.ageMax}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-gray-500">Gender</span>
-                      <span className="font-medium capitalize">{campaign.targeting.gender}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-gray-500">Device Brands</span>
-                      <span className="font-medium">{campaign.targeting.deviceBrands.length > 0 ? campaign.targeting.deviceBrands.join(', ') : 'All'}</span>
-                    </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-gray-500">Estimated Reach</span>
-                      <span className="font-medium text-primary">{estimatedReach.toLocaleString()} users</span>
-                    </div>
-                  </div>
-                </div>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="bg-gray-50 p-4 rounded-lg border">
+                <h3 className="font-semibold border-b pb-2 mb-3">Audience Summary</h3>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex justify-between"><span className="text-gray-500">Gender</span> <span className="font-medium capitalize">{campaign.targeting.gender}</span></li>
+                  <li className="flex justify-between"><span className="text-gray-500">Age Range</span> <span className="font-medium">{campaign.targeting.ageMin} - {campaign.targeting.ageMax}</span></li>
+                  <li className="flex justify-between"><span className="text-gray-500">Cities</span> <span className="font-medium">{campaign.targeting.cities.length || 'All'}</span></li>
+                  <li className="flex justify-between mt-4 pt-4 border-t"><span className="font-semibold">Final App. Reach</span> <span className="font-bold text-primary text-lg">{reachData.totalReach.toLocaleString()}</span></li>
+                </ul>
               </div>
 
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <Check className="w-6 h-6 text-green-600" />
-                  <div>
-                    <p className="font-semibold text-green-800">Ready to Launch</p>
-                    <p className="text-sm text-green-600">Your campaign will be reviewed and published within 24 hours</p>
+              <div>
+                {!reachData.meetsMinimum ? (
+                  <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+                    <h4 className="font-bold mb-1">Launch Blocked</h4>
+                    <p className="text-sm">Cannot launch campaigns targeting under 500 estimated active users. Please expand your audience definition in Step 2.</p>
                   </div>
-                </div>
+                ) : (
+                   <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg">
+                    <h4 className="font-bold mb-1">Ready for Launch</h4>
+                    <p className="text-sm">Your audience segment is healthy. This survey will distribute until the {campaign.completionsNeeded} completion cap is hit.</p>
+                  </div>
+                )}
               </div>
             </div>
           </Card>
         )}
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between mt-8">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={step === 1}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-          
-          {step < 4 ? (
-            <Button onClick={handleNext}>
-              Next
-              <ArrowRight className="w-4 h-4 ml-2" />
+        {/* Global Footer Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <Button variant="outline" onClick={handleBack} disabled={step === 1}>
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back
             </Button>
-          ) : (
-            <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
-              <Rocket className="w-4 h-4 mr-2" />
-              Launch Campaign
-            </Button>
-          )}
+            
+            <div className="flex gap-2 items-center">
+              {STEPS.map(s => (
+                <div key={s.id} className={`w-3 h-3 rounded-full ${step === s.id ? 'bg-primary' : step > s.id ? 'bg-green-400' : 'bg-gray-200'}`} />
+              ))}
+            </div>
+
+            {step < 4 ? (
+              <Button onClick={handleNext}>
+                Next Step <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <Button onClick={handleSubmit} disabled={!reachData.meetsMinimum} className={reachData.meetsMinimum ? "bg-green-600 hover:bg-green-700" : "bg-gray-300"}>
+                <Rocket className="w-4 h-4 mr-2" /> Launch Campaign
+              </Button>
+            )}
+          </div>
         </div>
+
       </div>
     </div>
   );
