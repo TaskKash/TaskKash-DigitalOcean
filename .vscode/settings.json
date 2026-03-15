@@ -1,3 +1,4 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+  "java.import.excludes": ["**/node_modules/**"],
+  "java.project.importOnFirstTimeStartup": "disabled"
 }

@@ -61,7 +61,7 @@ export default function CampaignBuilder() {
       incomeLevels: [] as string[], homeOwnership: '' as ''|'owner'|'renter',
       // 3: Device & Connectivity
       deviceTiers: [] as string[], deviceOs: '' as ''|'iOS'|'Android', 
-      deviceModels: [] as string[], networkCarriers: [] as string[], connectionTypes: [] as string[],
+      deviceBrands: [] as string[], deviceModels: [] as string[], networkCarriers: [] as string[], connectionTypes: [] as string[],
       // 4: Psychographics
       interests: [] as string[], interestsMatchAll: false,
       brandAffinity: [] as string[], brandAffinityMatchAll: false,

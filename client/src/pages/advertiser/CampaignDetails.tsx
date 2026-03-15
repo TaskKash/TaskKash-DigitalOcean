@@ -206,10 +206,9 @@ export default function CampaignDetails() {
                   <span className="font-semibold">{spentPercentage}%</span>
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  {/* eslint-disable-next-line */}
                   <div 
                     className="h-full bg-gradient-to-r from-orange-400 to-orange-500 transition-all"
-                    style={{ width: `${spentPercentage}%` }}
+                    style={{ ...({ width: `${spentPercentage}%` }) } as React.CSSProperties}
                   />
                 </div>
               </div>
@@ -250,10 +249,9 @@ export default function CampaignDetails() {
                   <span className="font-semibold">{completionPercentage}%</span>
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  {/* eslint-disable-next-line */}
                   <div 
                     className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all"
-                    style={{ width: `${completionPercentage}%` }}
+                    style={{ ...({ width: `${completionPercentage}%` }) } as React.CSSProperties}
                   />
                 </div>
               </div>
