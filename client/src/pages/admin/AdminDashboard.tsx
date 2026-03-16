@@ -11,25 +11,19 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const stats = [
-  { icon: Users, label: 'إجمالي المستخدمين', value: '125,430', change: '+15.3%', color: 'blue' },
-  { icon: Building2, label: 'إجمالي المعلنين', value: '2,847', change: '+8.7%', color: 'purple' },
-  { icon: CheckCircle2, label: 'المهام المكتملة', value: '458,920', change: '+22.4%', color: 'green' },
-  { icon: DollarSign, label: 'الإيرادات (ج.م)', value: '4.58M', change: '+18.9%', color: 'orange' },
-  { icon: AlertTriangle, label: 'البلاغات المعلقة', value: '23', change: '-12%', color: 'red' },
-  { icon: Activity, label: 'المستخدمون النشطون', value: '98,234', change: '+11.2%', color: 'cyan' }
+  { icon: Users, label: 'Active Users Now', value: '4,231', change: '+5.2%', color: 'blue' },
+  { icon: Building2, label: 'New Advertisers (Today)', value: '12', change: '+20%', color: 'purple' },
+  { icon: CheckCircle2, label: 'Tasks Completed (Today)', value: '15,892', change: '+12.4%', color: 'green' },
+  { icon: DollarSign, label: 'Revenue (Today)', value: '84,500 EGP', change: '+18.9%', color: 'orange' },
+  { icon: AlertTriangle, label: 'Action Required', value: '38', change: '+5', color: 'red' },
+  { icon: Activity, label: 'System Load', value: '42%', change: '-3%', color: 'cyan' }
 ];
 
-const recentUsers = [
-  { name: 'أحمد محمد', email: 'ahmed@example.com', date: 'منذ 5 دقائق', status: 'active' },
-  { name: 'سارة أحمد', email: 'sara@example.com', date: 'منذ 12 دقيقة', status: 'active' },
-  { name: 'محمد علي', email: 'mohammed@example.com', date: 'منذ 18 دقيقة', status: 'pending' },
-  { name: 'فاطمة حسن', email: 'fatima@example.com', date: 'منذ 25 دقيقة', status: 'active' }
-];
-
-const recentReports = [
-  { type: 'spam', user: 'أحمد محمد', reason: 'محتوى غير لائق', date: 'منذ 10 دقائق', status: 'pending' },
-  { type: 'fraud', user: 'سارة أحمد', reason: 'محاولة احتيال', date: 'منذ 30 دقيقة', status: 'reviewing' },
-  { type: 'abuse', user: 'محمد علي', reason: 'إساءة استخدام', date: 'منذ ساعة', status: 'resolved' }
+const actionQueue = [
+  { id: '1', type: 'withdrawal', user: 'ahmed@example.com', amount: '1,500 EGP', urgency: 'high', time: '10 mins ago' },
+  { id: '2', type: 'report', user: 'sara@example.com', reason: 'Spam task', urgency: 'medium', time: '25 mins ago' },
+  { id: '3', type: 'kyc', user: 'mohammed@example.com', reason: 'ID Verification', urgency: 'low', time: '1 hour ago' },
+  { id: '4', type: 'campaign', user: 'brand@company.com', reason: 'Video format review', urgency: 'high', time: '2 mins ago' },
 ];
 
 export default function AdminDashboard() {
@@ -112,70 +106,55 @@ export default function AdminDashboard() {
           </div>
         </Card>
 
-        {/* Recent Activity */}
+        {/* Dashboard Panels */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Users */}
-          <Card className="p-6">
+          {/* Action Required Queue */}
+          <Card className="p-6 col-span-1 lg:col-span-2 border-red-200 shadow-sm border">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">المستخدمون الجدد</h2>
-              <Button variant="ghost" size="sm" onClick={() => setLocation('/admin/users')}>
-                عرض الكل
-              </Button>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="text-red-600 w-5 h-5" />
+                <h2 className="text-lg font-semibold text-red-700">Action Required Queue</h2>
+              </div>
+              <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-200">38 Pending Items</Badge>
             </div>
-            <div className="space-y-4">
-              {recentUsers.map((user, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Users className="w-5 h-5 text-primary" />
+            <div className="space-y-3">
+              {actionQueue.map((item) => (
+                <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                    <div className={`p-2 rounded-full flex-shrink-0 ${
+                      item.type === 'withdrawal' ? 'bg-orange-100 text-orange-600' :
+                      item.type === 'report' ? 'bg-red-100 text-red-600' :
+                      item.type === 'kyc' ? 'bg-blue-100 text-blue-600' :
+                      'bg-purple-100 text-purple-600'
+                    }`}>
+                      {item.type === 'withdrawal' ? <DollarSign className="w-5 h-5" /> :
+                       item.type === 'report' ? <AlertTriangle className="w-5 h-5" /> :
+                       item.type === 'kyc' ? <Users className="w-5 h-5" /> :
+                       <Building2 className="w-5 h-5" />}
                     </div>
                     <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <div className="flex items-center gap-2 font-medium">
+                        <span className="capitalize">{item.type}</span>
+                        {item.urgency === 'high' && <Badge variant="destructive" className="px-1.5 py-0 text-[10px]">Urgent</Badge>}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{item.user} - {item.amount || item.reason}</p>
                     </div>
                   </div>
-                  <div className="text-left">
-                    <Badge className={`${
-                      user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    } border-0 mb-1`}>
-                      {user.status === 'active' ? 'نشط' : 'معلق'}
-                    </Badge>
-                    <p className="text-xs text-muted-foreground">{user.date}</p>
+                  <div className="flex items-center gap-3 sm:w-auto w-full justify-between sm:justify-end">
+                    <span className="text-xs text-muted-foreground">{item.time}</span>
+                    <Button size="sm" onClick={() => setLocation(
+                      item.type === 'withdrawal' ? '/admin/withdrawals' :
+                      item.type === 'report' ? '/admin/reports' :
+                      item.type === 'kyc' ? '/admin/users' : '/admin/advertisers'
+                    )}>
+                      Review
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
-          </Card>
-
-          {/* Recent Reports */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">البلاغات الأخيرة</h2>
-              <Button variant="ghost" size="sm" onClick={() => setLocation('/admin/reports')}>
-                عرض الكل
-              </Button>
-            </div>
-            <div className="space-y-4">
-              {recentReports.map((report, index) => (
-                <div key={index} className="p-3 rounded-lg hover:bg-muted/50">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-red-600" />
-                      <p className="font-medium">{report.user}</p>
-                    </div>
-                    <Badge className={`${
-                      report.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      report.status === 'reviewing' ? 'bg-blue-100 text-blue-800' :
-                      'bg-green-100 text-green-800'
-                    } border-0`}>
-                      {report.status === 'pending' ? 'معلق' :
-                       report.status === 'reviewing' ? 'قيد المراجعة' : 'تم الحل'}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-1">{report.reason}</p>
-                  <p className="text-xs text-muted-foreground">{report.date}</p>
-                </div>
-              ))}
+            <div className="mt-4 text-center">
+              <Button variant="ghost" className="text-muted-foreground w-full">View All Pending Actions</Button>
             </div>
           </Card>
         </div>
@@ -190,7 +169,8 @@ export default function AdminDashboard() {
                 <span className="text-sm text-primary">ممتاز</span>
               </div>
               <div className="h-2 rounded-full bg-muted">
-                <div className="h-full rounded-full bg-green-600" style={{ width: '95%' }} />
+                <style>{`.w-dyn-sys-1 { width: 95%; }`}</style>
+                <div className="h-full rounded-full bg-green-600 w-dyn-sys-1" />
               </div>
             </div>
             <div>
@@ -199,7 +179,8 @@ export default function AdminDashboard() {
                 <span className="text-sm text-blue-600">جيد</span>
               </div>
               <div className="h-2 rounded-full bg-muted">
-                <div className="h-full rounded-full bg-blue-600" style={{ width: '68%' }} />
+                <style>{`.w-dyn-sys-2 { width: 68%; }`}</style>
+                <div className="h-full rounded-full bg-blue-600 w-dyn-sys-2" />
               </div>
             </div>
             <div>
@@ -208,7 +189,8 @@ export default function AdminDashboard() {
                 <span className="text-sm text-primary">سريع</span>
               </div>
               <div className="h-2 rounded-full bg-muted">
-                <div className="h-full rounded-full bg-green-600" style={{ width: '92%' }} />
+                <style>{`.w-dyn-sys-3 { width: 92%; }`}</style>
+                <div className="h-full rounded-full bg-green-600 w-dyn-sys-3" />
               </div>
             </div>
           </div>

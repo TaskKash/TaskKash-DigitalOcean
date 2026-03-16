@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
 } from '@/components/ui/dialog';
 import {
   Table,
@@ -20,7 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Edit, Trash2, Key, Search, UserCheck, UserX, ArrowLeft, UserPlus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Edit, Trash2, Key, Search, UserCheck, UserX, ArrowLeft, UserPlus, AlertTriangle, ShieldAlert, Target } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface User {
@@ -37,6 +37,8 @@ interface User {
   profileStrength: number;
   isVerified: number;
   createdAt: string;
+  failedTasks?: number;
+  fraudFlag?: string;
 }
 
 export default function UsersManagementNew() {
@@ -64,7 +66,21 @@ export default function UsersManagementNew() {
       });
       const data = await response.json();
       if (data.success) {
-        setUsers(data.users);
+        // Enriched with mock data for Admin CRM view
+        const enrichedUsers = data.users.map((user: User) => {
+          const failed = Math.floor(Math.random() * 20);
+          const ratio = user.completedTasks / (user.completedTasks + failed || 1);
+          let flag = '';
+          if (ratio < 0.3 && (user.completedTasks + failed) > 10) flag = 'High Failure Rate';
+          if (user.balance > 10000 && user.completedTasks < 5) flag = 'Suspicious Balance';
+          
+          return {
+            ...user,
+            failedTasks: failed,
+            fraudFlag: flag
+          };
+        });
+        setUsers(enrichedUsers);
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
@@ -249,7 +265,22 @@ export default function UsersManagementNew() {
 
         {/* Header Actions */}
         <div className="flex justify-between items-center mb-6">
-          <div></div>
+          <div className="flex gap-4">
+            <Card className="px-4 py-2 border-l-4 border-l-blue-500 shadow-sm flex items-center gap-3">
+              <div className="p-1.5 bg-blue-100 rounded-lg"><Target className="w-4 h-4 text-blue-600" /></div>
+              <div>
+                <div className="text-xs text-muted-foreground leading-tight">Total Taskers</div>
+                <div className="font-bold leading-tight">{users.length.toLocaleString()}</div>
+              </div>
+            </Card>
+            <Card className="px-4 py-2 border-l-4 border-l-red-500 shadow-sm flex items-center gap-3">
+              <div className="p-1.5 bg-red-100 rounded-lg"><ShieldAlert className="w-4 h-4 text-red-600" /></div>
+              <div>
+                <div className="text-xs text-muted-foreground leading-tight">Flagged Accounts</div>
+                <div className="font-bold leading-tight text-red-600">{users.filter(u => u.fraudFlag).length}</div>
+              </div>
+            </Card>
+          </div>
           <Button onClick={handleCreate} className="bg-green-600 hover:bg-green-700">
             <UserPlus className="w-4 h-4 mr-2" />
             Create New User
@@ -275,40 +306,72 @@ export default function UsersManagementNew() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Balance</TableHead>
-                  <TableHead>Tasks</TableHead>
-                  <TableHead>Tier</TableHead>
-                  <TableHead>Verified</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>User ID</TableHead>
+                  <TableHead>Contact Info</TableHead>
+                  <TableHead>Financials</TableHead>
+                  <TableHead>Task Ratio (Pass/Fail)</TableHead>
+                  <TableHead>Tier & Status</TableHead>
+                  <TableHead>Fraud Engine</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.id}</TableCell>
-                    <TableCell>{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.phone}</TableCell>
-                    <TableCell>{user.balance} EGP</TableCell>
-                    <TableCell>{user.completedTasks}</TableCell>
+                {filteredUsers.map((user) => {
+                  const totalTasks = user.completedTasks + (user.failedTasks || 0);
+                  const passRate = totalTasks > 0 ? Math.round((user.completedTasks / totalTasks) * 100) : 0;
+                  
+                  return (
+                  <TableRow key={user.id} className={user.fraudFlag ? "bg-red-50/30" : ""}>
+                    <TableCell className="font-medium text-gray-500">#{user.id}</TableCell>
                     <TableCell>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                        {user.tier}
-                      </span>
+                      <div className="font-medium text-gray-900">{user.name}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{user.email}</div>
+                      <div className="text-xs text-muted-foreground">{user.phone}</div>
                     </TableCell>
                     <TableCell>
-                      {user.isVerified ? (
-                        <UserCheck className="w-5 h-5 text-green-600" />
+                      <div className="font-bold text-green-700">{user.balance.toLocaleString()} EGP</div>
+                      <div className="text-xs text-muted-foreground">Lifetime: {user.totalEarnings?.toLocaleString() || 0} EGP</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-green-600" title="Completed">{user.completedTasks}</span>
+                        <span className="text-muted-foreground">/</span>
+                        <span className="text-sm font-medium text-red-600" title="Failed">{user.failedTasks || 0}</span>
+                      </div>
+                      <div className="w-24 h-1.5 bg-red-100 rounded-full overflow-hidden">
+                        <style>{`.w-dyn-${user.id} { width: ${passRate}%; }`}</style>
+                        <div className={`h-full bg-green-500 w-dyn-${user.id}`} />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1 items-start">
+                        <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${
+                          user.tier === 'platinum' ? 'bg-slate-200 text-slate-800' :
+                          user.tier === 'gold' ? 'bg-yellow-100 text-yellow-800' :
+                          user.tier === 'silver' ? 'bg-gray-100 text-gray-800' :
+                          'bg-orange-100 text-orange-800'
+                        }`}>
+                          {user.tier}
+                        </Badge>
+                        {user.isVerified ? (
+                          <span className="text-[10px] text-green-600 flex items-center gap-1"><UserCheck className="w-3 h-3"/> KYC Verified</span>
+                        ) : (
+                          <span className="text-[10px] text-gray-400 flex items-center gap-1"><UserX className="w-3 h-3"/> Unverified</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {user.fraudFlag ? (
+                        <div className="flex items-center gap-1.5 text-red-600 text-xs font-semibold bg-red-100 px-2 py-1 rounded max-w-fit">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          {user.fraudFlag}
+                        </div>
                       ) : (
-                        <UserX className="w-5 h-5 text-gray-400" />
+                        <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">Clear</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 justify-end">
                         <Button
                           size="sm"
                           variant="outline"
@@ -333,7 +396,8 @@ export default function UsersManagementNew() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -383,10 +447,11 @@ export default function UsersManagementNew() {
                 />
               </div>
               <div>
-                <Label htmlFor="tier">Tier</Label>
-                <select
-                  id="tier"
-                  className="w-full border rounded px-3 py-2"
+                  <Label htmlFor="tier">Tier</Label>
+                  <select
+                    id="tier"
+                    title="User Tier"
+                    className="w-full border rounded px-3 py-2"
                   value={editForm.tier || ''}
                   onChange={(e) => setEditForm({ ...editForm, tier: e.target.value })}
                 >
@@ -411,6 +476,7 @@ export default function UsersManagementNew() {
                 <Label className="flex items-center gap-2">
                   <input
                     type="checkbox"
+                    title="Verify User"
                     checked={editForm.isVerified === 1}
                     onChange={(e) => setEditForm({ ...editForm, isVerified: e.target.checked ? 1 : 0 })}
                   />
@@ -505,10 +571,11 @@ export default function UsersManagementNew() {
                 />
               </div>
               <div>
-                <Label htmlFor="create-tier">Tier</Label>
-                <select
-                  id="create-tier"
-                  className="w-full border rounded px-3 py-2"
+                  <Label htmlFor="create-tier">Tier</Label>
+                  <select
+                    id="create-tier"
+                    title="User Tier"
+                    className="w-full border rounded px-3 py-2"
                   value={createForm.tier || 'tier1'}
                   onChange={(e) => setCreateForm({ ...createForm, tier: e.target.value })}
                 >
@@ -522,6 +589,7 @@ export default function UsersManagementNew() {
                 <Label className="flex items-center gap-2">
                   <input
                     type="checkbox"
+                    title="Verify User"
                     checked={createForm.isVerified === 1}
                     onChange={(e) => setCreateForm({ ...createForm, isVerified: e.target.checked ? 1 : 0 })}
                   />

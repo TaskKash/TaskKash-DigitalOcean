@@ -116,6 +116,8 @@ import AdminTasks from "./pages/admin/Tasks";
 import UsersManagementNew from "./pages/admin/UsersManagementNew";
 import AdvertisersManagementNew from "./pages/admin/AdvertisersManagementNew";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
+import FinancialControl from "./pages/admin/FinancialControl";
+import PlatformOperations from "./pages/admin/PlatformOperations";
 import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
 import AdvertiserLayout from "./components/layout/AdvertiserLayout";
 import { AdvertiserProtectedRoute } from "./components/AdvertiserProtectedRoute";
@@ -250,13 +252,13 @@ function Router() {
       <Route path="/admin/reports">
         <AdminProtectedRoute><ReportedTasks /></AdminProtectedRoute>
       </Route>
-      <Route path="/admin/transactions">
-        <AdminProtectedRoute><ReportedTasks /></AdminProtectedRoute>
+      <Route path="/admin/financials">
+        <AdminProtectedRoute><FinancialControl /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/operations">
+        <AdminProtectedRoute><PlatformOperations /></AdminProtectedRoute>
       </Route>
       <Route path="/admin/settings">
-        <AdminProtectedRoute><PlatformSettings /></AdminProtectedRoute>
-      </Route>
-      <Route path="/admin/countries">
         <AdminProtectedRoute><PlatformSettings /></AdminProtectedRoute>
       </Route>
       <Route path="/admin/withdrawals">

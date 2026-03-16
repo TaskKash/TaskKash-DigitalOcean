@@ -60,11 +60,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-    { icon: Users, label: 'Users', path: '/admin/users' },
-    { icon: Briefcase, label: 'Tasks', path: '/admin/tasks' },
     { icon: Building2, label: 'Advertisers', path: '/admin/advertisers' },
-    { icon: Receipt, label: 'Transactions', path: '/admin/transactions' },
-    { icon: Globe, label: 'Countries', path: '/admin/countries' },
+    { icon: Users, label: 'Users', path: '/admin/users' },
+    { icon: Receipt, label: 'Financial Control', path: '/admin/financials' },
+    { icon: Globe, label: 'Platform Operations', path: '/admin/operations' },
+    { icon: Briefcase, label: 'Settings', path: '/admin/settings' },
   ];
 
   return (

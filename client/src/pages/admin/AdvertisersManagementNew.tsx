@@ -20,7 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Edit, Trash2, Key, Search, CheckCircle, XCircle, ArrowLeft, Building2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Edit, Trash2, Key, Search, CheckCircle, XCircle, ArrowLeft, Building2, PlayCircle, AlertTriangle, DollarSign } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface Advertiser {
@@ -32,7 +33,14 @@ interface Advertiser {
   isActive: number;
   createdAt: string;
   updatedAt: string;
+  totalSpent?: number;
+  activeCampaigns?: number;
 }
+
+const mockPendingCampaigns = [
+  { id: 'CMP-001', advertiser: 'Samsung Egypt', title: 'Galaxy S25 Launch', type: 'Video', budget: '50,000 EGP', status: 'pending' },
+  { id: 'CMP-002', advertiser: 'Vodafone', title: 'Summer Offer', type: 'App Install', budget: '120,000 EGP', status: 'reviewing' },
+];
 
 export default function AdvertisersManagementNew() {
   const [, setLocation] = useLocation();
@@ -69,7 +77,13 @@ export default function AdvertisersManagementNew() {
       });
       const data = await response.json();
       if (data.success) {
-        setAdvertisers(data.advertisers);
+        // Enriched with mock data for CRM view
+        const enrichedAdvertisers = data.advertisers.map((adv: Advertiser) => ({
+          ...adv,
+          totalSpent: Math.floor(Math.random() * 500000),
+          activeCampaigns: Math.floor(Math.random() * 5),
+        }));
+        setAdvertisers(enrichedAdvertisers);
       }
     } catch (error) {
       console.error('Failed to fetch advertisers:', error);
@@ -257,12 +271,57 @@ export default function AdvertisersManagementNew() {
 
         {/* Header Actions */}
         <div className="flex justify-between items-center mb-6">
-          <div></div>
+          <div className="flex gap-4">
+            <Card className="px-4 py-2 border-l-4 border-l-purple-500 shadow-sm">
+              <span className="text-sm text-muted-foreground mr-2">Total Advertisers:</span>
+              <span className="font-bold">{advertisers.length}</span>
+            </Card>
+            <Card className="px-4 py-2 border-l-4 border-l-green-500 shadow-sm">
+              <span className="text-sm text-muted-foreground mr-2">Total Spend:</span>
+              <span className="font-bold">1,240,000 EGP</span>
+            </Card>
+          </div>
           <Button onClick={handleCreate} className="bg-purple-600 hover:bg-purple-700">
             <Building2 className="w-4 h-4 mr-2" />
             Create New Advertiser
           </Button>
         </div>
+
+        {/* Campaign Moderation Hub */}
+        <Card className="p-0 mb-8 border-orange-200 overflow-hidden shadow-sm">
+          <div className="bg-orange-50 border-b border-orange-100 p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="text-orange-600 w-5 h-5" />
+              <h2 className="text-lg font-semibold text-orange-900">Campaign Moderation Queue</h2>
+            </div>
+            <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200 border-none">2 Pending Review</Badge>
+          </div>
+          <div className="divide-y divide-border">
+            {mockPendingCampaigns.map(camp => (
+              <div key={camp.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-muted/50 transition-colors">
+                <div className="mb-3 sm:mb-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-gray-900">{camp.title}</span>
+                    <Badge variant="outline" className="text-[10px] uppercase">{camp.type}</Badge>
+                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100">{camp.budget}</Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Building2 className="w-4 h-4" /> {camp.advertiser} • ID: {camp.id}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">View Details</Button>
+                  <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700 hover:bg-green-50">
+                    <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <XCircle className="w-4 h-4 mr-1" /> Reject
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
 
         {/* Search */}
         <Card className="p-4 mb-6">
@@ -284,10 +343,10 @@ export default function AdvertisersManagementNew() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
-                  <TableHead>Name (EN)</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Slug</TableHead>
+                  <TableHead>Advertiser</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Active Campaigns</TableHead>
+                  <TableHead>Total Spent</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -295,26 +354,33 @@ export default function AdvertisersManagementNew() {
               <TableBody>
                 {filteredAdvertisers.map((advertiser) => (
                   <TableRow key={advertiser.id}>
-                    <TableCell className="font-medium">{advertiser.id}</TableCell>
-                    <TableCell>{advertiser.nameEn}</TableCell>
-                    <TableCell>{advertiser.email}</TableCell>
+                    <TableCell className="font-medium text-gray-500">{advertiser.id}</TableCell>
                     <TableCell>
-                      <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                        {advertiser.slug}
-                      </code>
+                      <div className="font-medium text-gray-900">{advertiser.nameEn}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{advertiser.email}</div>
                     </TableCell>
                     <TableCell>
                       {advertiser.isActive ? (
-                        <span className="flex items-center gap-1 text-green-600">
-                          <CheckCircle className="w-4 h-4" />
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           Active
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-red-600">
-                          <XCircle className="w-4 h-4" />
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                           Inactive
                         </span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <PlayCircle className="w-4 h-4 text-purple-500" />
+                        {advertiser.activeCampaigns || 0}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 font-bold text-green-700">
+                        <DollarSign className="w-4 h-4" />
+                        {advertiser.totalSpent?.toLocaleString() || 0} EGP
+                      </div>
                     </TableCell>
                     <TableCell>
                       {new Date(advertiser.createdAt).toLocaleDateString()}
