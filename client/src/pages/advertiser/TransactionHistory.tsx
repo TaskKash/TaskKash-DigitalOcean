@@ -8,95 +8,26 @@ import {
   Calendar, CreditCard, FileText
 } from 'lucide-react';
 
-const transactions = [
-  {
-    id: 'TXN-001',
-    type: 'payment',
-    description: 'دفع لحملة إطلاق المنتج الجديد',
-    amount: -23500,
-    date: '2024-01-25',
-    status: 'completed',
-    method: 'Visa •••• 4242',
-    reference: 'REF-12345'
-  },
-  {
-    id: 'TXN-002',
-    type: 'refund',
-    description: 'استرداد من حملة ملغاة',
-    amount: +5000,
-    date: '2024-01-24',
-    status: 'completed',
-    method: 'Visa •••• 4242',
-    reference: 'REF-12344'
-  },
-  {
-    id: 'TXN-003',
-    type: 'payment',
-    description: 'دفع لحملة استبيان أبحاث السوق',
-    amount: -15000,
-    date: '2024-01-23',
-    status: 'completed',
-    method: 'Mastercard •••• 8888',
-    reference: 'REF-12343'
-  },
-  {
-    id: 'TXN-004',
-    type: 'payment',
-    description: 'دفع لحملة مشاهدة فيديو ترويجي',
-    amount: -8500,
-    date: '2024-01-22',
-    status: 'completed',
-    method: 'Visa •••• 4242',
-    reference: 'REF-12342'
-  },
-  {
-    id: 'TXN-005',
-    type: 'payment',
-    description: 'دفع لحملة مراجعة المتاجر',
-    amount: -12000,
-    date: '2024-01-21',
-    status: 'pending',
-    method: 'Visa •••• 4242',
-    reference: 'REF-12341'
-  },
-  {
-    id: 'TXN-006',
-    type: 'payment',
-    description: 'رسوم خدمة شهرية',
-    amount: -500,
-    date: '2024-01-20',
-    status: 'completed',
-    method: 'Visa •••• 4242',
-    reference: 'REF-12340'
-  },
-  {
-    id: 'TXN-007',
-    type: 'payment',
-    description: 'دفع لحملة تطبيقات الجوال',
-    amount: -18000,
-    date: '2024-01-19',
-    status: 'completed',
-    method: 'Mastercard •••• 8888',
-    reference: 'REF-12339'
-  },
-  {
-    id: 'TXN-008',
-    type: 'refund',
-    description: 'استرداد مهام مرفوضة',
-    amount: +1500,
-    date: '2024-01-18',
-    status: 'completed',
-    method: 'Visa •••• 4242',
-    reference: 'REF-12338'
-  }
-];
+// Transactions will be fetched from API
 
 export default function TransactionHistory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [transactionsList, setTransactionsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredTransactions = transactions.filter(txn => {
+  React.useEffect(() => {
+    fetch('/api/advertiser/billing/transactions')
+      .then(r => r.json())
+      .then(data => {
+        setTransactionsList(data);
+        setLoading(false);
+      })
+      .catch(console.error);
+  }, []);
+
+  const filteredTransactions = transactionsList.filter(txn => {
     const matchesSearch = 
       txn.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       txn.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -105,13 +36,17 @@ export default function TransactionHistory() {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const totalSpent = transactions
+  const totalSpent = transactionsList
     .filter(t => t.amount < 0)
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-  const totalRefunded = transactions
+  const totalRefunded = transactionsList
     .filter(t => t.amount > 0)
     .reduce((sum, t) => sum + t.amount, 0);
+
+  if (loading) {
+    return <div className="min-h-screen bg-background p-8 text-center text-muted-foreground">جاري تحميل المعاملات...</div>;
+  }
 
   const getStatusBadge = (status: string) => {
     if (status === 'completed') {
@@ -153,15 +88,19 @@ export default function TransactionHistory() {
               />
             </div>
             <select
+              title="Filter by Type"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
               className="px-4 py-2 border rounded-lg bg-white"
             >
               <option value="all">جميع الأنواع</option>
               <option value="payment">دفع</option>
+              <option value="payout">دفع للمستخدمين</option>
+              <option value="deposit">شحن رصيد</option>
               <option value="refund">استرداد</option>
             </select>
             <select
+              title="Filter by Status"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="px-4 py-2 border rounded-lg bg-white"
@@ -211,7 +150,7 @@ export default function TransactionHistory() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {transactions.length}
+                  {transactionsList.length}
                 </p>
                 <p className="text-sm text-muted-foreground">إجمالي المعاملات</p>
               </div>

@@ -565,10 +565,37 @@ export default function TaskCompletion() {
 
               {result.passed && (
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('tasks.rewardEarned')}</p>
-                  <p className="text-4xl font-bold text-green-600 dark:text-green-400">
-                    {result.reward} ج.م
-                  </p>
+                  <h3 className="text-lg font-bold text-card-foreground dark:text-card-foreground mb-4">
+                    {language === 'ar' ? 'تفاصيل المكافأة' : 'Reward Breakdown'}
+                  </h3>
+                  
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {language === 'ar' ? 'قيمة المهمة الأساسية' : 'Gross Reward'}
+                      </span>
+                      <span className="font-semibold">{result.reward || 0} ج.م</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center text-red-500">
+                      <span className="text-sm">
+                        {language === 'ar' ? 'عمولة المنصة' : 'Platform Commission'} 
+                        ({user?.tier === 'bronze' ? '5%' : user?.tier === 'silver' ? '10%' : '20%'} - {language === 'ar' ? 'باقة ' : 'Tier '}{user?.tier || 'bronze'})
+                      </span>
+                      <span className="font-semibold">
+                        -{((result.reward || 0) * (user?.tier === 'bronze' ? 0.05 : user?.tier === 'silver' ? 0.10 : 0.20)).toFixed(2)} ج.م
+                      </span>
+                    </div>
+                    
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between items-center">
+                      <span className="font-bold text-gray-800 dark:text-gray-200">
+                        {language === 'ar' ? 'الصافي المضاف لمحفظتك' : 'Net Added to Wallet'}
+                      </span>
+                      <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {((result.reward || 0) * (1 - (user?.tier === 'bronze' ? 0.05 : user?.tier === 'silver' ? 0.10 : 0.20))).toFixed(2)} ج.م
+                      </span>
+                    </div>
+                  </div>
                 </div>
               )}
 

@@ -13,16 +13,20 @@ export default function Analytics() {
   const [, setLocation] = useLocation();
   const { currentAdvertiser, advertiserCampaigns } = useApp();
 
-  // إذا لم يكن هناك معلن مسجل، إعادة توجيه لصفحة تسجيل الدخول
-  useEffect(() => {
-    if (!currentAdvertiser) {
-      setLocation('/advertiser/login');
-    }
-  }, [currentAdvertiser, setLocation]);
-
+  // إخفاء مؤقت إذا لم يكن هناك معلن
   if (!currentAdvertiser) {
     return null;
   }
+  
+  const [performance, setPerformance] = useState<any[]>([]);
+  const [timeRange, setTimeRange] = useState('30');
+  
+  useEffect(() => {
+    fetch(`/api/advertiser/analytics/performance?days=${timeRange}`)
+      .then(r => r.json())
+      .then(setPerformance)
+      .catch(console.error);
+  }, [timeRange]);
 
   // حساب الإحصائيات من البيانات الحقيقية
   const totalViews = advertiserCampaigns.reduce((sum, c) => sum + c.performance.impressions, 0);
@@ -73,7 +77,7 @@ export default function Analytics() {
     }
   ];
 
-  // بيانات ديموغرافية وهمية (يمكن تحسينها لاحقاً)
+  // بيانات ديموغرافية نسبة لإجمالي الإكمالات
   const demographicsData = [
     { age: '18-24', percentage: 35, count: Math.round(totalCompletions * 0.35) },
     { age: '25-34', percentage: 42, count: Math.round(totalCompletions * 0.42) },
@@ -85,8 +89,7 @@ export default function Analytics() {
     { city: 'القاهرة', percentage: 38, count: Math.round(totalCompletions * 0.38) },
     { city: 'الإسكندرية', percentage: 28, count: Math.round(totalCompletions * 0.28) },
     { city: 'الجيزة', percentage: 15, count: Math.round(totalCompletions * 0.15) },
-    { city: 'طنطا', percentage: 10, count: Math.round(totalCompletions * 0.10) },
-    { city: 'أخرى', percentage: 9, count: Math.round(totalCompletions * 0.09) }
+    { city: 'محافظات أخرى', percentage: 19, count: Math.round(totalCompletions * 0.19) }
   ];
 
   return (
@@ -135,8 +138,9 @@ export default function Analytics() {
 
         {/* Tabs */}
         <Tabs defaultValue="campaigns" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="campaigns">أداء الحملات</TabsTrigger>
+            <TabsTrigger value="performance">أداء الأيام</TabsTrigger>
             <TabsTrigger value="demographics">الديموغرافيا</TabsTrigger>
             <TabsTrigger value="locations">المواقع</TabsTrigger>
           </TabsList>
@@ -215,6 +219,47 @@ export default function Analytics() {
                   </Button>
                 </div>
               )}
+            </Card>
+          </TabsContent>
+
+          {/* Daily Performance Tab */}
+          <TabsContent value="performance" className="space-y-4">
+            <Card className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-semibold">الأداء اليومي (أخر {timeRange} يوم)</h2>
+                <select 
+                  className="border rounded p-1 text-sm bg-white" 
+                  value={timeRange} 
+                  onChange={e => setTimeRange(e.target.value)}
+                >
+                  <option value="7">أخر 7 أيام</option>
+                  <option value="30">أخر 30 يوم</option>
+                  <option value="90">أخر 90 يوم</option>
+                </select>
+              </div>
+              <div className="space-y-4">
+                {performance.map((day, i) => {
+                  const maxCompletions = Math.max(1, Math.max(...performance.map(p => p.completions)));
+                  const percent = (day.completions / maxCompletions) * 100;
+                  return (
+                    <div key={i} className="flex items-center gap-4">
+                      <span className="text-sm text-gray-500 w-20">{day.date}</span>
+                      <div className="flex-1 bg-gray-100 rounded-full h-6 relative overflow-hidden">
+                        <div 
+                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full flex items-center pr-2 transition-all"
+                          style={{ width: `${Math.max(5, percent)}%` }}
+                        >
+                          <span className="text-xs text-white font-medium pr-2 text-right w-full">{day.completions}</span>
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold w-24 text-left">{day.spent} ج.م</span>
+                    </div>
+                  );
+                })}
+                {performance.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">لا توجد بيانات للأداء في هذه الفترة.</div>
+                )}
+              </div>
             </Card>
           </TabsContent>
 

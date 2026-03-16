@@ -4,35 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, Download, DollarSign, Calendar, CheckCircle2 } from 'lucide-react';
 
-const invoices = [
-  {
-    id: 'INV-2025-001',
-    date: '2025-10-01',
-    amount: 50000,
-    status: 'paid',
-    campaign: 'حملة إطلاق المنتج',
-    dueDate: '2025-10-15',
-    paidDate: '2025-10-12'
-  },
-  {
-    id: 'INV-2025-002',
-    date: '2025-09-01',
-    amount: 30000,
-    status: 'paid',
-    campaign: 'استبيان أبحاث السوق',
-    dueDate: '2025-09-15',
-    paidDate: '2025-09-10'
-  },
-  {
-    id: 'INV-2025-003',
-    date: '2025-08-01',
-    amount: 100000,
-    status: 'paid',
-    campaign: 'مراجعة المتاجر',
-    dueDate: '2025-08-15',
-    paidDate: '2025-08-14'
-  }
-];
+// Invoices will be fetched from API
 
 const paymentMethods = [
   {
@@ -52,8 +24,27 @@ const paymentMethods = [
 ];
 
 export default function Billing() {
-  const totalSpent = invoices.reduce((sum, inv) => sum + inv.amount, 0);
-  const currentBalance = 25000;
+  const [balanceData, setBalanceData] = React.useState({ balance: 0, totalSpent: 0, totalBudget: 0 });
+  const [invoicesList, setInvoicesList] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    Promise.all([
+      fetch('/api/advertiser/billing/balance').then(r => r.json()),
+      fetch('/api/advertiser/billing/invoices').then(r => r.json())
+    ]).then(([bData, iData]) => {
+      setBalanceData(bData);
+      setInvoicesList(iData);
+      setLoading(false);
+    }).catch(console.error);
+  }, []);
+
+  const totalSpent = balanceData.totalSpent;
+  const currentBalance = balanceData.balance;
+
+  if (loading) {
+    return <div className="min-h-screen bg-background p-8 text-center text-muted-foreground">جاري تحميل بيانات الفواتير...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,7 +73,7 @@ export default function Billing() {
             </div>
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-sm opacity-90">عدد الفواتير</p>
-              <p className="text-xl font-bold">{invoices.length}</p>
+              <p className="text-xl font-bold">{invoicesList.length}</p>
             </div>
           </div>
           <Button className="w-full mt-4 bg-white text-primary hover:bg-gray-100">
@@ -144,7 +135,7 @@ export default function Billing() {
           </div>
 
           <div className="space-y-3">
-            {invoices.map((invoice) => (
+            {invoicesList.map((invoice) => (
               <div
                 key={invoice.id}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"

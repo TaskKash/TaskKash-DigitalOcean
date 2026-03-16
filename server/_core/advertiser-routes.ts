@@ -143,6 +143,91 @@ router.get('/advertisers/:slug', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/advertiser/analytics/overview - Get global analytics overview
+ */
+router.get('/advertiser/analytics/overview', requireAdvertiser, async (req: Request, res: Response) => {
+  try {
+    const advertiserId = (req as any).user.advertiserId;
+    
+    // Overall stats derived from campaigns and tasks
+    const stats = await query(`
+      SELECT 
+        (SELECT COUNT(*) FROM campaigns WHERE advertiserId = ?) as totalCampaigns,
+        (SELECT COUNT(*) FROM tasks WHERE advertiserId = ?) as totalTasks,
+        (SELECT SUM(currentCompletions) FROM tasks WHERE advertiserId = ?) as tasksCompleted,
+        (SELECT SUM(maxCompletions) FROM tasks WHERE advertiserId = ?) as tasksAssigned,
+        (SELECT SUM(reward * currentCompletions) FROM tasks WHERE advertiserId = ?) as totalSpend
+    `, [advertiserId, advertiserId, advertiserId, advertiserId, advertiserId]);
+    
+    // Audience reached = unique users who completed tasks for this advertiser
+    const audienceReached = await query(`
+      SELECT COUNT(DISTINCT userId) as uniqueUsers
+      FROM userTasks ut
+      JOIN tasks t ON ut.taskId = t.id
+      WHERE t.advertiserId = ? AND ut.status = 'completed'
+    `, [advertiserId]);
+
+    const globalStats = stats[0] || {};
+    const uUsers = audienceReached[0]?.uniqueUsers || 0;
+    
+    // Calculate completion rate based on tasks assigned vs completed
+    const assigned = Number(globalStats.tasksAssigned) || 0;
+    const completed = Number(globalStats.tasksCompleted) || 0;
+    const completionRate = assigned > 0 ? (completed / assigned) * 100 : 0;
+
+    res.json({
+      totalCampaigns: Number(globalStats.totalCampaigns) || 0,
+      totalTasks: Number(globalStats.totalTasks) || 0,
+      tasksCompleted: completed,
+      tasksAssigned: assigned,
+      totalSpend: Number(globalStats.totalSpend) || 0,
+      audienceReached: uUsers,
+      completionRate: Number(completionRate.toFixed(1))
+    });
+  } catch (error) {
+    console.error('Error fetching analytics overview:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics overview' });
+  }
+});
+
+/**
+ * GET /api/advertiser/analytics/performance - Get daily performance
+ */
+router.get('/advertiser/analytics/performance', requireAdvertiser, async (req: Request, res: Response) => {
+  try {
+    const advertiserId = (req as any).user.advertiserId;
+    const days = parseInt(req.query.days as string) || 30;
+    
+    const dailyPerformance = await query(`
+      SELECT 
+        DATE(ut.completedAt) as date,
+        COUNT(*) as completions,
+        SUM(t.reward) as spent,
+        COUNT(DISTINCT ut.userId) as uniqueViews
+      FROM userTasks ut
+      JOIN tasks t ON ut.taskId = t.id
+      WHERE t.advertiserId = ?
+        AND ut.status = 'completed'
+        AND ut.completedAt >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+      GROUP BY DATE(ut.completedAt)
+      ORDER BY date ASC
+    `, [advertiserId, days]);
+    
+    const formattedData = dailyPerformance.map((row: any) => ({
+      date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      completions: Number(row.completions) || 0,
+      spent: Number(row.spent) || 0,
+      views: Number(row.uniqueViews) || 0 // Proxy for views
+    }));
+    
+    res.json(formattedData);
+  } catch (error) {
+    console.error('Error fetching analytics performance:', error);
+    res.status(500).json({ error: 'Failed to fetch performance data' });
+  }
+});
+
+/**
  * GET /api/advertiser/dashboard - Get advertiser dashboard data
  */
 router.get('/advertiser/dashboard', requireAdvertiser, async (req: Request, res: Response) => {
@@ -707,6 +792,107 @@ router.get('/advertiser/templates', requireAdvertiser, async (req: Request, res:
   } catch (error) {
     console.error('Error fetching templates:', error);
     res.status(500).json({ error: 'Failed to fetch templates' });
+  }
+});
+
+/**
+ * GET /api/advertiser/billing/balance - Get wallet balance and spending
+ */
+router.get('/advertiser/billing/balance', requireAdvertiser, async (req: Request, res: Response) => {
+  try {
+    const advertiserId = (req as any).user.advertiserId;
+    
+    // Calculate total spent from tasks completed
+    const statsResult = await query(`
+      SELECT SUM(reward * currentCompletions) as totalSpent
+      FROM tasks
+      WHERE advertiserId = ?
+    `, [advertiserId]);
+    
+    const totalSpent = Number(statsResult[0]?.totalSpent) || 0;
+    
+    // Simulate a total budget metric (e.g., they deposited 50k, or spent + 10k buffer)
+    const simulatedTotalBudget = Math.max(50000, totalSpent + 15000);
+    const available = Math.max(0, simulatedTotalBudget - totalSpent);
+
+    res.json({
+      balance: available,
+      totalSpent: totalSpent,
+      totalBudget: simulatedTotalBudget,
+      currency: 'EGP'
+    });
+  } catch (error) {
+    console.error('Error fetching billing balance:', error);
+    res.status(500).json({ error: 'Failed to fetch billing balance' });
+  }
+});
+
+/**
+ * GET /api/advertiser/billing/transactions - Get list of transactions
+ */
+router.get('/advertiser/billing/transactions', requireAdvertiser, async (req: Request, res: Response) => {
+  try {
+    const advertiserId = (req as any).user.advertiserId;
+    
+    // We will simulate transactions by grouping task payouts by day
+    const transactions = await query(`
+      SELECT 
+        DATE(ut.completedAt) as date,
+        t.titleEn as description,
+        SUM(t.reward) as amount,
+        COUNT(*) as count
+      FROM userTasks ut
+      JOIN tasks t ON ut.taskId = t.id
+      WHERE t.advertiserId = ? AND ut.status = 'completed'
+      GROUP BY DATE(ut.completedAt), t.id, t.titleEn
+      ORDER BY date DESC
+      LIMIT 100
+    `, [advertiserId]);
+    
+    const formattedData = transactions.map((row: any, i: number) => ({
+      id: `TXN-${Date.now()}-${i}`,
+      date: new Date(row.date).toISOString().split('T')[0],
+      description: `Task Payouts: ${row.description} (${row.count} completions)`,
+      amount: -Number(row.amount), // Negative to represent spending
+      status: 'completed',
+      type: 'payout'
+    }));
+
+    // Add a simulated deposit if there are payouts, just to show a deposit transaction
+    if (formattedData.length > 0) {
+      formattedData.push({
+        id: `TXN-DEP-${Date.now()}`,
+        date: new Date(formattedData[formattedData.length-1].date).toISOString().split('T')[0], // around the time of the oldest payout
+        description: 'Wallet Deposit via Bank Transfer',
+        amount: 50000,
+        status: 'completed',
+        type: 'deposit'
+      });
+    }
+
+    res.json(formattedData);
+  } catch (error) {
+    console.error('Error fetching billing transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch transactions' });
+  }
+});
+
+/**
+ * GET /api/advertiser/billing/invoices - Get mock invoices
+ */
+router.get('/advertiser/billing/invoices', requireAdvertiser, async (req: Request, res: Response) => {
+  try {
+    // Return a few simulated invoices for the frontend
+    const invoices = [
+      { id: 'INV-2024-001', date: '2024-01-01', amount: 5000, status: 'paid', pdfUrl: '#' },
+      { id: 'INV-2024-002', date: '2024-02-01', amount: 12500, status: 'paid', pdfUrl: '#' },
+      { id: 'INV-2024-003', date: '2024-03-01', amount: 8000, status: 'pending', pdfUrl: '#' }
+    ];
+    
+    res.json(invoices);
+  } catch (error) {
+    console.error('Error fetching invoices:', error);
+    res.status(500).json({ error: 'Failed to fetch invoices' });
   }
 });
 

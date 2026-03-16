@@ -9,60 +9,48 @@ import {
   Download, Filter, RefreshCw, Smartphone, MapPin, UserCheck
 } from 'lucide-react';
 
-// Mock data for analytics
-const mockCampaignData = {
-  id: 1,
-  name: 'Samsung Customer Experience Survey',
-  status: 'active',
-  startDate: '2024-12-01',
-  endDate: '2024-12-31',
-  budget: 3000,
-  spent: 1850,
-  reward: 30,
-  completions: 62,
-  targetCompletions: 100,
-  views: 1250,
-  started: 180,
-  conversionRate: 34.4,
-  avgCompletionTime: '4m 32s',
-};
-
-const dailyStats = [
-  { date: 'Dec 12', completions: 8, views: 120, spent: 240 },
-  { date: 'Dec 13', completions: 12, views: 180, spent: 360 },
-  { date: 'Dec 14', completions: 6, views: 95, spent: 180 },
-  { date: 'Dec 15', completions: 15, views: 210, spent: 450 },
-  { date: 'Dec 16', completions: 11, views: 165, spent: 330 },
-  { date: 'Dec 17', completions: 10, views: 140, spent: 300 },
-];
-
-const demographicsData = {
-  gender: { male: 45, female: 52, other: 3 },
-  age: { '18-24': 25, '25-34': 35, '35-44': 22, '45-54': 12, '55+': 6 },
-  tier: { tier1: 30, tier2: 45, tier3: 25 },
-};
-
-const deviceData = {
-  brands: { Samsung: 35, Apple: 28, Xiaomi: 18, Huawei: 12, Other: 7 },
-  os: { Android: 65, iOS: 35 },
-  carriers: { Vodafone: 40, Orange: 30, Etisalat: 20, WE: 10 },
-};
-
-const locationData = [
-  { city: 'Cairo', completions: 28, percentage: 45 },
-  { city: 'Alexandria', completions: 15, percentage: 24 },
-  { city: 'Giza', completions: 10, percentage: 16 },
-  { city: 'Other', completions: 9, percentage: 15 },
-];
-
 export default function AnalyticsDashboard() {
   const { t } = useTranslation();
-  const [timeRange, setTimeRange] = useState('7d');
+  const [timeRange, setTimeRange] = useState('30d');
   const [activeTab, setActiveTab] = useState('overview');
+  
+  const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<any>(null);
+  const [performance, setPerformance] = useState<any[]>([]);
 
-  const campaign = mockCampaignData;
-  const completionPercentage = (campaign.completions / campaign.targetCompletions) * 100;
-  const budgetPercentage = (campaign.spent / campaign.budget) * 100;
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const [overviewRes, perfRes] = await Promise.all([
+          fetch('/api/advertiser/analytics/overview'),
+          fetch(`/api/advertiser/analytics/performance?days=${timeRange.replace('d', '')}`)
+        ]);
+        
+        if (overviewRes.ok && perfRes.ok) {
+          setOverview(await overviewRes.json());
+          setPerformance(await perfRes.json());
+        }
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchAnalytics();
+  }, [timeRange]);
+
+  if (loading) {
+    return <div className="p-8 text-center bg-gray-50 min-h-screen">Loading analytics data...</div>;
+  }
+  
+  if (!overview) {
+    return <div className="p-8 text-center bg-gray-50 min-h-screen">Failed to load analytics</div>;
+  }
+
+  const completionPercentage = overview.completionRate;
+  const budgetPercentage = overview.tasksAssigned > 0 ? (overview.tasksCompleted / overview.tasksAssigned) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
@@ -78,13 +66,13 @@ export default function AnalyticsDashboard() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">{campaign.name}</h1>
+                <h1 className="text-xl font-bold text-gray-900">Analytics Overview</h1>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                    Active
+                    {overview.totalCampaigns} Campaigns
                   </span>
                   <span className="text-sm text-gray-500">
-                    {campaign.startDate} - {campaign.endDate}
+                    All Active Data
                   </span>
                 </div>
               </div>
@@ -129,10 +117,10 @@ export default function AnalyticsDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm">Completions</p>
-                  <p className="text-3xl font-bold">{campaign.completions}</p>
+                  <p className="text-green-100 text-sm">Tasks Completed</p>
+                  <p className="text-3xl font-bold">{overview.tasksCompleted.toLocaleString()}</p>
                   <p className="text-green-100 text-xs mt-1">
-                    of {campaign.targetCompletions} target
+                    of {overview.tasksAssigned.toLocaleString()} total
                   </p>
                 </div>
                 <CheckCircle className="w-10 h-10 text-green-200" />
@@ -140,7 +128,7 @@ export default function AnalyticsDashboard() {
               <div className="mt-3 bg-green-400/30 rounded-full h-2">
                 <div 
                   className="bg-white rounded-full h-2" 
-                  style={{ width: `${completionPercentage}%` }}
+                  style={{ width: `${Math.min(100, overview.completionRate)}%` }}
                 />
               </div>
             </CardContent>
@@ -150,14 +138,14 @@ export default function AnalyticsDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-500 text-sm">Views</p>
-                  <p className="text-3xl font-bold text-gray-900">{campaign.views.toLocaleString()}</p>
+                  <p className="text-gray-500 text-sm">Audience Reached</p>
+                  <p className="text-3xl font-bold text-gray-900">{overview.audienceReached.toLocaleString()}</p>
                   <div className="flex items-center gap-1 mt-1">
                     <TrendingUp className="w-3 h-3 text-green-500" />
-                    <span className="text-green-500 text-xs">+12.5%</span>
+                    <span className="text-green-500 text-xs text-muted-foreground mr-1">unique users</span>
                   </div>
                 </div>
-                <Eye className="w-10 h-10 text-gray-200" />
+                <Users className="w-10 h-10 text-gray-200" />
               </div>
             </CardContent>
           </Card>
@@ -166,11 +154,11 @@ export default function AnalyticsDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-500 text-sm">Conversion Rate</p>
-                  <p className="text-3xl font-bold text-gray-900">{campaign.conversionRate}%</p>
+                  <p className="text-gray-500 text-sm">Completion Rate</p>
+                  <p className="text-3xl font-bold text-gray-900">{overview.completionRate}%</p>
                   <div className="flex items-center gap-1 mt-1">
-                    <TrendingUp className="w-3 h-3 text-green-500" />
-                    <span className="text-green-500 text-xs">+3.2%</span>
+                    <Target className="w-3 h-3 text-green-500" />
+                    <span className="text-green-500 text-xs">average</span>
                   </div>
                 </div>
                 <Target className="w-10 h-10 text-gray-200" />
@@ -182,58 +170,13 @@ export default function AnalyticsDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-amber-100 text-sm">Budget Spent</p>
-                  <p className="text-3xl font-bold">{campaign.spent.toLocaleString()} EGP</p>
+                  <p className="text-amber-100 text-sm">Total Spend</p>
+                  <p className="text-3xl font-bold">{overview.totalSpend.toLocaleString()} EGP</p>
                   <p className="text-amber-100 text-xs mt-1">
-                    of {campaign.budget.toLocaleString()} EGP
+                    across {overview.totalCampaigns} campaigns
                   </p>
                 </div>
                 <DollarSign className="w-10 h-10 text-amber-200" />
-              </div>
-              <div className="mt-3 bg-amber-400/30 rounded-full h-2">
-                <div 
-                  className="bg-white rounded-full h-2" 
-                  style={{ width: `${budgetPercentage}%` }}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Secondary KPIs */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">Started Task</p>
-                <p className="text-2xl font-bold text-gray-900">{campaign.started}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <Clock className="w-6 h-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">Avg. Completion Time</p>
-                <p className="text-2xl font-bold text-gray-900">{campaign.avgCompletionTime}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">Cost per Completion</p>
-                <p className="text-2xl font-bold text-gray-900">{campaign.reward} EGP</p>
               </div>
             </CardContent>
           </Card>
@@ -275,20 +218,23 @@ export default function AnalyticsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {dailyStats.map((day) => (
+                  {performance.slice(0, 10).map((day) => (
                     <div key={day.date} className="flex items-center gap-4">
                       <span className="text-sm text-gray-500 w-16">{day.date}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-6 relative overflow-hidden">
                         <div 
                           className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-green-400 rounded-full flex items-center justify-end pr-2"
-                          style={{ width: `${(day.completions / 20) * 100}%` }}
+                          style={{ width: `${Math.max(10, Math.min(100, (day.completions / Math.max(1, Math.max(...performance.map(p => p.completions)))) * 100))}%` }}
                         >
-                          <span className="text-xs text-white font-medium">{day.completions}</span>
+                          <span className="text-xs text-white font-medium pl-2">{day.completions}</span>
                         </div>
                       </div>
                       <span className="text-sm text-gray-600 w-20 text-right">{day.spent} EGP</span>
                     </div>
                   ))}
+                  {performance.length === 0 && (
+                    <div className="text-center text-gray-500 text-sm py-4">No performance data yet</div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -305,22 +251,22 @@ export default function AnalyticsDashboard() {
                 <div className="space-y-4">
                   <div className="relative">
                     <div className="bg-blue-100 rounded-lg p-4 text-center">
-                      <p className="text-2xl font-bold text-blue-700">{campaign.views.toLocaleString()}</p>
-                      <p className="text-sm text-blue-600">Views</p>
+                      <p className="text-2xl font-bold text-blue-700">{overview.tasksAssigned.toLocaleString()}</p>
+                      <p className="text-sm text-blue-600">Tasks Required</p>
                     </div>
                     <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-gray-400">▼</div>
                   </div>
                   <div className="relative mx-8">
                     <div className="bg-amber-100 rounded-lg p-4 text-center">
-                      <p className="text-2xl font-bold text-amber-700">{campaign.started}</p>
-                      <p className="text-sm text-amber-600">Started ({((campaign.started / campaign.views) * 100).toFixed(1)}%)</p>
+                      <p className="text-2xl font-bold text-amber-700">{overview.audienceReached}</p>
+                      <p className="text-sm text-amber-600">Unique Users Reached</p>
                     </div>
                     <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-gray-400">▼</div>
                   </div>
                   <div className="mx-16">
                     <div className="bg-green-100 rounded-lg p-4 text-center">
-                      <p className="text-2xl font-bold text-green-700">{campaign.completions}</p>
-                      <p className="text-sm text-green-600">Completed ({campaign.conversionRate}%)</p>
+                      <p className="text-2xl font-bold text-green-700">{overview.tasksCompleted}</p>
+                      <p className="text-sm text-green-600">Tasks Completed ({overview.completionRate}%)</p>
                     </div>
                   </div>
                 </div>

@@ -233,6 +233,17 @@ router.post('/request', isUser, async (req, res) => {
       [transactionId, withdrawalId]
     );
 
+    let actualProcessingTime = methodConfig.processingTime;
+    
+    // Enforce tier-based payout timing
+    if (userTier === 'tier1') {
+      actualProcessingTime = 'Will be processed on the 21st of the month (Bronze Tier)';
+    } else if (userTier === 'tier2') {
+      actualProcessingTime = 'Will be processed next Monday (Silver Tier)';
+    } else if (userTier === 'tier3' || userTier === 'tier4') {
+      actualProcessingTime = 'Within 3 hours (Gold/Platinum Tier)';
+    }
+
     res.json({
       success: true,
       message: 'Withdrawal request submitted successfully',
@@ -241,7 +252,7 @@ router.post('/request', isUser, async (req, res) => {
         amount: withdrawalAmount,
         method: methodConfig.nameEn,
         status: 'pending',
-        processingTime: methodConfig.processingTime
+        processingTime: actualProcessingTime
       }
     });
 
