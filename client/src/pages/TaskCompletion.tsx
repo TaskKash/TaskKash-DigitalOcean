@@ -360,7 +360,7 @@ export default function TaskCompletion() {
       <MobileLayout title={title}>
         {/* Full-width Video Player - No padding for maximum size */}
         <div className="bg-black">
-          <div className="w-full" style={{ aspectRatio: '16/9' }}>
+          <div className="w-full aspect-video">
             {task.taskData?.videoUrl && (
               <video autoPlay playsInline
                 ref={videoRef as any}
@@ -396,10 +396,8 @@ export default function TaskCompletion() {
               </div>
               {/* Green Progress Bar */}
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-300 flex items-center justify-end pr-2"
-                  style={{ width: `${progress}%` }}
-                >
+                <style>{`.w-dyn-prog { width: ${progress}%; }`}</style>
+                <div className="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-300 flex items-center justify-end pr-2 w-dyn-prog">
                   {progress > 10 && (
                     <span className="text-xs font-bold text-white">
                       {Math.round(progress)}%

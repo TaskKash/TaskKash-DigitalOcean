@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -206,10 +206,8 @@ export default function CampaignDetails() {
                   <span className="font-semibold">{spentPercentage}%</span>
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-orange-400 to-orange-500 transition-all"
-                    style={{ width: `${spentPercentage}%` }}
-                  />
+                  <style>{`.w-dyn-cmp-spent { width: ${spentPercentage}%; }`}</style>
+                  <div className="h-full bg-gradient-to-r from-orange-400 to-orange-500 transition-all w-dyn-cmp-spent" />
                 </div>
               </div>
             </div>
@@ -249,10 +247,8 @@ export default function CampaignDetails() {
                   <span className="font-semibold">{completionPercentage}%</span>
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all"
-                    style={{ width: `${completionPercentage}%` }}
-                  />
+                  <style>{`.w-dyn-cmp-comp { width: ${completionPercentage}%; }`}</style>
+                  <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all w-dyn-cmp-comp" />
                 </div>
               </div>
             </div>

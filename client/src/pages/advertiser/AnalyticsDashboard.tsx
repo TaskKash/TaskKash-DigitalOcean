@@ -126,10 +126,8 @@ export default function AnalyticsDashboard() {
                 <CheckCircle className="w-10 h-10 text-green-200" />
               </div>
               <div className="mt-3 bg-green-400/30 rounded-full h-2">
-                <div 
-                  className="bg-white rounded-full h-2" 
-                  style={{ width: `${Math.min(100, overview.completionRate)}%` }}
-                />
+                <style>{`.w-dyn-ovw-cmp { width: ${Math.min(100, overview.completionRate)}%; }`}</style>
+                <div className="bg-white rounded-full h-2 w-dyn-ovw-cmp" />
               </div>
             </CardContent>
           </Card>
@@ -222,10 +220,8 @@ export default function AnalyticsDashboard() {
                     <div key={day.date} className="flex items-center gap-4">
                       <span className="text-sm text-gray-500 w-16">{day.date}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-6 relative overflow-hidden">
-                        <div 
-                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-green-400 rounded-full flex items-center justify-end pr-2"
-                          style={{ width: `${Math.max(10, Math.min(100, (day.completions / Math.max(1, Math.max(...performance.map(p => p.completions)))) * 100))}%` }}
-                        >
+                        <style>{`.w-dyn-prf-${day.date.replace(/\\D/g, '')} { width: ${Math.max(10, Math.min(100, (day.completions / Math.max(1, Math.max(...performance.map(p => p.completions)))) * 100))}%; }`}</style>
+                        <div className={`absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-green-400 rounded-full flex items-center justify-end pr-2 w-dyn-prf-${day.date.replace(/\\D/g, '')}`}>
                           <span className="text-xs text-white font-medium pl-2">{day.completions}</span>
                         </div>
                       </div>
@@ -288,13 +284,11 @@ export default function AnalyticsDashboard() {
                     <div key={gender} className="flex items-center gap-3">
                       <span className="text-sm text-gray-600 w-16 capitalize">{gender}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-4">
-                        <div 
-                          className={`h-4 rounded-full ${
+                        <style>{`.w-dyn-gnd-${gender} { width: ${percentage}%; }`}</style>
+                        <div className={`h-4 rounded-full w-dyn-gnd-${gender} ${
                             gender === 'male' ? 'bg-blue-500' : 
                             gender === 'female' ? 'bg-pink-500' : 'bg-gray-400'
-                          }`}
-                          style={{ width: `${percentage}%` }}
-                        />
+                          }`} />
                       </div>
                       <span className="text-sm font-medium w-12 text-right">{percentage}%</span>
                     </div>
@@ -314,10 +308,8 @@ export default function AnalyticsDashboard() {
                     <div key={age} className="flex items-center gap-3">
                       <span className="text-sm text-gray-600 w-16">{age}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-4">
-                        <div 
-                          className="h-4 rounded-full bg-gradient-to-r from-green-500 to-green-400"
-                          style={{ width: `${percentage}%` }}
-                        />
+                        <style>{`.w-dyn-age-${age.replace(/[^a-zA-Z0-9]/g, '')} { width: ${percentage}%; }`}</style>
+                        <div className={`h-4 rounded-full bg-gradient-to-r from-green-500 to-green-400 w-dyn-age-${age.replace(/[^a-zA-Z0-9]/g, '')}`} />
                       </div>
                       <span className="text-sm font-medium w-12 text-right">{percentage}%</span>
                     </div>
@@ -339,13 +331,11 @@ export default function AnalyticsDashboard() {
                         {tier === 'tier1' ? '🥉 Bronze' : tier === 'tier2' ? '🥈 Silver' : '🥇 Gold'}
                       </span>
                       <div className="flex-1 bg-gray-100 rounded-full h-4">
-                        <div 
-                          className={`h-4 rounded-full ${
+                        <style>{`.w-dyn-tier-${tier} { width: ${percentage}%; }`}</style>
+                        <div className={`h-4 rounded-full w-dyn-tier-${tier} ${
                             tier === 'tier1' ? 'bg-amber-600' : 
                             tier === 'tier2' ? 'bg-gray-400' : 'bg-yellow-500'
-                          }`}
-                          style={{ width: `${percentage}%` }}
-                        />
+                          }`} />
                       </div>
                       <span className="text-sm font-medium w-12 text-right">{percentage}%</span>
                     </div>
@@ -372,10 +362,8 @@ export default function AnalyticsDashboard() {
                     <div key={brand} className="flex items-center gap-3">
                       <span className="text-sm text-gray-600 w-20">{brand}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-4">
-                        <div 
-                          className="h-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
-                          style={{ width: `${percentage}%` }}
-                        />
+                        <style>{`.w-dyn-brand-${brand.replace(/\\s+/g, '-')} { width: ${percentage}%; }`}</style>
+                        <div className={`h-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 w-dyn-brand-${brand.replace(/\\s+/g, '-')}`} />
                       </div>
                       <span className="text-sm font-medium w-12 text-right">{percentage}%</span>
                     </div>
@@ -418,10 +406,8 @@ export default function AnalyticsDashboard() {
                     <div key={carrier} className="flex items-center gap-3">
                       <span className="text-sm text-gray-600 w-20">{carrier}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-4">
-                        <div 
-                          className="h-4 rounded-full bg-gradient-to-r from-purple-500 to-purple-400"
-                          style={{ width: `${percentage}%` }}
-                        />
+                        <style>{`.w-dyn-carrier-${carrier.replace(/\\s+/g, '-')} { width: ${percentage}%; }`}</style>
+                        <div className={`h-4 rounded-full bg-gradient-to-r from-purple-500 to-purple-400 w-dyn-carrier-${carrier.replace(/\\s+/g, '-')}`} />
                       </div>
                       <span className="text-sm font-medium w-12 text-right">{percentage}%</span>
                     </div>
@@ -451,10 +437,8 @@ export default function AnalyticsDashboard() {
                       </span>
                       <span className="text-sm text-gray-700 flex-1">{loc.city}</span>
                       <div className="w-32 bg-gray-100 rounded-full h-3">
-                        <div 
-                          className="h-3 rounded-full bg-gradient-to-r from-green-500 to-green-400"
-                          style={{ width: `${loc.percentage}%` }}
-                        />
+                        <style>{`.w-dyn-loc-${index} { width: ${loc.percentage}%; }`}</style>
+                        <div className={`h-3 rounded-full bg-gradient-to-r from-green-500 to-green-400 w-dyn-loc-${index}`} />
                       </div>
                       <span className="text-sm font-medium w-16 text-right">{loc.completions} ({loc.percentage}%)</span>
                     </div>

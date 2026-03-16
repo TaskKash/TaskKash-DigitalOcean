@@ -176,10 +176,8 @@ export default function Analytics() {
                           <span className="font-semibold">{completionRate}%</span>
                         </div>
                         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600"
-                            style={{ width: `${completionRate}%` }}
-                          />
+                          <style>{`.w-dyn-cmp-${campaign.id} { width: ${completionRate}%; }`}</style>
+                          <div className={`h-full bg-gradient-to-r from-emerald-500 to-emerald-600 w-dyn-cmp-${campaign.id}`} />
                         </div>
                       </div>
 
@@ -231,6 +229,7 @@ export default function Analytics() {
                   className="border rounded p-1 text-sm bg-white" 
                   value={timeRange} 
                   onChange={e => setTimeRange(e.target.value)}
+                  title="Time range filter"
                 >
                   <option value="7">أخر 7 أيام</option>
                   <option value="30">أخر 30 يوم</option>
@@ -245,10 +244,8 @@ export default function Analytics() {
                     <div key={i} className="flex items-center gap-4">
                       <span className="text-sm text-gray-500 w-20">{day.date}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-6 relative overflow-hidden">
-                        <div 
-                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full flex items-center pr-2 transition-all"
-                          style={{ width: `${Math.max(5, percent)}%` }}
-                        >
+                        <style>{`.w-dyn-prf-${i} { width: ${Math.max(5, percent)}%; }`}</style>
+                        <div className={`absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full flex items-center pr-2 transition-all w-dyn-prf-${i}`}>
                           <span className="text-xs text-white font-medium pr-2 text-right w-full">{day.completions}</span>
                         </div>
                       </div>
@@ -277,10 +274,8 @@ export default function Analytics() {
                       </span>
                     </div>
                     <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600"
-                        style={{ width: `${item.percentage}%` }}
-                      />
+                      <style>{`.w-dyn-age-${item.age} { width: ${item.percentage}%; }`}</style>
+                      <div className={`h-full bg-gradient-to-r from-emerald-500 to-emerald-600 w-dyn-age-${item.age}`} />
                     </div>
                   </div>
                 ))}
@@ -329,10 +324,8 @@ export default function Analytics() {
                       </span>
                     </div>
                     <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-orange-400 to-orange-500"
-                        style={{ width: `${item.percentage}%` }}
-                      />
+                      <style>{`.w-dyn-loc-${index} { width: ${item.percentage}%; }`}</style>
+                      <div className={`h-full bg-gradient-to-r from-orange-400 to-orange-500 w-dyn-loc-${index}`} />
                     </div>
                   </div>
                 ))}
