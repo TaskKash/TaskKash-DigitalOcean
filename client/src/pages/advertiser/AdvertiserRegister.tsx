@@ -129,7 +129,7 @@ export default function AdvertiserRegister() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/advertiser/register', {
+      const response = await fetch('/api/auth/advertiser/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -336,6 +336,7 @@ export default function AdvertiserRegister() {
                   <Label htmlFor="industry">Industry</Label>
                   <select
                     id="industry"
+                    title="Industry"
                     value={formData.industry}
                     onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
                     className="w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary"
@@ -354,6 +355,7 @@ export default function AdvertiserRegister() {
                   <Label htmlFor="companySize">Company Size</Label>
                   <select
                     id="companySize"
+                    title="Company Size"
                     value={formData.companySize}
                     onChange={(e) => setFormData({ ...formData, companySize: e.target.value })}
                     className="w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary"

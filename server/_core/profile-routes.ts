@@ -109,6 +109,26 @@ router.post('/complete', async (req, res) => {
       vehicleBrand = carType; // Use the value directly as brand
     }
     
+    // Strict Enum Mapping to prevent MySQL Crash
+    const validWorkTypes = ['remote', 'office', 'hybrid'];
+    const validShoppingFreq = ['daily', 'weekly', 'monthly', 'rarely'];
+    
+    // Map employment safely
+    let safeWorkType = validWorkTypes.includes(employment) ? employment : null;
+    
+    // Map shopping safely
+    let safeShoppingFreq = validShoppingFreq.includes(shopping) ? shopping : null;
+    
+    // Map marital status safely
+    let safeLifeStage = null;
+    if (maritalStatus === 'single' || maritalStatus === 'divorced') safeLifeStage = 'single';
+    else if (maritalStatus === 'married') safeLifeStage = 'married';
+    
+    // Map housing safely
+    let safeHomeOwnership = null;
+    if (housingType === 'owned') safeHomeOwnership = 'owner';
+    else if (housingType === 'rent') safeHomeOwnership = 'renter';
+
     // 1. Upsert into userProfiles
     await query(
       `INSERT INTO userProfiles (
@@ -126,13 +146,13 @@ router.post('/complete', async (req, res) => {
       [
         user.id, 
         industry || null, 
-        employment || null, 
-        shopping || null, 
+        safeWorkType, 
+        safeShoppingFreq, 
         interests && interests.length > 0 ? JSON.stringify(interests) : null, 
-        maritalStatus || null, 
+        safeLifeStage, 
         hasVehicle, 
         vehicleBrand, 
-        housingType || null
+        safeHomeOwnership
       ]
     );
 
@@ -165,7 +185,8 @@ router.post('/complete', async (req, res) => {
     });
   } catch (error) {
     console.error('[Profile] Error completing profile:', error);
-    res.status(500).json({ error: 'Failed to complete profile' });
+    // @ts-ignore
+    res.status(500).json({ error: 'Failed to complete profile', details: error.message, stack: error.stack });
   }
 });
 
@@ -374,24 +395,33 @@ router.post('/answers', async (req, res) => {
       // Map section answers to userProfiles columns where possible
       let syncUpdates: Record<string, any> = {};
       
-      // Basic heuristic mapper
+      // Basic heuristic mapper with strict Enum checks
+      const validWorkTypes = ['remote', 'office', 'hybrid'];
+      const validLifeStages = ['single', 'engaged', 'married', 'parent'];
+      
       for (const [key, val] of Object.entries(answers)) {
         const valueStr = String(val).toLowerCase();
         
         if (key.toLowerCase().includes('industry')) syncUpdates.industry = val;
         if (key.toLowerCase().includes('job')) syncUpdates.jobTitle = val;
-        if (key.toLowerCase().includes('work_type') || key.toLowerCase().includes('employment')) syncUpdates.workType = val;
+        if (key.toLowerCase().includes('work_type') || key.toLowerCase().includes('employment')) {
+            if (validWorkTypes.includes(valueStr)) syncUpdates.workType = val;
+        }
         
-        if (key.toLowerCase().includes('marital') || key.toLowerCase().includes('lifestage')) syncUpdates.lifeStage = val;
+        if (key.toLowerCase().includes('marital') || key.toLowerCase().includes('lifestage')) {
+            if (validLifeStages.includes(valueStr)) syncUpdates.lifeStage = val;
+            else if (valueStr === 'divorced') syncUpdates.lifeStage = 'single';
+        }
         if (key.toLowerCase().includes('household')) syncUpdates.householdSize = parseInt(valueStr) || null;
         
         if (key.toLowerCase().includes('vehicle') || key.toLowerCase().includes('car')) {
            syncUpdates.hasVehicle = valueStr === 'none' || valueStr === 'no' ? 0 : 1;
-           if (syncUpdates.hasVehicle === 1) syncUpdates.vehicleBrand = val;
+           if (syncUpdates.hasVehicle === 1 && valueStr !== 'yes') syncUpdates.vehicleBrand = val;
         }
 
         if (key.toLowerCase().includes('housing') || key.toLowerCase().includes('home')) {
-           syncUpdates.homeOwnership = valueStr.includes('rent') ? 'renter' : 'owner';
+           if (valueStr.includes('rent')) syncUpdates.homeOwnership = 'renter';
+           else if (valueStr.includes('own')) syncUpdates.homeOwnership = 'owner';
         }
       }
 

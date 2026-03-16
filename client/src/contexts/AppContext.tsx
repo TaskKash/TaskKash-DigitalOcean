@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
+import { createContext, useState, useEffect, useContext, useCallback, type ReactNode } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { mockTasks, mockTransactions, mockNotifications, type Task, type Transaction, type Notification } from '@/lib/mockData';
 import { requestNotificationPermission } from '@/lib/pushNotifications';
@@ -153,9 +153,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [user]); // Refetch tasks when user logs in or changes
 
   // Function to fetch transactions - can be called manually
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
 
-    if (!user) return;
+    if (!user?.id) return;
     try {
       const response = await fetch('/api/transactions');
       if (response.ok) {
@@ -179,7 +179,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.error('Failed to fetch transactions:', error);
       setTransactions([]);
     }
-  };
+  }, [user?.id]);
 
   // Fetch transactions from API when user changes
   useEffect(() => {

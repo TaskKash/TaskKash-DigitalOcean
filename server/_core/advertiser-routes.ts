@@ -1,5 +1,25 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { query } from './mysql-db';
+import { sdk } from './sdk';
+import { COOKIE_NAME } from '@shared/const';
+
+export const requireAdvertiser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.cookies?.[COOKIE_NAME];
+    if (!token) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    const payload = await sdk.verifySession(token);
+    if (!payload || !payload.openId || !payload.openId.startsWith('advertiser_')) {
+      return res.status(403).json({ error: 'Not an advertiser account' });
+    }
+    const advertiserId = parseInt(payload.openId.replace('advertiser_', ''), 10);
+    (req as any).user = { ...((req as any).user || {}), advertiserId };
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid session' });
+  }
+};
 
 const router = Router();
 
@@ -125,9 +145,9 @@ router.get('/advertisers/:slug', async (req: Request, res: Response) => {
 /**
  * GET /api/advertiser/dashboard - Get advertiser dashboard data
  */
-router.get('/advertiser/dashboard', async (req: Request, res: Response) => {
+router.get('/advertiser/dashboard', requireAdvertiser, async (req: Request, res: Response) => {
   try {
-    const advertiserId = (req as any).user?.advertiserId || 1;
+    const advertiserId = (req as any).user.advertiserId;
 
     const advertiserResult = await query(
       `SELECT * FROM advertisers WHERE id = ?`,
@@ -202,9 +222,9 @@ router.get('/advertiser/dashboard', async (req: Request, res: Response) => {
 /**
  * GET /api/advertiser/campaigns - Get all campaigns for the advertiser
  */
-router.get('/advertiser/campaigns', async (req: Request, res: Response) => {
+router.get('/advertiser/campaigns', requireAdvertiser, async (req: Request, res: Response) => {
   try {
-    const advertiserId = (req as any).user?.advertiserId || 1;
+    const advertiserId = (req as any).user.advertiserId;
 
     const campaigns = await query(`
       SELECT 
@@ -227,10 +247,10 @@ router.get('/advertiser/campaigns', async (req: Request, res: Response) => {
 /**
  * GET /api/advertiser/campaigns/:id/analytics - Get detailed campaign analytics
  */
-router.get('/advertiser/campaigns/:id/analytics', async (req: Request, res: Response) => {
+router.get('/advertiser/campaigns/:id/analytics', requireAdvertiser, async (req: Request, res: Response) => {
   try {
     const campaignId = parseInt(req.params.id);
-    const advertiserId = (req as any).user?.advertiserId || 1;
+    const advertiserId = (req as any).user.advertiserId;
 
     const campaignResult = await query(
       `SELECT * FROM campaigns WHERE id = ? AND advertiserId = ?`,
@@ -320,9 +340,9 @@ router.get('/advertiser/campaigns/:id/analytics', async (req: Request, res: Resp
 /**
  * POST /api/advertiser/campaigns - Create a new campaign
  */
-router.post('/advertiser/campaigns', async (req: Request, res: Response) => {
+router.post('/advertiser/campaigns', requireAdvertiser, async (req: Request, res: Response) => {
   try {
-    const advertiserId = (req as any).user?.advertiserId || 1;
+    const advertiserId = (req as any).user.advertiserId;
 
     const {
       nameEn,
@@ -426,10 +446,10 @@ router.post('/advertiser/campaigns', async (req: Request, res: Response) => {
 /**
  * POST /api/advertiser/campaigns/:id/launch - Launch a campaign
  */
-router.post('/advertiser/campaigns/:id/launch', async (req: Request, res: Response) => {
+router.post('/advertiser/campaigns/:id/launch', requireAdvertiser, async (req: Request, res: Response) => {
   try {
     const campaignId = parseInt(req.params.id);
-    const advertiserId = (req as any).user?.advertiserId || 1;
+    const advertiserId = (req as any).user.advertiserId;
 
     const campaignResult = await query(
       `SELECT * FROM campaigns WHERE id = ? AND advertiserId = ?`,
@@ -472,7 +492,7 @@ router.post('/advertiser/campaigns/:id/launch', async (req: Request, res: Respon
 /**
  * POST /api/advertiser/targeting/audience-estimate - Get estimated audience size
  */
-router.post('/advertiser/targeting/audience-estimate', async (req: Request, res: Response) => {
+router.post('/advertiser/targeting/audience-estimate', requireAdvertiser, async (req: Request, res: Response) => {
   try {
     const {
       countryId,
@@ -520,9 +540,9 @@ router.post('/advertiser/targeting/audience-estimate', async (req: Request, res:
 /**
  * GET /api/advertiser/tasks - Get all tasks for the advertiser
  */
-router.get('/advertiser/tasks', async (req: Request, res: Response) => {
+router.get('/advertiser/tasks', requireAdvertiser, async (req: Request, res: Response) => {
   try {
-    const advertiserId = (req as any).user?.advertiserId || 1;
+    const advertiserId = (req as any).user.advertiserId;
 
     const tasks = await query(`
       SELECT 
@@ -545,9 +565,9 @@ router.get('/advertiser/tasks', async (req: Request, res: Response) => {
 /**
  * POST /api/advertiser/tasks - Create a standalone task
  */
-router.post('/advertiser/tasks', async (req: Request, res: Response) => {
+router.post('/advertiser/tasks', requireAdvertiser, async (req: Request, res: Response) => {
   try {
-    const advertiserId = (req as any).user?.advertiserId || 1;
+    const advertiserId = (req as any).user.advertiserId;
 
     const {
       type,
@@ -594,7 +614,7 @@ router.post('/advertiser/tasks', async (req: Request, res: Response) => {
 /**
  * GET /api/advertiser/templates - Get task templates
  */
-router.get('/advertiser/templates', async (req: Request, res: Response) => {
+router.get('/advertiser/templates', requireAdvertiser, async (req: Request, res: Response) => {
   try {
     const templates = [
       {

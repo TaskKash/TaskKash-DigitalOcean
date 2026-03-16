@@ -317,10 +317,11 @@ authRouter.post("/advertiser/register", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const openId = `adv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const baseSlug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const slug = `${baseSlug}-${Math.random().toString(36).substr(2, 6)}`;
 
     const [result] = await pool.execute(
-      `INSERT INTO advertisers (openId, email, password, nameEn, nameAr, slug, tier, isActive, balance, totalSpent, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, NOW(), NOW())`,
+      `INSERT INTO advertisers (openId, email, password, nameEn, nameAr, slug, tier, isActive, balance, totalSpent, countryId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, NULL, NOW(), NOW())`,
       [openId, email, hashedPassword, companyName, companyName, slug, tier]
     );
 

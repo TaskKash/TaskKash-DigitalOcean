@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from './mysql-db.js';
 import { sdk } from './sdk.js';
+import { requireAdvertiser } from './advertiser-routes.js';
 
 const router = Router();
 
@@ -40,13 +41,8 @@ function buildJsonContains(column: string, values: string[], matchAll: boolean, 
  * POST /api/advertiser/segments
  * Advanced 7-Category Segment Builder
  */
-router.post('/segments', async (req, res) => {
+router.post('/segments', requireAdvertiser, async (req, res) => {
   try {
-    const authUser = await sdk.authenticateRequest(req);
-    if (!authUser || !authUser.openId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
     const filters = req.body;
     
     // Strict baseline constraints (Silent Filters)
@@ -54,7 +50,13 @@ router.post('/segments', async (req, res) => {
       'u.kycStatus = ?',
       'u.profileStrength >= ?'
     ];
-    const params: any[] = ['verified', 60];
+    const params: any[] = ['verified', filters.profileStrengthMin !== undefined ? filters.profileStrengthMin : 0];
+
+    // Additional Custom Baseline metrics
+    if (filters.completedTasksMin !== undefined && filters.completedTasksMin > 0) {
+      conditions.push('u.completedTasks >= ?');
+      params.push(filters.completedTasksMin);
+    }
 
     // CATEGORY 1: Demographics
     if (filters.ageMin) { conditions.push('u.age >= ?'); params.push(filters.ageMin); }
@@ -62,7 +64,7 @@ router.post('/segments', async (req, res) => {
     if (filters.gender && filters.gender !== 'all') { conditions.push('u.gender = ?'); params.push(filters.gender); }
     if (filters.countries && filters.countries.length > 0) {
       const placeholders = filters.countries.map(() => '?').join(', ');
-      conditions.push(`u.countryId IN (SELECT id FROM countries WHERE code IN (${placeholders}))`);
+      conditions.push(`u.countryId IN (SELECT id FROM countries WHERE nameEn IN (${placeholders}))`);
       params.push(...filters.countries);
     }
     if (filters.cities && filters.cities.length > 0) {
@@ -238,7 +240,7 @@ router.post('/segments', async (req, res) => {
       FROM users u 
       LEFT JOIN userProfiles up ON u.id = up.userId 
       LEFT JOIN countries c ON u.countryId = c.id
-      WHERE ${whereClause} AND c.code IS NOT NULL
+      WHERE ${whereClause || '1=1'} AND c.code IS NOT NULL
       GROUP BY c.code
     `;
     const countryResult = await query(countrySql, params);
@@ -257,9 +259,9 @@ router.post('/segments', async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error('[Advertiser Segments] Error executing 7-category query:', error);
-    res.status(500).json({ error: 'Failed to evaluate dynamic segments' });
+  } catch (error: any) {
+    console.error('[Advertiser Segments] Error executing 7-category query:', error.stack || error);
+    res.status(500).json({ error: 'Failed to evaluate dynamic segments', details: error.message });
   }
 });
 

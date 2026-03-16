@@ -49,7 +49,7 @@ import ProfileComplete from "./pages/ProfileComplete";
 
 // Advertiser Pages
 import AdvertiserDashboard from "./pages/advertiser/Dashboard";
-import CreateCampaign from "./pages/advertiser/CreateCampaign";
+
 import Analytics from "./pages/advertiser/Analytics";
 import Reports from "./pages/advertiser/Reports";
 import Billing from "./pages/advertiser/Billing";
@@ -268,8 +268,7 @@ function Router() {
       <Route path="/advertiser/register" component={AdvertiserRegister} />
       <Route path="/advertiser/dashboard"><AdvertiserProtectedRoute><AdvertiserLayout><AdvertiserDashboard /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
       <Route path="/advertiser/campaigns"><AdvertiserProtectedRoute><AdvertiserLayout><CampaignList /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
-      <Route path="/advertiser/campaigns/new"><AdvertiserProtectedRoute><AdvertiserLayout><CreateCampaign /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
-      <Route path="/advertiser/campaign-builder"><AdvertiserProtectedRoute><AdvertiserLayout><CampaignBuilder /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
+      <Route path="/advertiser/campaigns/new"><AdvertiserProtectedRoute><AdvertiserLayout><CampaignBuilder /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
       <Route path="/advertiser/analytics-dashboard"><AdvertiserProtectedRoute><AdvertiserLayout><AnalyticsDashboard /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
       <Route path="/advertiser/new-dashboard"><AdvertiserProtectedRoute><AdvertiserLayout><NewDashboard /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
       <Route path="/advertiser/campaigns/:id"><AdvertiserProtectedRoute><AdvertiserLayout><CampaignDetails /></AdvertiserLayout></AdvertiserProtectedRoute></Route>
