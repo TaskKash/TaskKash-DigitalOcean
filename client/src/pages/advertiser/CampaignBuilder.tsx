@@ -253,10 +253,10 @@ export default function CampaignBuilder() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-transparent pb-24">
       {/* Sticky Header */}
-      <div className="bg-white border-b sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div className="bg-white border-b sticky top-16 z-20 -mx-6 lg:-mx-8 -mt-6 lg:-mt-8 mb-6 shadow-sm">
+        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-4 flex flex-col sm:flex-row gap-4 sm:gap-0 sm:items-center justify-between">
           <button onClick={() => setLocation('/advertiser/new-dashboard')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
             <ArrowLeft className="w-5 h-5" /><span>Dashboard</span>
           </button>
@@ -270,7 +270,7 @@ export default function CampaignBuilder() {
           </div>
         </div>
         {/* Tabs Layout UI */}
-        <div className="max-w-5xl mx-auto px-4 pb-0 pt-2">
+        <div className="max-w-5xl mx-auto px-6 lg:px-8 pb-0 pt-2">
           <div className="flex overflow-x-auto hide-scrollbar gap-2 border-b">
             {STEPS.map((s) => (
               <button
