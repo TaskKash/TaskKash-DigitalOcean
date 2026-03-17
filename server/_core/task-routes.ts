@@ -17,7 +17,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { sdk } from './sdk';
 import { query as mysqlQuery } from './mysql-db';
-import { calculateAdvertiserCommission, calculateUserWithdrawalCommission } from './commission.service';
+import { calculateAdvertiserCost, getCommissionRates } from '../services/commission.service';
 import { FraudDetectionService } from '../services/fraud-detection.service';
 
 const router = Router();
@@ -585,8 +585,7 @@ router.get('/tasks', async (req, res) => {
 
       // Filter by targetTiers if user is logged in and task has tier targeting
       if (userTier && task.targetTiers && Array.isArray(task.targetTiers)) {
-        const matches = task.targetTiers.includes(userTier);
-        return matches;
+        return task.targetTiers.includes(userTier);
       }
 
       return true;
@@ -835,7 +834,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
     let isFraudulent = false;
     if (finalPassed) {
       isFraudulent = await FraudDetectionService.analyzeTaskCompletion({
-        userId: req.userId,
+        userId: req.userId as number,
         campaignId: taskId,
         watchTime: watchTime || undefined,
         expectedDuration: task.duration,
@@ -922,7 +921,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
         const advertiserTier = 'basic';
 
         // Calculate advertiser commission
-        const commission = calculateAdvertiserCommission(parseFloat(task.reward), advertiserTier);
+        const advertiserCost = calculateAdvertiserCost(task.reward, advertiserTier);
 
         // Get user balance for transaction record
         const userBalanceData = await mysqlQuery(
@@ -943,7 +942,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
         // Deduct from advertiser balance (reward + commission)
         await mysqlQuery(
           `UPDATE advertisers SET balance = balance - ?, totalSpent = totalSpent + ? WHERE id = ?`,
-          [commission.totalCost, commission.totalCost, task.advertiserId]
+          [advertiserCost, advertiserCost, task.advertiserId]
         );
 
         // Update task completion count in MySQL
@@ -1090,18 +1089,18 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
     const advertiserTier = advertiserData[0]?.tier || 'basic';
 
     // Calculate advertiser commission
-    const commission = calculateAdvertiserCommission(parseFloat(task.reward), advertiserTier);
+    const advertiserCost = calculateAdvertiserCost(parseFloat(task.reward), advertiserTier);
 
     // Create transaction record with commission tracking
     await mysqlQuery(`
       INSERT INTO transactions (userId, type, currency, amount, status, description, relatedTaskId, balanceBefore, balanceAfter, commissionAmount, commissionRate, netAmount, createdAt)
       VALUES (?, "earning", "EGP", ?, "completed", ?, ?, ?, ?, ?, ?, ?, NOW())
-    `, [req.userId, task.reward, `Survey completed: ${task.titleEn}`, taskId, balanceBefore, balanceAfter, commission.commissionAmount, commission.commissionRate, task.reward]);
+    `, [req.userId, task.reward, `Survey completed: ${task.titleEn}`, taskId, balanceBefore, balanceAfter, advertiserCost - parseFloat(task.reward), 0, task.reward]);
 
     // Deduct from advertiser balance (reward + commission)
     await mysqlQuery(
       `UPDATE advertisers SET balance = balance - ?, totalSpent = totalSpent + ? WHERE id = ?`,
-      [commission.totalCost, commission.totalCost, task.advertiserId]
+      [advertiserCost, advertiserCost, task.advertiserId]
     );
 
     // Update task completion count

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { getDb } from '../db';
 import { query } from './mysql-db';
 import { holdFunds, releaseFunds } from '../services/escrow.service';
+import { sql } from 'drizzle-orm';
 
 const router = Router();
 

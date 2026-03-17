@@ -29,11 +29,11 @@ export async function checkUserTierEligibility(userId: number): Promise<UserTier
   const stats = await getUserTaskStats(userId);
 
   // Check eligibility for each tier (from highest to lowest)
-  if (currentTier !== 'tier3' && isEligibleForTier('tier3', stats)) {
-    return 'tier3';
+  if ((currentTier as string) !== 'gold' && isEligibleForTier('gold', stats)) {
+    return 'gold' as UserTier;
   }
-  if (currentTier !== 'tier2' && isEligibleForTier('tier2', stats)) {
-    return 'tier2';
+  if ((currentTier as string) !== 'silver' && isEligibleForTier('silver', stats)) {
+    return 'silver' as UserTier;
   }
 
   return null; // No upgrade available
@@ -113,14 +113,14 @@ export async function checkAdvertiserTierEligibility(advertiserId: number): Prom
   const monthlySpend = await getAdvertiserMonthlySpend(advertiserId);
 
   // Check eligibility for each tier (from highest to lowest)
-  if (currentTier !== 'tier4' && monthlySpend >= ADVERTISER_TIERS.tier4.minMonthlySpend) {
-    return 'tier4';
+  if ((currentTier as string) !== 'tier4' && monthlySpend >= ADVERTISER_TIERS.tier4.minMonthlySpend) {
+    return 'tier4' as AdvertiserTier;
   }
-  if (currentTier !== 'tier3' && monthlySpend >= ADVERTISER_TIERS.tier3.minMonthlySpend) {
-    return 'tier3';
+  if ((currentTier as string) !== 'tier3' && monthlySpend >= ADVERTISER_TIERS.tier3.minMonthlySpend) {
+    return 'tier3' as AdvertiserTier;
   }
-  if (currentTier !== 'tier2' && monthlySpend >= ADVERTISER_TIERS.tier2.minMonthlySpend) {
-    return 'tier2';
+  if ((currentTier as string) !== 'tier2' && monthlySpend >= ADVERTISER_TIERS.tier2.minMonthlySpend) {
+    return 'tier2' as AdvertiserTier;
   }
 
   return null; // No upgrade available

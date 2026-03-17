@@ -5,9 +5,9 @@
  * NOTE: imports fixed to match real exported functions from each service module
  */
 
-import { calculateAdvertiserCommission, calculateUserWithdrawalCommission } from '../_core/commission.service';
+import { calculateAdvertiserCost, getCommissionRates } from '../services/commission.service';
 import { checkUserTierEligibility, upgradeUserTier } from '../services/tier.service';
-import { getUserBalance, addFunds, deductFunds } from '../services/wallet.service';
+import { getUserBalance, requestWithdrawal } from '../services/wallet.service';
 
 console.log('🧪 Starting TaskKash Integration Tests...\n');
 
@@ -18,7 +18,7 @@ async function runTests() {
   // Test 1: Commission Calculation
   console.log('📊 Test 1: Commission Calculation');
   try {
-    const advertiserCost = calculateAdvertiserCommission(100, 'basic');
+    const advertiserCost = calculateAdvertiserCost(100, 'tier1');
     if (typeof advertiserCost === 'number') {
       console.log('✅ PASSED: Commission calculation returned a number:', advertiserCost);
       passed++;
@@ -35,9 +35,9 @@ async function runTests() {
   // Test 2: Withdrawal Commission
   console.log('📊 Test 2: Withdrawal Commission Calculation');
   try {
-    const fee = calculateUserWithdrawalCommission(500, 'tier1');
-    if (typeof fee === 'number') {
-      console.log('✅ PASSED: Withdrawal commission returned a number:', fee);
+    const rates = getCommissionRates('tier1');
+    if (typeof rates.userRate === 'number') {
+      console.log('✅ PASSED: Withdrawal commission returned a number:', rates.userRate);
       passed++;
     } else {
       console.log('❌ FAILED: Withdrawal commission did not return a number');

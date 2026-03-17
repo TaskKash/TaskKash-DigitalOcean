@@ -160,7 +160,7 @@ export default function Tasks() {
 
   // We no longer have a single 'filterType', we will have a multi-select state instead.
   // Wait, I will use advancedFilters.category instead of filterType. I will remove the old filterType logic.
-  let filteredAvailableTasks = filterType === 'all'
+  let filteredAvailableTasks = filterType.includes('all')
     ? availableTasks
     : availableTasks.filter(t => filterType.includes(t.type));
 

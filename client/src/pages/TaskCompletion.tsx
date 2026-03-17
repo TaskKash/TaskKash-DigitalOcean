@@ -618,7 +618,7 @@ export default function TaskCompletion() {
                         {language === 'ar' ? 'الصافي المضاف لمحفظتك' : 'Net Added to Wallet'}
                       </span>
                       <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {((result.reward || 0) * (1 - (user?.tier === 'bronze' ? 0.05 : user?.tier === 'silver' ? 0.10 : 0.20))).toFixed(2)} {symbol}
+                        {((result.reward || 0) * (1 - (user?.tier === 'bronze' ? 0.05 : user?.tier === 'silver' ? 0.10 : 0.20))).toFixed(2)} {language === 'ar' ? 'ج.م' : 'EGP'}
                       </span>
                     </div>
                   </div>

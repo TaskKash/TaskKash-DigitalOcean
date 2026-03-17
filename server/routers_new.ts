@@ -103,7 +103,7 @@ export const appRouter = router({
         newTier: z.enum(['tier1', 'tier2', 'tier3']),
       }))
       .mutation(async ({ input }) => {
-        return await upgradeUserTier(input.userId, input.newTier);
+        return await upgradeUserTier(input.userId, input.newTier as any);
       }),
     getUserTierInfo: publicProcedure
       .input(z.object({ tier: z.string() }))
@@ -123,7 +123,7 @@ export const appRouter = router({
         newTier: z.enum(['tier1', 'tier2', 'tier3', 'tier4']),
       }))
       .mutation(async ({ input }) => {
-        return await upgradeAdvertiserTier(input.advertiserId, input.newTier);
+        return await upgradeAdvertiserTier(input.advertiserId, input.newTier as any);
       }),
     getAdvertiserTierInfo: publicProcedure
       .input(z.object({ tier: z.string() }))
