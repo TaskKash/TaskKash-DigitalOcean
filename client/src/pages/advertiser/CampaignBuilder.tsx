@@ -240,7 +240,7 @@ export default function CampaignBuilder() {
             </div>
             <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-lg border">
               <LinkIcon className="w-4 h-4 text-gray-500 ml-2" />
-              <input type="text" readOnly value="https://taskkash.com/tasks/demo-preview" className="bg-transparent border-none outline-none text-sm text-gray-600 flex-1 w-full" />
+              <input title="Campaign URL" type="text" readOnly value="https://taskkash.com/tasks/demo-preview" className="bg-transparent border-none outline-none text-sm text-gray-600 flex-1 w-full" />
               <Button size="sm" variant="secondary" onClick={() => {
                 navigator.clipboard.writeText("https://taskkash.com/tasks/demo-preview");
                 toast.success("Link copied to clipboard!");
@@ -666,6 +666,7 @@ export default function CampaignBuilder() {
                     ) : (
                       <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors bg-white relative">
                         <input 
+                          title="Upload Sponsor Video"
                           type="file" 
                           accept="video/mp4,video/mov" 
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"

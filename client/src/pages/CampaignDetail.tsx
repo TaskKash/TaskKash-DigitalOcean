@@ -571,7 +571,7 @@ export default function CampaignDetail() {
                   </div>
                   <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
                     <LinkIcon className="w-4 h-4 text-gray-500 ml-2 shrink-0" />
-                    <input type="text" readOnly value={`${window.location.origin}/campaigns/${id}`} className="bg-transparent border-none outline-none text-xs text-gray-600 flex-1 w-full min-w-0" />
+                    <input title="Share Campaign URL" type="text" readOnly value={`${window.location.origin}/campaigns/${id}`} className="bg-transparent border-none outline-none text-xs text-gray-600 flex-1 w-full min-w-0" />
                     <Button size="sm" variant="secondary" onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/campaigns/${id}`);
                       toast.success("Link copied!");
