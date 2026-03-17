@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import db from '../server/_core/mysql-db.js';
 
-const TOTAL_TASKS = 50;
+const TOTAL_TASKS = 3;
 
 const videoUrls = [
   'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Placeholder

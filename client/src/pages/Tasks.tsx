@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLocation } from 'wouter';
 import { Clock, Filter, CheckCircle, ListTodo } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import AdvancedFilters from '@/components/AdvancedFilters';
 import { getAdvertiserId } from '@/lib/advertiserUtils';
 import { useLocalizedFieldGetter } from '@/lib/languageUtils';
@@ -22,6 +23,8 @@ const taskTypeIcons: Record<string, string> = {
   visit: '📍',
   vote: '☑️'
 };
+
+const taskTypesList = ['survey', 'video', 'app', 'social', 'quiz', 'photo', 'visit', 'vote'];
 
 interface CompletedTask {
   id: string;
@@ -43,7 +46,7 @@ export default function Tasks() {
   const { tasks: contextTasks } = useApp();
   const getLocalizedField = useLocalizedFieldGetter();
   const [, setLocation] = useLocation();
-  const [filterType, setFilterType] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string[]>(['all']);
   const [tasks, setTasks] = useState<any[]>([]);
   const [completedTasks, setCompletedTasks] = useState<CompletedTask[]>([]);
   const [isLoadingCompleted, setIsLoadingCompleted] = useState(true);
@@ -155,9 +158,11 @@ export default function Tasks() {
   const availableTasks = tasks.filter(t => t.status === 'available' || t.status === 'active');
   const inProgressTasks = tasks.filter(t => t.status === 'in-progress');
 
+  // We no longer have a single 'filterType', we will have a multi-select state instead.
+  // Wait, I will use advancedFilters.category instead of filterType. I will remove the old filterType logic.
   let filteredAvailableTasks = filterType === 'all'
     ? availableTasks
-    : availableTasks.filter(t => t.type === filterType);
+    : availableTasks.filter(t => filterType.includes(t.type));
 
   // Apply category filter from Advanced Filters
   if (advancedFilters.category && advancedFilters.category.length > 0) {
@@ -377,25 +382,41 @@ export default function Tasks() {
           </TabsList>
 
           <TabsContent value="available" className="space-y-4">
-            {/* Filter Buttons */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              <Button
-                variant={filterType === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilterType('all')}
-              >
-                {t('all')}
-              </Button>
-              {Object.entries(taskTypeNames).map(([type, name]) => (
-                <Button
-                  key={type}
-                  variant={filterType === type ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilterType(type)}
-                >
-                  {taskTypeIcons[type as keyof typeof taskTypeIcons]} {name}
-                </Button>
-              ))}
+            {/* Filter Checkboxes */}
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4 mb-4">
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Filter className="w-4 h-4 text-primary" /> تصفية حسب نوع المهمة</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <label className="flex items-center space-x-2 space-x-reverse cursor-pointer">
+                  <Checkbox 
+                    checked={filterType.includes('all')} 
+                    onCheckedChange={(checked) => {
+                      if (checked) setFilterType(['all']);
+                      else setFilterType([]);
+                    }}
+                  />
+                  <span className="text-sm">{t('all')}</span>
+                </label>
+                {taskTypesList.map((type) => (
+                  <label key={type} className="flex items-center space-x-2 space-x-reverse cursor-pointer">
+                    <Checkbox
+                      checked={filterType.includes(type) && !filterType.includes('all')}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          const newFilter = filterType.filter(f => f !== 'all');
+                          setFilterType([...newFilter, type]);
+                        } else {
+                          const newFilter = filterType.filter(f => f !== type && f !== 'all');
+                          setFilterType(newFilter.length === 0 ? ['all'] : newFilter);
+                        }
+                      }}
+                    />
+                    <span className="text-sm flex items-center gap-1.5">
+                      <span>{taskTypeIcons[type as keyof typeof taskTypeIcons]}</span>
+                      <span>{taskTypeNames[type as keyof typeof taskTypeNames]}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             {/* Advanced Filters */}

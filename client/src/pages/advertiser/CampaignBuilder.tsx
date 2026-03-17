@@ -269,17 +269,23 @@ export default function CampaignBuilder() {
             </div>
           </div>
         </div>
-        {/* Step Progress */}
-        <div className="max-w-5xl mx-auto px-4 pb-3">
-          <div className="flex items-center gap-0">
-            {STEPS.map((s, idx) => (
-              <div key={s.id} className="flex items-center flex-1">
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${step === s.id ? 'bg-primary text-white' : step > s.id ? 'bg-green-100 text-green-700' : 'text-gray-400'}`}>
-                  {step > s.id ? <Check className="w-3 h-3" /> : <s.icon className="w-3 h-3" />}
-                  <span className="hidden sm:inline">{s.title}</span>
-                </div>
-                {idx < STEPS.length - 1 && <div className={`h-0.5 flex-1 mx-1 ${step > s.id ? 'bg-green-300' : 'bg-gray-200'}`} />}
-              </div>
+        {/* Tabs Layout UI */}
+        <div className="max-w-5xl mx-auto px-4 pb-0 pt-2">
+          <div className="flex overflow-x-auto hide-scrollbar gap-2 border-b">
+            {STEPS.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setStep(s.id)}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                  step === s.id
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
+                }`}
+              >
+                <s.icon className="w-4 h-4" />
+                <span>{s.title}</span>
+                {step > s.id && <CheckCircle2 className="w-4 h-4 ml-1 text-green-500" />}
+              </button>
             ))}
           </div>
         </div>
