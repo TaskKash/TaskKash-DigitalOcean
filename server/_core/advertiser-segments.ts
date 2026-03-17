@@ -194,13 +194,19 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     const rawCount = countResult[0]?.rawCount || 0;
     
     // Scale count to simulate the 100,000 user database requested
-    const DB_USER_COUNT = 33000; // actual roughly in DB
     const TARGET_DB_COUNT = 100000;
-    const scaleFactor = rawCount === 0 ? 0 : TARGET_DB_COUNT / DB_USER_COUNT;
+    // We treat the current actual raw count (roughly 33,000) as reaching 100k when no filters are applied.
+    // Let's find out the max possible count.
+    const maxDbQuery = await query('SELECT COUNT(DISTINCT id) as cnt FROM users', []);
+    const DB_USER_COUNT = maxDbQuery[0]?.cnt || 1;
+    
+    // Scale count to simulate 100,000 baseline
+    const scaleFactor = TARGET_DB_COUNT / DB_USER_COUNT;
     const scaledRawCount = Math.floor(rawCount * scaleFactor);
     
     const meetsMinimum = scaledRawCount >= 500;
-    const totalReach = roundReach(scaledRawCount);
+    // Cap at 100,000 to be perfectly accurate
+    const totalReach = roundReach(Math.min(TARGET_DB_COUNT, scaledRawCount));
 
     if (rawCount === 0) {
       return res.json({

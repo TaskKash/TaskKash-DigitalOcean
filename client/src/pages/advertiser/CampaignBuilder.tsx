@@ -14,7 +14,7 @@ import {
   ArrowLeft, ArrowRight, Check, Target, Users, FileText, Rocket,
   Lock, Crown, Zap, Info, DollarSign, Calendar, Clock, AlertTriangle, Monitor,
   Activity, Briefcase, Tag, Globe, Car, Home, Video, HelpCircle, Receipt,
-  CheckCircle2, Loader2
+  CheckCircle2, Loader2, UploadCloud, X as XIcon, FileVideo
 } from 'lucide-react';
 
 const COUNTRIES = ['Egypt', 'Saudi Arabia', 'United Arab Emirates', 'Kuwait', 'Qatar'];
@@ -25,7 +25,13 @@ const PURCHASE_INTENTS = ['Smartphone', 'TV', 'Laptop', 'Car', 'Home Appliances'
 const VEHICLE_BRANDS = ['Toyota', 'Hyundai', 'Kia', 'Nissan', 'BMW', 'Mercedes', 'Volkswagen', 'Ford', 'Chevrolet', 'Honda', 'Suzuki', 'Mitsubishi'];
 const WORK_TYPES = ['employed', 'self_employed', 'freelance', 'student', 'homemaker', 'retired'];
 const LIFE_STAGES = ['single', 'married', 'married_with_kids', 'parent_18plus', 'retiree'];
-const CITIES = ['Cairo', 'Alexandria', 'Giza', 'Shubra El-Kheima', 'Port Said', 'Suez', 'Mansoura', 'Riyadh', 'Jeddah', 'Dubai', 'Abu Dhabi', 'Kuwait City', 'Doha'];
+const CITIES_BY_COUNTRY: Record<string, string[]> = {
+  'Egypt': ['Cairo', 'Alexandria', 'Giza', 'Shubra El-Kheima', 'Port Said', 'Suez', 'Mansoura', 'Tanta', 'Sohag', 'Luxor', 'Aswan'],
+  'Saudi Arabia': ['Riyadh', 'Jeddah', 'Mecca', 'Medina', 'Dammam', 'Taif', 'Tabuk', 'Khobar'],
+  'United Arab Emirates': ['Dubai', 'Abu Dhabi', 'Sharjah', 'Al Ain', 'Ajman', 'Ras Al Khaimah'],
+  'Kuwait': ['Kuwait City', 'Al Ahmadi', 'Hawalli', 'Salmiya', 'Jahra'],
+  'Qatar': ['Doha', 'Al Rayyan', 'Al Wakrah', 'Al Khor']
+};
 const INCOME_LEVELS = ['low', 'lower_mid', 'mid', 'upper_mid', 'high'];
 const CONNECTION_TYPES = ['4G', '5G', 'WiFi', '3G'];
 const DEVICE_TIERS = ['A', 'B', 'C'];
@@ -97,7 +103,11 @@ export default function CampaignBuilder() {
       profileStrengthMin: '' as any,
       completedTasksMin: '' as any
     },
+    // For local file upload simulation
+    videoFileName: ''
   });
+
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   useEffect(() => {
     const info = localStorage.getItem('advertiser-info');
@@ -371,14 +381,20 @@ export default function CampaignBuilder() {
                   </div>
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Primary Cities</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {CITIES.map(city => (
-                        <label key={city} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.cities.includes(city) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
-                          <Checkbox checked={campaign.targeting.cities.includes(city)} onCheckedChange={() => toggleArrayItem('cities', city)} />
-                          <span>{city}</span>
-                        </label>
-                      ))}
-                    </div>
+                    {campaign.targeting.countries.length === 0 ? (
+                      <div className="text-sm text-gray-500 italic bg-gray-50 p-4 rounded border">
+                        Please select at least one country first to view cities.
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {campaign.targeting.countries.flatMap(country => CITIES_BY_COUNTRY[country] || []).map(city => (
+                          <label key={city} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.cities.includes(city) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
+                            <Checkbox checked={campaign.targeting.cities.includes(city)} onCheckedChange={() => toggleArrayItem('cities', city)} />
+                            <span>{city}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -516,8 +532,59 @@ export default function CampaignBuilder() {
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <Label>Video URL * <span className="text-xs text-gray-400">(YouTube, Vimeo, or direct MP4)</span></Label>
-                    <Input value={campaign.videoUrl} onChange={e => setCampaign({ ...campaign, videoUrl: e.target.value })} placeholder="https://youtube.com/watch?v=..." />
+                    <Label>Sponsor Video File *</Label>
+                    {campaign.videoUrl ? (
+                      <div className="border border-green-200 bg-green-50 rounded-lg p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-green-100 rounded flex items-center justify-center">
+                            <FileVideo className="w-5 h-5 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-green-900 text-sm">{campaign.videoFileName || 'uploaded-campaign-video.mp4'}</p>
+                            <p className="text-xs text-green-600">Successfully uploaded</p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => setCampaign({ ...campaign, videoUrl: '', videoFileName: '' })} className="text-red-600 hover:bg-red-50 hover:text-red-700">
+                          Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors bg-white relative">
+                        <input 
+                          type="file" 
+                          accept="video/mp4,video/mov" 
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setUploadingVideo(true);
+                              // Simulate network upload
+                              setTimeout(() => {
+                                setCampaign({ 
+                                  ...campaign, 
+                                  videoUrl: URL.createObjectURL(file), // Provide local blob url for demo
+                                  videoFileName: file.name
+                                });
+                                setUploadingVideo(false);
+                              }, 1500);
+                            }
+                          }}
+                        />
+                        {uploadingVideo ? (
+                          <div className="flex flex-col items-center">
+                            <Loader2 className="w-10 h-10 text-primary animate-spin mb-3" />
+                            <p className="text-sm font-medium">Uploading video...</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center">
+                            <UploadCloud className="w-10 h-10 text-gray-400 mb-3" />
+                            <p className="text-sm font-medium mb-1">Click to upload or drag and drop</p>
+                            <p className="text-xs text-gray-500">MP4 or MOV (max 50MB)</p>
+                            <Button type="button" variant="outline" size="sm" className="mt-4 pointer-events-none">Select Video</Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Label>Minimum Watch Percentage: <strong>{campaign.minWatchPercent}%</strong></Label>
@@ -596,7 +663,7 @@ export default function CampaignBuilder() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Title</span><span className="font-medium">{campaign.titleEn || '—'}</span></div>
                 <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Task Type</span><span className="font-medium capitalize">Video + Quiz</span></div>
-                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Video URL</span><span className="font-medium text-blue-600 truncate max-w-xs">{campaign.videoUrl || '—'}</span></div>
+                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Video File</span><span className="font-medium text-blue-600 truncate max-w-xs">{campaign.videoFileName || 'Not Uploaded'}</span></div>
                 <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Min. Watch</span><span className="font-medium">{campaign.minWatchPercent}%</span></div>
                 <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Audience Reach</span><span className="font-bold text-primary">{reachData.totalReach.toLocaleString()}</span></div>
                 <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Target Cities</span><span className="font-medium">{campaign.targeting.cities.length ? campaign.targeting.cities.join(', ') : 'All'}</span></div>
