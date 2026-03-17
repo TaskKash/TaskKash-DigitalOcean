@@ -94,6 +94,69 @@ function ProfileRow({ label, value }: { label: string; value: string | number | 
   );
 }
 
+// ─── Guest Privacy Policy Component ─────────────────────────────────────────────
+function GuestPrivacyPolicy() {
+  const [, setLocation] = useLocation();
+  return (
+    <MobileLayout title="Privacy Policy" showBack>
+      <div className="p-4 pb-28 space-y-6 max-w-2xl mx-auto">
+        <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white">
+          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <Shield className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="font-bold text-lg leading-tight">Privacy Policy</h1>
+            <p className="text-white/80 text-xs mt-0.5">TaskKash Data Protection & Privacy</p>
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Your Privacy Matters</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <p>At TaskKash, we take your privacy seriously. This policy explains what information we collect, how we use it, and the rights you have concerning your data under GDPR, CCPA, and Egyptian Data Protection Law.</p>
+            
+            <h3 className="font-semibold text-foreground pt-2">1. Information We Collect</h3>
+            <p>We collect information you provide directly to us when creating an account, including your name, email, phone number, and demographic information. We also collect data about your interactions with tasks and offers.</p>
+
+            <h3 className="font-semibold text-foreground pt-2">2. How We Use Your Data</h3>
+            <p>Your data is used to personalize your experience, match you with relevant tasks and offers, process payments, and improve our services. We do not sell your personal data to third parties.</p>
+
+            <h3 className="font-semibold text-foreground pt-2">3. Your Data Rights (Registered Users)</h3>
+            <p>Once you register, you gain access to our Data & Privacy Center where you can:</p>
+            <ul className="list-disc pl-5 space-y-1">
+               <li>Manage your consent for personalization and marketing.</li>
+               <li>View the exact profile and behavioral data we hold.</li>
+               <li>Download a copy of your data in JSON or CSV format.</li>
+               <li>Request the permanent deletion of your account and data.</li>
+            </ul>
+
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-100 dark:bg-blue-900/20 dark:border-blue-800 rounded-xl text-center">
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Want to manage your privacy settings?</h4>
+              <p className="text-xs text-blue-700 dark:text-blue-300 mb-4">Log in or create an account to access the Privacy Center and take full control of your data.</p>
+              <div className="flex gap-2 justify-center">
+                <Button onClick={() => setLocation('/login')} variant="default">Log In</Button>
+                <Button onClick={() => setLocation('/register')} variant="outline">Register</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Compliance Footer */}
+        <div className="pt-2 pb-2 text-center">
+          <p className="text-[10px] text-muted-foreground">
+            TaskKash complies with GDPR, CCPA, and Egypt Data Protection Law 2023/82
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            Data Protection Officer: <a href="mailto:dpo@taskkash.com" className="underline">dpo@taskkash.com</a>
+          </p>
+        </div>
+      </div>
+    </MobileLayout>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function PrivacyCenter() {
   const { user } = useApp();
@@ -121,6 +184,10 @@ export default function PrivacyCenter() {
 
   // ── Fetch initial consent state ──
   useEffect(() => {
+    if (!user) {
+      setConsentsLoading(false);
+      return;
+    }
     fetch('/api/privacy/consents', { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
@@ -128,18 +195,21 @@ export default function PrivacyCenter() {
       })
       .catch(console.error)
       .finally(() => setConsentsLoading(false));
-  }, []);
+  }, [user]);
 
   // ── Fetch profile on tab change ──
   const loadProfile = useCallback(() => {
-    if (profile) return;
+    if (profile || !user) return;
     setProfileLoading(true);
     fetch('/api/privacy/profile', { credentials: 'include' })
       .then(r => r.json())
-      .then(data => setProfile(data))
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        setProfile(data);
+      })
       .catch(console.error)
       .finally(() => setProfileLoading(false));
-  }, [profile]);
+  }, [profile, user]);
 
   // ── Toggle consent (immediate, append-only) ──
   const handleToggle = async (key: keyof ConsentMap) => {
@@ -228,6 +298,10 @@ export default function PrivacyCenter() {
       setDeleteLoading(false);
     }
   };
+
+  if (!user) {
+    return <GuestPrivacyPolicy />;
+  }
 
   return (
     <MobileLayout title="Your Privacy & Data Rights" showBack>
