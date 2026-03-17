@@ -173,7 +173,7 @@ export default function FinancialControl() {
                 <tr key={req.id} className={`hover:bg-muted/50 ${req.flagged ? 'bg-red-50/50' : ''}`}>
                   <td className="px-6 py-4 font-medium">
                     {req.id}
-                    {req.flagged && <AlertTriangle className="w-4 h-4 text-red-500 inline ml-2" title="Flagged for unusually large amount" />}
+                    {req.flagged && <span title="Flagged for unusually large amount"><AlertTriangle className="w-4 h-4 text-red-500 inline ml-2" /></span>}
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium text-gray-900 dark:text-gray-100">{req.user}</div>

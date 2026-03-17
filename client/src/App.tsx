@@ -118,7 +118,9 @@ import AdvertisersManagementNew from "./pages/admin/AdvertisersManagementNew";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
 import FinancialControl from "./pages/admin/FinancialControl";
 import PlatformOperations from "./pages/admin/PlatformOperations";
+import WalletDashboard from "./pages/admin/WalletDashboard";
 import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
+import CookieConsentBanner from "./components/CookieConsentBanner";
 import AdvertiserLayout from "./components/layout/AdvertiserLayout";
 import { AdvertiserProtectedRoute } from "./components/AdvertiserProtectedRoute";
 import Referrals from "./pages/Referrals";
@@ -246,6 +248,9 @@ function Router() {
       <Route path="/admin/advertisers-manage">
         <AdminProtectedRoute><AdvertisersManagementNew /></AdminProtectedRoute>
       </Route>
+      <Route path="/admin/wallet-hub">
+        <AdminProtectedRoute><WalletDashboard /></AdminProtectedRoute>
+      </Route>
       <Route path="/admin/tasks">
         <AdminProtectedRoute><AdminTasks /></AdminProtectedRoute>
       </Route>
@@ -358,6 +363,7 @@ function App() {
             <Toaster />
             <Router />
             <PWAInstallBanner />
+            <CookieConsentBanner />
           </TooltipProvider>
         </AppProvider>
       </ThemeProvider>

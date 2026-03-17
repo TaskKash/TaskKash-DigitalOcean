@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,26 @@ import {
   DollarSign, Clock, Target, BarChart3, PieChart, Calendar,
   Download, Filter, RefreshCw, Smartphone, MapPin, UserCheck
 } from 'lucide-react';
+
+const demographicsData = {
+  gender: { male: 55, female: 45 },
+  age: { '18-24': 30, '25-34': 40, '35-44': 20, '45+': 10 },
+  tier: { tier1: 40, tier2: 30, tier3: 30 }
+};
+
+const deviceData = {
+  brands: { Samsung: 45, Apple: 25, Xiaomi: 15, Oppo: 10, Other: 5 },
+  os: { Android: 70, iOS: 30 },
+  carriers: { Vodafone: 40, Orange: 30, Etisalat: 20, WE: 10 }
+};
+
+const locationData = [
+  { city: 'Cairo', completions: 12500, percentage: 45 },
+  { city: 'Alexandria', completions: 5500, percentage: 20 },
+  { city: 'Giza', completions: 4500, percentage: 15 },
+  { city: 'Mansoura', completions: 2000, percentage: 8 },
+  { city: 'Other', completions: 3500, percentage: 12 },
+];
 
 export default function AnalyticsDashboard() {
   const { t } = useTranslation();

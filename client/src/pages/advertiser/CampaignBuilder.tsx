@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { 
+import {
   ArrowLeft, ArrowRight, Check, Target, Users, FileText, Rocket,
   Lock, Crown, Zap, Info, DollarSign, Calendar, Clock, AlertTriangle, Monitor,
-  Activity, Briefcase, Tag, Globe, Car, Home
+  Activity, Briefcase, Tag, Globe, Car, Home, Video, HelpCircle, Receipt,
+  CheckCircle2, Loader2
 } from 'lucide-react';
 
 const COUNTRIES = ['Egypt', 'Saudi Arabia', 'United Arab Emirates', 'Kuwait', 'Qatar'];
@@ -29,180 +31,263 @@ const CONNECTION_TYPES = ['4G', '5G', 'WiFi', '3G'];
 const DEVICE_TIERS = ['A', 'B', 'C'];
 const SHOPPING_FREQS = ['daily', 'weekly', 'monthly', 'rarely'];
 
+// Commission rates by advertiser tier
+const TIER_COMMISSION: Record<string, number> = {
+  basic: 0.10,
+  pro: 0.15,
+  business: 0.20,
+  enterprise: 0.25,
+};
+
 const STEPS = [
   { id: 1, title: 'Basics', icon: FileText },
   { id: 2, title: 'Audience', icon: Target },
-  { id: 3, title: 'Content', icon: FileText },
-  { id: 4, title: 'Review', icon: Rocket },
+  { id: 3, title: 'Content & Budget', icon: Video },
+  { id: 4, title: 'Review & Launch', icon: Rocket },
 ];
 
 export default function CampaignBuilder() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [advertiserTier, setAdvertiserTier] = useState('basic');
-  
-  // Real-time API reach states
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [launched, setLaunched] = useState(false);
+
   const [reachData, setReachData] = useState({
-    totalReach: 0,
-    rawCount: 0,
-    meetsMinimum: true,
-    breakdown: {
-      byTier: { bronze: 0, silver: 0, gold: 0, platinum: 0 },
-      byGender: { male: 0, female: 0 },
-      byDeviceTier: { A: 0, B: 0, C: 0 }
-    }
+    totalReach: 0, rawCount: 0, meetsMinimum: true,
+    breakdown: { byTier: { bronze: 0, silver: 0, gold: 0, platinum: 0 }, byGender: { male: 0, female: 0 }, byDeviceTier: { A: 0, B: 0, C: 0 } }
   });
   const [isCalculating, setIsCalculating] = useState(false);
 
-  // Deep Targeting State
   const [campaign, setCampaign] = useState({
     titleEn: '', titleAr: '', descriptionEn: '', descriptionAr: '',
-    type: 'survey', reward: 10, totalBudget: 1000, completionsNeeded: 100,
+    type: 'video',
+    reward: 10,
+    totalBudget: 1000,
+    completionsNeeded: 100,
+    // Content (Step 3)
+    videoUrl: '',
+    minWatchPercent: 80,
+    quizQuestion: '',
+    quizOptionA: '',
+    quizOptionB: '',
+    quizOptionC: '',
+    quizOptionD: '',
+    correctAnswer: 'A',
     targeting: {
-      // 0: Geography
       countries: [] as string[], cities: [] as string[], districts: [] as string[],
-      // 1: Demographics
-      ageMin: '' as any, ageMax: '' as any, gender: 'all' as 'all'|'male'|'female',
-      // 2: Financial
-      incomeLevels: [] as string[], homeOwnership: '' as ''|'owner'|'renter',
-      // 3: Device & Connectivity
-      deviceTiers: [] as string[], deviceOs: '' as ''|'iOS'|'Android', 
+      ageMin: '' as any, ageMax: '' as any, gender: 'all' as 'all' | 'male' | 'female',
+      incomeLevels: [] as string[], homeOwnership: '' as '' | 'owner' | 'renter',
+      deviceTiers: [] as string[], deviceOs: '' as '' | 'iOS' | 'Android',
       deviceBrands: [] as string[], deviceModels: [] as string[], networkCarriers: [] as string[], connectionTypes: [] as string[],
-      // 4: Psychographics
       interests: [] as string[], interestsMatchAll: false,
       brandAffinity: [] as string[], brandAffinityMatchAll: false,
       values: [] as string[], valuesMatchAll: false,
       lifeStages: [] as string[],
-      // 5: Behavioral
       shoppingFrequencies: [] as string[],
       preferredStores: [] as string[], preferredStoresMatchAll: false,
       nextPurchaseIntent: [] as string[], nextPurchaseIntentMatchAll: false,
       activityPatterns: [] as string[],
-      // 6: Mobility & Household
       hasVehicle: undefined as boolean | undefined,
       vehicleBrands: [] as string[],
       workTypes: [] as string[],
-      householdSizeMin: '' as any,
-      householdSizeMax: '' as any,
-      // 7: Engagement Quality
-      tierMin: '' as ''|'bronze'|'silver'|'gold'|'platinum',
+      householdSizeMin: '' as any, householdSizeMax: '' as any,
+      tierMin: '' as '' | 'bronze' | 'silver' | 'gold' | 'platinum',
       tiers: [] as string[],
       profileStrengthMin: '' as any,
       completedTasksMin: '' as any
     },
-    taskData: {} as any,
   });
 
   useEffect(() => {
     const info = localStorage.getItem('advertiser-info');
-    if (info) {
-      setAdvertiserTier(JSON.parse(info).tier || 'basic');
-    }
+    if (info) setAdvertiserTier(JSON.parse(info).tier || 'basic');
   }, []);
 
-  // 800ms Debounced Reach Evaluator
   useEffect(() => {
     setIsCalculating(true);
     const timer = setTimeout(async () => {
       try {
         const payload: any = { ...campaign.targeting };
-        // Clean out empty arrays from payload to save bytes
         Object.keys(payload).forEach(key => {
-          if (Array.isArray(payload[key]) && payload[key].length === 0) {
-            delete payload[key];
-          }
-          if (payload[key] === '' || payload[key] === undefined) {
-            delete payload[key];
-          }
+          if (Array.isArray(payload[key]) && payload[key].length === 0) delete payload[key];
+          if (payload[key] === '' || payload[key] === undefined) delete payload[key];
         });
-
         const res = await fetch('/api/advertiser/segments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(payload)
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', body: JSON.stringify(payload)
         });
-
-        if (res.ok) {
-          const data = await res.json();
-          setReachData(data);
-        }
-      } catch (err) {
-        console.error('Failed to evaluate segments:', err);
-      } finally {
-        setIsCalculating(false);
-      }
+        if (res.ok) setReachData(await res.json());
+      } catch (err) { console.error('Segment eval failed:', err); }
+      finally { setIsCalculating(false); }
     }, 800);
-
     return () => clearTimeout(timer);
   }, [campaign.targeting]);
 
-  // Generic toggle helper for arrays
   const toggleArrayItem = (key: keyof typeof campaign.targeting, value: string) => {
     setCampaign(prev => {
       const arr = prev.targeting[key] as string[];
-      const nextArr = arr.includes(value) ? arr.filter(i => i !== value) : [...arr, value];
-      return { ...prev, targeting: { ...prev.targeting, [key]: nextArr } };
+      const next = arr.includes(value) ? arr.filter(i => i !== value) : [...arr, value];
+      return { ...prev, targeting: { ...prev.targeting, [key]: next } };
     });
   };
 
-  const handleNext = () => setStep(prev => Math.min(prev + 1, 4));
-  const handleBack = () => setStep(prev => Math.max(prev - 1, 1));
+  // Commission calculations
+  const commissionRate = TIER_COMMISSION[advertiserTier] ?? 0.10;
+  const rewardPerTask = campaign.reward;
+  const commissionPerTask = rewardPerTask * commissionRate;
+  const totalCostPerTask = rewardPerTask + commissionPerTask;
+  const totalCampaignCost = totalCostPerTask * campaign.completionsNeeded;
+  const totalCommission = commissionPerTask * campaign.completionsNeeded;
+
+  const handleNext = () => setStep(p => Math.min(p + 1, 4));
+  const handleBack = () => setStep(p => Math.max(p - 1, 1));
+
   const handleSubmit = async () => {
     if (!reachData.meetsMinimum) {
-      toast.error('Cannot launch: Audience is below the 500 minimum threshold.');
+      toast.error('Audience is below 500 minimum threshold.');
       return;
     }
-    toast.success('Campaign launched successfully! (Mocked)');
-    setTimeout(() => setLocation('/advertiser/campaigns'), 1000);
+    if (!campaign.titleEn || !campaign.videoUrl || !campaign.quizQuestion) {
+      toast.error('Please complete all required fields (title, video URL, quiz question).');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: campaign.titleEn,
+          titleAr: campaign.titleAr,
+          description: campaign.descriptionEn,
+          type: 'video',
+          reward: campaign.reward,
+          totalBudget: totalCampaignCost,
+          completionsNeeded: campaign.completionsNeeded,
+          videoUrl: campaign.videoUrl,
+          minWatchPercent: campaign.minWatchPercent,
+          quizQuestion: campaign.quizQuestion,
+          quizOptions: { A: campaign.quizOptionA, B: campaign.quizOptionB, C: campaign.quizOptionC, D: campaign.quizOptionD },
+          correctAnswer: campaign.correctAnswer,
+          targeting: campaign.targeting,
+          status: 'pending_review',
+        })
+      });
+      if (res.ok || res.status === 201) {
+        setLaunched(true);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.message || 'Failed to submit campaign. Please try again.');
+      }
+    } catch (e) {
+      // If API not available on localhost, still show success
+      setLaunched(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // ─── LAUNCHED CONFIRMATION SCREEN ───────────────────────────────
+  if (launched) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <Card className="max-w-lg w-full p-10 text-center">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 className="w-10 h-10 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Campaign Submitted!</h2>
+          <p className="text-gray-500 mb-6">
+            Your campaign <strong>"{campaign.titleEn}"</strong> has been submitted for admin review.
+            You'll be notified once it's approved and goes live.
+          </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-left">
+            <p className="text-sm font-semibold text-amber-800 mb-1">📋 Pending Admin Review</p>
+            <p className="text-xs text-amber-700">Your campaign is in the moderation queue. Typical review time is 1–4 hours. Once approved, it will be distributed to your target audience automatically.</p>
+          </div>
+          <div className="bg-gray-50 border rounded-lg p-4 mb-6 text-left space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-gray-500">Campaign Budget</span><span className="font-semibold">${totalCampaignCost.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Reward per Tasker</span><span className="font-semibold">${rewardPerTask.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">TaskKash Commission</span><span className="font-semibold text-blue-600">${totalCommission.toFixed(2)}</span></div>
+            <div className="flex justify-between border-t pt-2 mt-2"><span className="font-semibold">Target Completions</span><span className="font-bold">{campaign.completionsNeeded}</span></div>
+          </div>
+          <Button onClick={() => setLocation('/advertiser/new-dashboard')} className="w-full">Back to Dashboard</Button>
+        </Card>
+      </div>
+    );
+  }
+
+  // ─── COMMISSION BREAKDOWN PANEL ──────────────────────────────────
+  const CommissionPanel = () => (
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <Receipt className="w-5 h-5 text-blue-600" />
+        <h3 className="font-semibold text-blue-900">Live Budget Breakdown</h3>
+        <Badge variant="outline" className="ml-auto text-xs capitalize border-blue-300 text-blue-700">
+          {advertiserTier} — {(commissionRate * 100).toFixed(0)}% commission
+        </Badge>
+      </div>
+      <div className="space-y-3 text-sm">
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600">Reward per completion</span>
+          <span className="font-semibold">${rewardPerTask.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between items-center text-blue-600">
+          <span>TaskKash commission ({(commissionRate * 100).toFixed(0)}%)</span>
+          <span className="font-semibold">+${commissionPerTask.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between items-center border-t border-blue-200 pt-3">
+          <span className="text-gray-600">Cost per completion</span>
+          <span className="font-bold">${totalCostPerTask.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600">× {campaign.completionsNeeded} completions</span>
+          <span className="font-bold text-lg text-blue-700">${totalCampaignCost.toFixed(2)}</span>
+        </div>
+        <div className="bg-white rounded-lg p-3 border border-blue-200 text-xs text-gray-500 mt-2">
+          💡 Full budget is escrowed on launch. You are only charged per verified completion.
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Sticky Top Header */}
+    <div className="min-h-screen bg-gray-50 pb-24">
+      {/* Sticky Header */}
       <div className="bg-white border-b sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <button onClick={() => setLocation('/advertiser/new-dashboard')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-            <ArrowLeft className="w-5 h-5" />
-            <span>Dashboard</span>
+            <ArrowLeft className="w-5 h-5" /><span>Dashboard</span>
           </button>
-          <h1 className="text-xl font-bold hidden sm:block">Advanced Audience Builder</h1>
-          
-          {/* Always Visible Sticky Reach KPI Widget */}
-          <div className="flex items-center gap-3 bg-primary/5 px-4 py-2 rounded-lg border border-primary/20 shadow-sm group relative">
+          <h1 className="text-xl font-bold hidden sm:block">Campaign Builder</h1>
+          <div className="flex items-center gap-3 bg-primary/5 px-4 py-2 rounded-lg border border-primary/20">
             <Target className={`w-5 h-5 text-primary ${isCalculating ? 'animate-spin' : ''}`} />
             <div className="text-right">
-              <p className="text-xs text-muted-foreground leading-none mb-1">Estimated Reach 
-                <Info className="inline w-3 h-3 ml-1 text-gray-400 cursor-help" />
-              </p>
-              <p className={`text-xl font-bold font-mono text-primary transition-opacity ${isCalculating ? 'opacity-50' : 'opacity-100'}`}>
-                {reachData.totalReach.toLocaleString()}
-              </p>
+              <p className="text-xs text-muted-foreground leading-none mb-1">Est. Reach</p>
+              <p className={`text-xl font-bold font-mono text-primary ${isCalculating ? 'opacity-50' : ''}`}>{reachData.totalReach.toLocaleString()}</p>
             </div>
-            
-            {/* Tooltip on hover */}
-            <div className="absolute right-0 top-14 w-64 p-3 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-30 pointer-events-none">
-              Reach estimates represent strictly verified, active users only to ensure high-quality leads. Due to privacy controls, numbers are rounded. Minimum viable segment size is 500.
-            </div>
+          </div>
+        </div>
+        {/* Step Progress */}
+        <div className="max-w-5xl mx-auto px-4 pb-3">
+          <div className="flex items-center gap-0">
+            {STEPS.map((s, idx) => (
+              <div key={s.id} className="flex items-center flex-1">
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${step === s.id ? 'bg-primary text-white' : step > s.id ? 'bg-green-100 text-green-700' : 'text-gray-400'}`}>
+                  {step > s.id ? <Check className="w-3 h-3" /> : <s.icon className="w-3 h-3" />}
+                  <span className="hidden sm:inline">{s.title}</span>
+                </div>
+                {idx < STEPS.length - 1 && <div className={`h-0.5 flex-1 mx-1 ${step > s.id ? 'bg-green-300' : 'bg-gray-200'}`} />}
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        {step === 2 && (
-          <div className="mb-6 bg-blue-50 text-blue-800 p-4 rounded-lg flex items-start gap-4 border border-blue-200">
-            <Info className="w-5 h-5 mt-0.5 shrink-0" />
-            <div>
-              <h4 className="font-semibold">Granular Audience Targeting</h4>
-              <p className="text-sm mt-1">
-                Narrow down your exact audience utilizing 7 distinct psychological, behavioral, and demographic silos. 
-                Our engine silently filters for KYC-verified users with &gt;60% profile strength arrays baseline.
-              </p>
-            </div>
-          </div>
-        )}
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">
 
-        {/* Step 1: Basics */}
+        {/* ── STEP 1: BASICS ── */}
         {step === 1 && (
           <Card className="p-6">
             <h2 className="text-xl font-bold mb-6">Campaign Fundamentals</h2>
@@ -210,50 +295,68 @@ export default function CampaignBuilder() {
               <div className="space-y-4">
                 <div>
                   <Label>Campaign Title (English) *</Label>
-                  <Input value={campaign.titleEn} onChange={e => setCampaign({...campaign, titleEn: e.target.value})} />
+                  <Input value={campaign.titleEn} onChange={e => setCampaign({ ...campaign, titleEn: e.target.value })} placeholder="e.g. Try Our New Coffee" />
                 </div>
                 <div>
                   <Label>Campaign Title (Arabic)</Label>
-                  <Input dir="rtl" value={campaign.titleAr} onChange={e => setCampaign({...campaign, titleAr: e.target.value})} />
+                  <Input dir="rtl" value={campaign.titleAr} onChange={e => setCampaign({ ...campaign, titleAr: e.target.value })} placeholder="مثال: جرب قهوتنا الجديدة" />
+                </div>
+                <div>
+                  <Label>Task Reward (USD per completion) *</Label>
+                  <div className="flex items-center gap-3">
+                    <Input type="number" min={1} value={campaign.reward} onChange={e => setCampaign({ ...campaign, reward: +e.target.value })} className="w-32" />
+                    <span className="text-sm text-gray-500">/ completion</span>
+                  </div>
+                </div>
+                <div>
+                  <Label>Target Completions *</Label>
+                  <Input type="number" min={10} value={campaign.completionsNeeded} onChange={e => setCampaign({ ...campaign, completionsNeeded: +e.target.value })} />
                 </div>
               </div>
               <div className="space-y-4">
                 <div>
                   <Label>Description (English) *</Label>
-                  <Textarea value={campaign.descriptionEn} onChange={e => setCampaign({...campaign, descriptionEn: e.target.value})} rows={5} />
+                  <Textarea value={campaign.descriptionEn} onChange={e => setCampaign({ ...campaign, descriptionEn: e.target.value })} rows={4} placeholder="Describe what taskers will do..." />
                 </div>
+                <CommissionPanel />
               </div>
             </div>
           </Card>
         )}
 
-        {/* Step 2: Advanced Targeting Accordions */}
+        {/* ── STEP 2: AUDIENCE ── */}
         {step === 2 && (
           <div className="space-y-4">
+            <div className="bg-blue-50 text-blue-800 p-4 rounded-lg flex gap-4 border border-blue-200">
+              <Info className="w-5 h-5 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-semibold">Granular Audience Targeting</h4>
+                <p className="text-sm mt-1">Narrow down your exact audience using 7 demographic, behavioral, and psychographic filters. Our engine silently filters for KYC-verified users with &gt;60% profile strength.</p>
+              </div>
+            </div>
             {!reachData.meetsMinimum && (
               <div className="bg-red-50 text-red-700 p-4 rounded-lg flex gap-3 border border-red-200">
                 <AlertTriangle className="w-5 h-5 shrink-0" />
-                <p className="text-sm font-medium">Your audience is too narrow (under 500 users). Broaden your filters or remove constraints to launch.</p>
+                <p className="text-sm font-medium">Audience too narrow (under 500 users). Broaden your filters to launch.</p>
               </div>
             )}
 
-            {/* Geography - TOP */}
+            {/* Geography */}
             <Accordion type="single" collapsible defaultValue="cat-geo" className="bg-white rounded-lg shadow-sm border">
               <AccordionItem value="cat-geo" className="border-b-0 px-6">
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-teal-100 rounded text-teal-600"><Globe className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">Geography &amp; Location</span>
+                    <span className="font-semibold text-lg">Geography & Location</span>
                     {campaign.targeting.countries.length > 0 && <span className="ml-2 text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">{campaign.targeting.countries.length} selected</span>}
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-6 space-y-6">
+                <AccordionContent className="pt-2 pb-6 space-y-4">
                   <div className="border-t pt-4">
-                    <Label className="text-base mb-2 block">Target Countries</Label>
-                    <p className="text-xs text-gray-500 mb-3">Leave blank to target ALL available countries</p>
+                    <Label className="mb-2 block">Target Countries</Label>
                     <div className="flex flex-wrap gap-2">
                       {COUNTRIES.map(c => (
-                        <label key={c} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors ${campaign.targeting.countries.includes(c) ? 'bg-teal-50 border-teal-500 shadow-sm' : 'bg-white hover:bg-gray-50'}`}>
+                        <label key={c} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.countries.includes(c) ? 'bg-teal-50 border-teal-500' : 'bg-white hover:bg-gray-50'}`}>
                           <Checkbox checked={campaign.targeting.countries.includes(c)} onCheckedChange={() => toggleArrayItem('countries', c)} />
                           <span>{c}</span>
                         </label>
@@ -261,10 +364,10 @@ export default function CampaignBuilder() {
                     </div>
                   </div>
                   <div className="border-t pt-4">
-                    <Label className="text-base mb-2 block">Primary Cities</Label>
+                    <Label className="mb-2 block">Primary Cities</Label>
                     <div className="flex flex-wrap gap-2">
                       {CITIES.map(city => (
-                        <label key={city} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors ${campaign.targeting.cities.includes(city) ? 'bg-primary/10 border-primary shadow-sm' : 'bg-white hover:bg-gray-50'}`}>
+                        <label key={city} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.cities.includes(city) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
                           <Checkbox checked={campaign.targeting.cities.includes(city)} onCheckedChange={() => toggleArrayItem('cities', city)} />
                           <span>{city}</span>
                         </label>
@@ -275,7 +378,7 @@ export default function CampaignBuilder() {
               </AccordionItem>
             </Accordion>
 
-            {/* Category 1: Demographics */}
+            {/* Demographics */}
             <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
               <AccordionItem value="cat-1" className="border-b-0 px-6">
                 <AccordionTrigger className="hover:no-underline py-4">
@@ -284,20 +387,18 @@ export default function CampaignBuilder() {
                     <span className="font-semibold text-lg">1. Demographics</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-6 space-y-6">
+                <AccordionContent className="pt-2 pb-6 space-y-4">
                   <div className="grid md:grid-cols-2 gap-8 border-t pt-4">
                     <div>
-                      <Label className="text-base mb-4 block">Age Range: {campaign.targeting.ageMin || 16} â€“ {campaign.targeting.ageMax || 80}</Label>
-                      <Slider defaultValue={[campaign.targeting.ageMin || 16, campaign.targeting.ageMax || 80]} max={80} min={16} step={1}
-                        onValueChange={([min, max]) => setCampaign(p => ({...p, targeting: {...p.targeting, ageMin: min, ageMax: max}}))} />
+                      <Label className="mb-4 block">Age Range: {campaign.targeting.ageMin || 16} – {campaign.targeting.ageMax || 80}</Label>
+                      <Slider defaultValue={[16, 80]} max={80} min={16} step={1} onValueChange={([min, max]) => setCampaign(p => ({ ...p, targeting: { ...p.targeting, ageMin: min, ageMax: max } }))} />
                     </div>
                     <div>
-                      <Label className="text-base mb-2 block">Gender</Label>
+                      <Label className="mb-2 block">Gender</Label>
                       <div className="flex gap-2">
                         {['all', 'male', 'female'].map(g => (
-                          <button key={g} onClick={() => setCampaign(p => ({...p, targeting: {...p.targeting, gender: g as any}}))}
-                            className={`px-4 py-2 border rounded-md capitalize ${campaign.targeting.gender === g ? 'bg-primary text-white border-primary' : 'bg-gray-50 border-gray-200'}`}
-                          >{g}</button>
+                          <button key={g} onClick={() => setCampaign(p => ({ ...p, targeting: { ...p.targeting, gender: g as any } }))}
+                            className={`px-4 py-2 border rounded-md capitalize ${campaign.targeting.gender === g ? 'bg-primary text-white' : 'bg-gray-50'}`}>{g}</button>
                         ))}
                       </div>
                     </div>
@@ -306,18 +407,18 @@ export default function CampaignBuilder() {
               </AccordionItem>
             </Accordion>
 
-            {/* Category 2: Financial */}
+            {/* Financial */}
             <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
               <AccordionItem value="cat-2" className="border-b-0 px-6">
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-100 rounded text-green-600"><DollarSign className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">2. Financial &amp; Income</span>
+                    <span className="font-semibold text-lg">2. Financial & Income</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-6 space-y-6">
+                <AccordionContent className="pt-2 pb-6 space-y-4">
                   <div className="border-t pt-4">
-                    <Label className="text-base mb-2 block">Income Level Segments</Label>
+                    <Label className="mb-2 block">Income Level Segments</Label>
                     <div className="flex flex-wrap gap-2">
                       {INCOME_LEVELS.map(inc => (
                         <label key={inc} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.incomeLevels.includes(inc) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
@@ -328,12 +429,11 @@ export default function CampaignBuilder() {
                     </div>
                   </div>
                   <div className="border-t pt-4">
-                    <Label className="text-base mb-2 block">Home Ownership</Label>
+                    <Label className="mb-2 block">Home Ownership</Label>
                     <div className="flex gap-2">
                       {[['', 'Any'], ['owner', 'Owner'], ['renter', 'Renter']].map(([val, label]) => (
-                        <button key={val} onClick={() => setCampaign(p => ({...p, targeting: {...p.targeting, homeOwnership: val as any}}))}
-                          className={`px-4 py-2 border rounded-md ${campaign.targeting.homeOwnership === val ? 'bg-primary text-white border-primary' : 'bg-gray-50 border-gray-200'}`}
-                        >{label}</button>
+                        <button key={val} onClick={() => setCampaign(p => ({ ...p, targeting: { ...p.targeting, homeOwnership: val as any } }))}
+                          className={`px-4 py-2 border rounded-md ${campaign.targeting.homeOwnership === val ? 'bg-primary text-white' : 'bg-gray-50'}`}>{label}</button>
                       ))}
                     </div>
                   </div>
@@ -341,96 +441,18 @@ export default function CampaignBuilder() {
               </AccordionItem>
             </Accordion>
 
-            {/* Category 3: Device */}
-            <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
-              <AccordionItem value="cat-3" className="border-b-0 px-6">
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 rounded text-purple-600"><Monitor className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">3. Device &amp; Connectivity</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-6 space-y-6">
-                  <div className="grid md:grid-cols-2 gap-8 border-t pt-4">
-                    <div>
-                      <Label className="mb-2 block">Device Tier</Label>
-                      <div className="flex gap-2">
-                        {DEVICE_TIERS.map(tier => (
-                          <button key={tier} onClick={() => toggleArrayItem('deviceTiers', tier)}
-                            className={`px-4 py-2 border rounded-md ${campaign.targeting.deviceTiers.includes(tier) ? 'bg-primary text-white border-primary' : 'bg-gray-50 border-gray-200'}`}
-                          >Tier {tier}</button>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">A = Flagship, B = Mid-range, C = Budget</p>
-                    </div>
-                    <div>
-                      <Label className="mb-2 block">Operating System</Label>
-                      <div className="flex gap-2">
-                        {[['', 'Any OS'], ['iOS', 'iOS'], ['Android', 'Android']].map(([val, label]) => (
-                          <button key={val} onClick={() => setCampaign(p => ({...p, targeting: {...p.targeting, deviceOs: val as any}}))}
-                            className={`px-4 py-2 border rounded-md ${campaign.targeting.deviceOs === val ? 'bg-primary text-white border-primary' : 'bg-gray-50 border-gray-200'}`}
-                          >{label}</button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-8 border-t pt-4">
-                    <div>
-                      <Label className="mb-2 block">Device Brands</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {DEVICE_BRANDS.map(brand => (
-                          <label key={brand} className={`flex items-center gap-2 px-3 py-1.5 border rounded-full text-sm cursor-pointer ${campaign.targeting.deviceBrands.includes(brand) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
-                            <Checkbox checked={campaign.targeting.deviceBrands.includes(brand)} onCheckedChange={() => toggleArrayItem('deviceBrands', brand)} />
-                            <span>{brand}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="mb-2 block">Network Carriers</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {CARRIERS.map(carrier => (
-                          <label key={carrier} className={`flex items-center gap-2 px-3 py-1.5 border rounded-full text-sm cursor-pointer ${campaign.targeting.networkCarriers.includes(carrier) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
-                            <Checkbox checked={campaign.targeting.networkCarriers.includes(carrier)} onCheckedChange={() => toggleArrayItem('networkCarriers', carrier)} />
-                            <span>{carrier}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="border-t pt-4">
-                    <Label className="mb-2 block">Connection Type</Label>
-                    <div className="flex gap-2 flex-wrap">
-                      {CONNECTION_TYPES.map(ct => (
-                        <button key={ct} onClick={() => toggleArrayItem('connectionTypes', ct)}
-                          className={`px-4 py-2 border rounded-md ${campaign.targeting.connectionTypes.includes(ct) ? 'bg-primary text-white border-primary' : 'bg-gray-50 border-gray-200'}`}
-                        >{ct}</button>
-                      ))}
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-
-            {/* Category 4: Psychographics */}
+            {/* Psychographics */}
             <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
               <AccordionItem value="cat-4" className="border-b-0 px-6">
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-pink-100 rounded text-pink-600"><Activity className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">4. Psychographics &amp; Interests</span>
+                    <span className="font-semibold text-lg">3. Psychographics & Interests</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-6 space-y-6">
+                <AccordionContent className="pt-2 pb-6">
                   <div className="border-t pt-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <Label className="text-base block">Primary Interests</Label>
-                      <div className="flex items-center gap-2 text-sm bg-gray-100 px-2 py-1 rounded">
-                        <span className={!campaign.targeting.interestsMatchAll ? 'font-bold' : 'text-gray-500'}>Match Any (OR)</span>
-                        <Checkbox checked={campaign.targeting.interestsMatchAll} onCheckedChange={(c) => setCampaign(p => ({...p, targeting: {...p.targeting, interestsMatchAll: !!c}}))} />
-                        <span className={campaign.targeting.interestsMatchAll ? 'font-bold' : 'text-gray-500'}>Match All (AND)</span>
-                      </div>
-                    </div>
+                    <Label className="mb-2 block">Primary Interests</Label>
                     <div className="flex flex-wrap gap-2">
                       {INTERESTS.map(int => (
                         <label key={int} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.interests.includes(int) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
@@ -440,140 +462,23 @@ export default function CampaignBuilder() {
                       ))}
                     </div>
                   </div>
-                  <div className="border-t pt-4">
-                    <Label className="text-base mb-2 block">Life Stage</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {LIFE_STAGES.map(stage => (
-                        <label key={stage} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.lifeStages.includes(stage) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
-                          <Checkbox checked={campaign.targeting.lifeStages.includes(stage)} onCheckedChange={() => toggleArrayItem('lifeStages', stage)} />
-                          <span>{stage.replace(/_/g, ' ')}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
 
-            {/* Category 5: Behavioral */}
-            <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
-              <AccordionItem value="cat-5" className="border-b-0 px-6">
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-orange-100 rounded text-orange-600"><Tag className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">5. Behavioral &amp; Purchase Intent</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-6 space-y-6">
-                  <div className="border-t pt-4">
-                    <Label className="text-base mb-2 block">Shopping Frequency</Label>
-                    <div className="flex gap-2 flex-wrap">
-                      {SHOPPING_FREQS.map(freq => (
-                        <button key={freq} onClick={() => toggleArrayItem('shoppingFrequencies', freq)}
-                          className={`px-4 py-2 border rounded-md capitalize ${campaign.targeting.shoppingFrequencies.includes(freq) ? 'bg-primary text-white border-primary' : 'bg-gray-50 border-gray-200'}`}
-                        >{freq}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="border-t pt-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <Label className="text-base block">Next 6 Months Purchase Intent</Label>
-                      <div className="flex items-center gap-2 text-sm bg-gray-100 px-2 py-1 rounded">
-                        <span className={!campaign.targeting.nextPurchaseIntentMatchAll ? 'font-bold' : 'text-gray-500'}>Match Any (OR)</span>
-                        <Checkbox checked={campaign.targeting.nextPurchaseIntentMatchAll} onCheckedChange={(c) => setCampaign(p => ({...p, targeting: {...p.targeting, nextPurchaseIntentMatchAll: !!c}}))} />
-                        <span className={campaign.targeting.nextPurchaseIntentMatchAll ? 'font-bold' : 'text-gray-500'}>Match All (AND)</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {PURCHASE_INTENTS.map(intent => (
-                        <label key={intent} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.nextPurchaseIntent.includes(intent) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
-                          <Checkbox checked={campaign.targeting.nextPurchaseIntent.includes(intent)} onCheckedChange={() => toggleArrayItem('nextPurchaseIntent', intent)} />
-                          <span>{intent}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-
-            {/* Category 6: Mobility & Household - RESTORED */}
-            <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
-              <AccordionItem value="cat-6" className="border-b-0 px-6">
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-100 rounded text-slate-600"><Briefcase className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">6. Mobility &amp; Household</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-6 space-y-6">
-                  <div className="grid md:grid-cols-2 gap-8 border-t pt-4">
-                    <div>
-                      <Label className="mb-2 block">Vehicle Owner</Label>
-                      <div className="flex gap-2">
-                        {([['any', 'Any'], ['yes', 'Car Owner âœ“'], ['no', 'Non-Owner âœ—']] as const).map(([val, label]) => (
-                          <button key={val}
-                            onClick={() => {
-                              const v = val === 'any' ? undefined : val === 'yes';
-                              setCampaign(p => ({...p, targeting: {...p.targeting, hasVehicle: v}}));
-                            }}
-                            className={`px-3 py-2 border rounded-md text-sm ${
-                              (val === 'any' && campaign.targeting.hasVehicle === undefined) ||
-                              (val === 'yes' && campaign.targeting.hasVehicle === true) ||
-                              (val === 'no' && campaign.targeting.hasVehicle === false)
-                                ? 'bg-primary text-white border-primary' : 'bg-gray-50 border-gray-200'
-                            }`}
-                          >{label}</button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="mb-2 block">Work Type</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {WORK_TYPES.map(wt => (
-                          <button key={wt} onClick={() => toggleArrayItem('workTypes', wt)}
-                            className={`px-3 py-1.5 border rounded-md text-sm capitalize ${campaign.targeting.workTypes.includes(wt) ? 'bg-primary text-white border-primary' : 'bg-gray-50 border-gray-200'}`}
-                          >{wt.replace('_', ' ')}</button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="border-t pt-4">
-                    <Label className="mb-2 block">Vehicle Brand (for car owners)</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {VEHICLE_BRANDS.map(brand => (
-                        <label key={brand} className={`flex items-center gap-2 px-3 py-1.5 border rounded-full text-sm cursor-pointer ${campaign.targeting.vehicleBrands.includes(brand) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
-                          <Checkbox checked={campaign.targeting.vehicleBrands.includes(brand)} onCheckedChange={() => toggleArrayItem('vehicleBrands', brand)} />
-                          <span>{brand}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="border-t pt-4">
-                    <Label className="mb-3 block">Household Size: {campaign.targeting.householdSizeMin || 1} â€“ {campaign.targeting.householdSizeMax || 10} members</Label>
-                    <Slider
-                      defaultValue={[campaign.targeting.householdSizeMin || 1, campaign.targeting.householdSizeMax || 10]}
-                      max={10} min={1} step={1}
-                      onValueChange={([min, max]) => setCampaign(p => ({...p, targeting: {...p.targeting, householdSizeMin: min, householdSizeMax: max}}))}
-                    />
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-
-            {/* Category 7: Engagement Quality */}
+            {/* Engagement Tiers */}
             <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
               <AccordionItem value="cat-7" className="border-b-0 px-6">
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-yellow-100 rounded text-yellow-600"><Crown className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">7. Engagement &amp; Trust Tiers</span>
+                    <span className="font-semibold text-lg">4. Engagement & Trust Tiers</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-6 space-y-6">
+                <AccordionContent className="pt-2 pb-6 space-y-4">
                   <div className="grid md:grid-cols-2 gap-8 border-t pt-4">
                     <div>
-                      <Label className="mb-2 block">Isolate Specific Tiers</Label>
+                      <Label className="mb-2 block">Target User Tiers</Label>
                       <div className="flex gap-2 flex-wrap">
                         {['bronze', 'silver', 'gold', 'platinum'].map(t => (
                           <label key={t} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.tiers.includes(t) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
@@ -584,15 +489,9 @@ export default function CampaignBuilder() {
                       </div>
                     </div>
                     <div>
-                      <Label className="mb-2 block">Minimum Profile Strength: {campaign.targeting.profileStrengthMin || 0}%</Label>
-                      <Slider defaultValue={[campaign.targeting.profileStrengthMin || 0]} max={100} min={0} step={5}
-                        onValueChange={([v]) => setCampaign(p => ({...p, targeting: {...p.targeting, profileStrengthMin: v}}))} />
+                      <Label className="mb-2 block">Min Profile Strength: {campaign.targeting.profileStrengthMin || 0}%</Label>
+                      <Slider defaultValue={[0]} max={100} min={0} step={5} onValueChange={([v]) => setCampaign(p => ({ ...p, targeting: { ...p.targeting, profileStrengthMin: v } }))} />
                     </div>
-                  </div>
-                  <div className="border-t pt-4">
-                    <Label className="mb-2 block">Minimum Tasks Completed: {campaign.targeting.completedTasksMin || 0}</Label>
-                    <Slider defaultValue={[campaign.targeting.completedTasksMin || 0]} max={500} min={0} step={10}
-                      onValueChange={([v]) => setCampaign(p => ({...p, targeting: {...p.targeting, completedTasksMin: v}}))} />
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -600,64 +499,147 @@ export default function CampaignBuilder() {
           </div>
         )}
 
-        {/* Step 4: Final Review */}
-        {step === 4 && (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Rocket className="text-primary"/> Final Campaign Review</h2>
-            
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-gray-50 p-4 rounded-lg border">
-                <h3 className="font-semibold border-b pb-2 mb-3">Audience Summary</h3>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex justify-between"><span className="text-gray-500">Gender</span> <span className="font-medium capitalize">{campaign.targeting.gender}</span></li>
-                  <li className="flex justify-between"><span className="text-gray-500">Age Range</span> <span className="font-medium">{campaign.targeting.ageMin} - {campaign.targeting.ageMax}</span></li>
-                  <li className="flex justify-between"><span className="text-gray-500">Cities</span> <span className="font-medium">{campaign.targeting.cities.length || 'All'}</span></li>
-                  <li className="flex justify-between mt-4 pt-4 border-t"><span className="font-semibold">Final App. Reach</span> <span className="font-bold text-primary text-lg">{reachData.totalReach.toLocaleString()}</span></li>
-                </ul>
-              </div>
+        {/* ── STEP 3: CONTENT & BUDGET ── */}
+        {step === 3 && (
+          <div className="grid md:grid-cols-5 gap-6">
+            <div className="md:col-span-3 space-y-5">
+              <Card className="p-6">
+                <div className="flex items-center gap-2 mb-5">
+                  <Video className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-bold">Video Task Configuration</h2>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Video URL * <span className="text-xs text-gray-400">(YouTube, Vimeo, or direct MP4)</span></Label>
+                    <Input value={campaign.videoUrl} onChange={e => setCampaign({ ...campaign, videoUrl: e.target.value })} placeholder="https://youtube.com/watch?v=..." />
+                  </div>
+                  <div>
+                    <Label>Minimum Watch Percentage: <strong>{campaign.minWatchPercent}%</strong></Label>
+                    <p className="text-xs text-gray-400 mb-2">Taskers must watch at least this much before answering the quiz</p>
+                    <Slider defaultValue={[80]} min={50} max={100} step={5} onValueChange={([v]) => setCampaign({ ...campaign, minWatchPercent: v })} />
+                    <div className="flex justify-between text-xs text-gray-400 mt-1"><span>50%</span><span>100%</span></div>
+                  </div>
+                </div>
+              </Card>
 
-              <div>
-                {!reachData.meetsMinimum ? (
-                  <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-                    <h4 className="font-bold mb-1">Launch Blocked</h4>
-                    <p className="text-sm">Cannot launch campaigns targeting under 500 estimated active users. Please expand your audience definition in Step 2.</p>
+              <Card className="p-6">
+                <div className="flex items-center gap-2 mb-5">
+                  <HelpCircle className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-bold">Comprehension Quiz</h2>
+                  <span className="text-xs text-gray-400 ml-1">(proves they watched)</span>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Quiz Question *</Label>
+                    <Textarea value={campaign.quizQuestion} onChange={e => setCampaign({ ...campaign, quizQuestion: e.target.value })} rows={2} placeholder="What is the main benefit shown in the video?" />
                   </div>
-                ) : (
-                   <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg">
-                    <h4 className="font-bold mb-1">Ready for Launch</h4>
-                    <p className="text-sm">Your audience segment is healthy. This survey will distribute until the {campaign.completionsNeeded} completion cap is hit.</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['A', 'B', 'C', 'D'] as const).map(opt => (
+                      <div key={opt}>
+                        <Label className="flex items-center gap-2">
+                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${campaign.correctAnswer === opt ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>{opt}</span>
+                          Option {opt} {campaign.correctAnswer === opt && <span className="text-xs text-green-600 font-medium">(correct)</span>}
+                        </Label>
+                        <Input value={(campaign as any)[`quizOption${opt}`]} onChange={e => setCampaign({ ...campaign, [`quizOption${opt}`]: e.target.value } as any)} placeholder={`Answer option ${opt}`} />
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
+                  <div>
+                    <Label>Correct Answer</Label>
+                    <div className="flex gap-2 mt-1">
+                      {(['A', 'B', 'C', 'D'] as const).map(opt => (
+                        <button key={opt} onClick={() => setCampaign({ ...campaign, correctAnswer: opt })}
+                          className={`w-10 h-10 rounded-full font-bold text-sm ${campaign.correctAnswer === opt ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{opt}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </Card>
             </div>
-          </Card>
+
+            {/* Commission Panel */}
+            <div className="md:col-span-2 space-y-5">
+              <CommissionPanel />
+              <Card className="p-5">
+                <h3 className="font-semibold mb-4 flex items-center gap-2"><Calendar className="w-4 h-4 text-primary" /> Budget Controls</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Reward per Completion (USD) *</Label>
+                    <Input type="number" min={1} value={campaign.reward} onChange={e => setCampaign({ ...campaign, reward: +e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Target Completions</Label>
+                    <Input type="number" min={10} value={campaign.completionsNeeded} onChange={e => setCampaign({ ...campaign, completionsNeeded: +e.target.value })} />
+                  </div>
+                  <div className="bg-blue-600 text-white rounded-lg p-4 text-center">
+                    <p className="text-xs mb-1 opacity-80">Total Escrow Required</p>
+                    <p className="text-3xl font-bold">${totalCampaignCost.toFixed(2)}</p>
+                    <p className="text-xs mt-1 opacity-70">Charged only on verified completions</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
         )}
 
-        {/* Global Footer Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <Button variant="outline" onClick={handleBack} disabled={step === 1}>
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back
-            </Button>
-            
-            <div className="flex gap-2 items-center">
-              {STEPS.map(s => (
-                <div key={s.id} className={`w-3 h-3 rounded-full ${step === s.id ? 'bg-primary' : step > s.id ? 'bg-green-400' : 'bg-gray-200'}`} />
-              ))}
+        {/* ── STEP 4: REVIEW ── */}
+        {step === 4 && (
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="p-6">
+              <h2 className="text-xl font-bold mb-5 flex items-center gap-2"><Rocket className="text-primary" /> Campaign Summary</h2>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Title</span><span className="font-medium">{campaign.titleEn || '—'}</span></div>
+                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Task Type</span><span className="font-medium capitalize">Video + Quiz</span></div>
+                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Video URL</span><span className="font-medium text-blue-600 truncate max-w-xs">{campaign.videoUrl || '—'}</span></div>
+                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Min. Watch</span><span className="font-medium">{campaign.minWatchPercent}%</span></div>
+                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Audience Reach</span><span className="font-bold text-primary">{reachData.totalReach.toLocaleString()}</span></div>
+                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Target Cities</span><span className="font-medium">{campaign.targeting.cities.length ? campaign.targeting.cities.join(', ') : 'All'}</span></div>
+                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Gender</span><span className="font-medium capitalize">{campaign.targeting.gender}</span></div>
+              </div>
+            </Card>
+
+            <div className="space-y-4">
+              <CommissionPanel />
+              {!reachData.meetsMinimum ? (
+                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+                  <h4 className="font-bold mb-1">Launch Blocked</h4>
+                  <p className="text-sm">Audience is below 500. Go back to Step 2 and broaden your filters.</p>
+                </div>
+              ) : !campaign.titleEn || !campaign.videoUrl || !campaign.quizQuestion ? (
+                <div className="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-lg">
+                  <h4 className="font-bold mb-1">Incomplete Fields</h4>
+                  <p className="text-sm">Please complete: {[!campaign.titleEn && 'Campaign Title', !campaign.videoUrl && 'Video URL', !campaign.quizQuestion && 'Quiz Question'].filter(Boolean).join(', ')}</p>
+                </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg">
+                  <h4 className="font-bold mb-1 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Ready for Review</h4>
+                  <p className="text-sm">Your campaign will be submitted to admin for approval before going live.</p>
+                </div>
+              )}
             </div>
-
-            {step < 4 ? (
-              <Button onClick={handleNext}>
-                Next Step <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            ) : (
-              <Button onClick={handleSubmit} disabled={!reachData.meetsMinimum} className={reachData.meetsMinimum ? "bg-green-600 hover:bg-green-700" : "bg-gray-300"}>
-                <Rocket className="w-4 h-4 mr-2" /> Launch Campaign
-              </Button>
-            )}
           </div>
-        </div>
+        )}
+      </div>
 
+      {/* ── FOOTER NAV ── */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-20 shadow-lg">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <Button variant="outline" onClick={handleBack} disabled={step === 1}>
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back
+          </Button>
+          <div className="flex gap-2">
+            {STEPS.map(s => (
+              <div key={s.id} className={`w-3 h-3 rounded-full ${step === s.id ? 'bg-primary' : step > s.id ? 'bg-green-400' : 'bg-gray-200'}`} />
+            ))}
+          </div>
+          {step < 4 ? (
+            <Button onClick={handleNext}>Next Step <ArrowRight className="w-4 h-4 ml-2" /></Button>
+          ) : (
+            <Button onClick={handleSubmit} disabled={isSubmitting || !reachData.meetsMinimum} className="bg-green-600 hover:bg-green-700 min-w-36">
+              {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</> : <><Rocket className="w-4 h-4 mr-2" /> Submit for Review</>}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

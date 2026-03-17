@@ -10,7 +10,8 @@ import {
   Globe, 
   LogOut,
   Menu,
-  X
+  X,
+  Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trpc } from '@/lib/trpc';
@@ -63,6 +64,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { icon: Building2, label: 'Advertisers', path: '/admin/advertisers' },
     { icon: Users, label: 'Users', path: '/admin/users' },
     { icon: Receipt, label: 'Financial Control', path: '/admin/financials' },
+    { icon: Wallet, label: 'Wallet Hub', path: '/admin/wallet-hub' },
     { icon: Globe, label: 'Platform Operations', path: '/admin/operations' },
     { icon: Briefcase, label: 'Settings', path: '/admin/settings' },
   ];
