@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Vote, ChevronLeft, ChevronRight, Check, Gift, Clock, Image as ImageIcon } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface VoteOption {
   id: number;
@@ -31,6 +32,7 @@ interface VoteQuestion {
 }
 
 export default function TakeVote() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const { user } = useApp();
   const [, setLocation] = useLocation();
@@ -169,7 +171,7 @@ export default function TakeVote() {
         </p>
         <div className="flex items-center justify-center gap-2 text-3xl font-bold text-green-600 mb-8">
           <Gift className="h-8 w-8" />
-          +{reward} EGP
+          +{reward} {symbol}
         </div>
         <div className="flex gap-4 justify-center">
           <Button variant="outline" onClick={() => setLocation('/votes')}>

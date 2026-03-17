@@ -18,6 +18,7 @@ import path from 'path';
 import { sdk } from './sdk';
 import { query as mysqlQuery } from './mysql-db';
 import { calculateAdvertiserCommission, calculateUserWithdrawalCommission } from './commission.service';
+import { FraudDetectionService } from '../services/fraud-detection.service';
 
 const router = Router();
 const dbPath = path.join(process.cwd(), 'server', 'db.sqlite');
@@ -831,6 +832,17 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
     // Format date for MySQL (YYYY-MM-DD HH:MM:SS)
     const mysqlDatetime = finalPassed ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
 
+    let isFraudulent = false;
+    if (finalPassed) {
+      isFraudulent = await FraudDetectionService.analyzeTaskCompletion({
+        userId: req.userId,
+        campaignId: taskId,
+        watchTime: watchTime || undefined,
+        expectedDuration: task.duration,
+        score
+      });
+    }
+
     const result = await mysqlQuery(`
       INSERT INTO task_submissions (
         taskId, userId, status, submissionData,
@@ -840,19 +852,36 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
     `, [
       taskId,
       req.userId,
-      finalPassed ? 'approved' : 'rejected',
+      finalPassed && !isFraudulent ? 'approved' : 'pending',
       submissionData,
       score,
       watchTime || null,
       correctCount,
       questions.length,
-      finalPassed ? task.reward : 0,
-      finalPassed ? 1 : 0,
+      finalPassed && !isFraudulent ? task.reward : 0,
+      finalPassed && !isFraudulent ? 1 : 0,
       mysqlDatetime
     ]) as any;
 
-    // If passed and automatic verification, credit reward immediately
-    if (finalPassed) {
+    if (isFraudulent) {
+      // Update fraud flag with the new submission ID
+      await mysqlQuery(`UPDATE fraud_flags SET taskCompletionId = ? WHERE userId = ? AND campaignId = ? ORDER BY id DESC LIMIT 1`, 
+        [result.insertId, req.userId, taskId]);
+        
+      return res.json({
+        success: true,
+        passed: true,
+        score,
+        correctAnswers: correctCount,
+        totalQuestions: questions.length,
+        reward: 0,
+        message: 'Task under manual review due to suspicious activity flags.',
+        answerResults
+      });
+    }
+
+    // If passed and automatic verification and NOT fraudulent, credit reward immediately
+    if (finalPassed && !isFraudulent) {
       // Check if user has already completed this task
       const existingCompletion = await mysqlQuery(
         `SELECT id FROM task_submissions WHERE userId = ? AND taskId = ? AND status = 'approved'`,

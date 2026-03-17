@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Lock, TrendingUp, Coins, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface ProfileSection {
   id: number;
@@ -26,6 +27,7 @@ interface ProfilePowerUpProps {
 }
 
 export default function ProfilePowerUp({ userId, language = 'en' }: ProfilePowerUpProps) {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [sections, setSections] = useState<ProfileSection[]>([]);
   const [currentMultiplier, setCurrentMultiplier] = useState(1.00);
   const [totalBonus, setTotalBonus] = useState(0);
@@ -70,7 +72,7 @@ export default function ProfilePowerUp({ userId, language = 'en' }: ProfilePower
       if (data.success) {
         toast.success(language === 'ar' 
           ? `🎉 تم إكمال القسم! حصلت على ${data.bonusAwarded} جنيه!`
-          : `🎉 Section Completed! You earned ${data.bonusAwarded} EGP!`);
+          : `🎉 Section Completed! You earned ${data.bonusAwarded} {symbol}!`);
         fetchProfileSections();
       } else {
         toast.error(data.error);
@@ -127,7 +129,7 @@ export default function ProfilePowerUp({ userId, language = 'en' }: ProfilePower
                   {language === 'ar' ? 'إجمالي المكافآت' : 'Total Bonuses'}
                 </span>
               </div>
-              <div className="text-xl font-bold">{totalBonus.toFixed(2)} {language === 'ar' ? 'ج.م' : 'EGP'}</div>
+              <div className="text-xl font-bold">{totalBonus.toFixed(2)} {language === 'ar' ? symbol : currency}</div>
             </div>
             <div className="bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
@@ -190,7 +192,7 @@ export default function ProfilePowerUp({ userId, language = 'en' }: ProfilePower
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                     <Coins className="w-3 h-3 mr-1" />
-                    +{section.bonusAmount} {language === 'ar' ? 'ج.م' : 'EGP'}
+                    +{section.bonusAmount} {language === 'ar' ? symbol : currency}
                   </Badge>
                   <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                     <TrendingUp className="w-3 h-3 mr-1" />

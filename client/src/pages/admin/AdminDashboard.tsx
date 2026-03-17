@@ -9,24 +9,26 @@ import {
 import { useLocation } from 'wouter';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const stats = [
   { icon: Users, label: 'Active Users Now', value: '4,231', change: '+5.2%', color: 'blue' },
   { icon: Building2, label: 'New Advertisers (Today)', value: '12', change: '+20%', color: 'purple' },
   { icon: CheckCircle2, label: 'Tasks Completed (Today)', value: '15,892', change: '+12.4%', color: 'green' },
-  { icon: DollarSign, label: 'Revenue (Today)', value: '84,500 EGP', change: '+18.9%', color: 'orange' },
+  { icon: DollarSign, label: 'Revenue (Today)', value: '84,500 {symbol}', change: '+18.9%', color: 'orange' },
   { icon: AlertTriangle, label: 'Action Required', value: '38', change: '+5', color: 'red' },
   { icon: Activity, label: 'System Load', value: '42%', change: '-3%', color: 'cyan' }
 ];
 
 const actionQueue = [
-  { id: '1', type: 'withdrawal', user: 'ahmed@example.com', amount: '1,500 EGP', urgency: 'high', time: '10 mins ago' },
+  { id: '1', type: 'withdrawal', user: 'ahmed@example.com', amount: '1,500 {symbol}', urgency: 'high', time: '10 mins ago' },
   { id: '2', type: 'report', user: 'sara@example.com', reason: 'Spam task', urgency: 'medium', time: '25 mins ago' },
   { id: '3', type: 'kyc', user: 'mohammed@example.com', reason: 'ID Verification', urgency: 'low', time: '1 hour ago' },
   { id: '4', type: 'campaign', user: 'brand@company.com', reason: 'Video format review', urgency: 'high', time: '2 mins ago' },
 ];
 
 export default function AdminDashboard() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
 
   return (

@@ -10,8 +10,10 @@ import {
 import { toast } from 'sonner';
 import { useLocation } from 'wouter';
 import { useApp } from '@/contexts/AppContext';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function AccountSettings() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   const { currentAdvertiser, logoutAdvertiser } = useApp();
   const [activeTab, setActiveTab] = useState('profile');
@@ -251,13 +253,13 @@ export default function AccountSettings() {
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">إجمالي الميزانية</p>
                       <p className="text-2xl font-bold text-emerald-700">
-                        {currentAdvertiser.totalBudget.toLocaleString('ar-EG')} ج.م
+                        {currentAdvertiser.totalBudget.toLocaleString('ar-EG')} {symbol}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">المنفق</p>
                       <p className="text-2xl font-bold text-orange-600">
-                        {currentAdvertiser.spentBudget.toLocaleString('ar-EG')} ج.م
+                        {currentAdvertiser.spentBudget.toLocaleString('ar-EG')} {symbol}
                       </p>
                     </div>
                   </div>

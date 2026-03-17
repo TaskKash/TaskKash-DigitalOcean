@@ -11,6 +11,7 @@ import { useNavigationWarning } from '@/hooks/useNavigationWarning';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface AppTaskData {
   appName: string;
@@ -30,6 +31,7 @@ interface AppTaskData {
 }
 
 export default function AppTask() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
@@ -68,7 +70,7 @@ export default function AppTask() {
     },
     onSuccess: (data) => {
       if (data.passed) {
-        toast.success(isArabic ? `تم إكمال المهمة! حصلت على ${task?.reward} ج.م` : `Task completed! You earned ${task?.reward} EGP`);
+        toast.success(isArabic ? `تم إكمال المهمة! حصلت على ${task?.reward} {symbol}` : `Task completed! You earned ${task?.reward} {symbol}`);
         setLocation('/tasks');
       } else {
         toast.error(isArabic ? 'لم تجتاز المهمة. حاول مرة أخرى.' : 'Task not passed. Try again.');
@@ -251,7 +253,7 @@ export default function AppTask() {
         <Card className="p-4 bg-primary/5 border-primary/20">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">{isArabic ? 'المكافأة:' : 'Reward:'}</span>
-            <span className="font-bold text-primary text-lg">{task?.reward} {isArabic ? 'ج.م' : 'EGP'}</span>
+            <span className="font-bold text-primary text-lg">{task?.reward} {isArabic ? symbol : currency}</span>
           </div>
         </Card>
       </div>

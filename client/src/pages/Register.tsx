@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useLocation } from 'wouter';
 import { useApp } from '@/contexts/AppContext';
-import { User, Mail, Lock, Phone, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { User, Mail, Lock, Phone, Eye, EyeOff, Loader2, Globe } from 'lucide-react';
 import { APP_LOGO, APP_TITLE } from '@/const';
 import { toast } from 'sonner';
 
@@ -25,6 +25,23 @@ export default function Register() {
   });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [countries, setCountries] = useState<any[]>([]);
+  const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('/api/countries')
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.countries) {
+          setCountries(data.countries);
+          // Default to Egypt
+          const egypt = data.countries.find((c: any) => c.code === 'EG');
+          if (egypt) setSelectedCountryId(egypt.id);
+          else if (data.countries.length > 0) setSelectedCountryId(data.countries[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +79,7 @@ export default function Register() {
           email: formData.email,
           phone: formData.phone,
           password: formData.password,
+          countryId: selectedCountryId,
         }),
       });
 
@@ -149,6 +167,27 @@ export default function Register() {
                   className="pr-10"
                   disabled={isLoading}
                 />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="country">{t('register.country') || 'Country'}</Label>
+              <div className="relative">
+                <Globe className="absolute right-3 top-3 w-5 h-5 text-muted-foreground" />
+                <select
+                  id="country"
+                  title="Country"
+                  value={selectedCountryId || ''}
+                  onChange={(e) => setSelectedCountryId(Number(e.target.value))}
+                  className="w-full h-10 px-3 pr-10 rounded-md border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary"
+                  disabled={isLoading}
+                >
+                  {countries.map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      {t('language') === 'ar' ? c.nameAr : c.nameEn} ({c.currency})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

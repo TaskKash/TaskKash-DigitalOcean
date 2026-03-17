@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Download, FileText, TrendingUp, Users, Target } from 'lucide-react';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const reports = [
   {
@@ -46,10 +47,11 @@ const reports = [
 const quickStats = [
   { label: 'إجمالي المشاهدات', value: '37,042', icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
   { label: 'معدل الإكمال', value: '68.3%', icon: Target, color: 'text-primary', bg: 'bg-green-100' },
-  { label: 'التكلفة الإجمالية', value: '151,500 ج.م', icon: TrendingUp, color: 'text-secondary', bg: 'bg-orange-100' }
+  { label: 'التكلفة الإجمالية', value: '151,500 {symbol}', icon: TrendingUp, color: 'text-secondary', bg: 'bg-orange-100' }
 ];
 
 export default function Reports() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [selectedPeriod, setSelectedPeriod] = useState('october-2025');
 
   return (

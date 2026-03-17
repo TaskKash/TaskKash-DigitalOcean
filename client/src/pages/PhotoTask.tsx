@@ -9,6 +9,7 @@ import { useNavigationWarning } from '@/hooks/useNavigationWarning';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface PhotoRequirement {
   id: number;
@@ -34,6 +35,7 @@ interface UploadedPhoto {
 }
 
 export default function PhotoTask() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
@@ -269,7 +271,7 @@ export default function PhotoTask() {
         <Card className="p-4 bg-primary/5 border-primary/20">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">{isArabic ? 'المكافأة:' : 'Reward:'}</span>
-            <span className="font-bold text-primary text-lg">{task?.reward} {isArabic ? 'ج.م' : 'EGP'}</span>
+            <span className="font-bold text-primary text-lg">{task?.reward} {isArabic ? symbol : currency}</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {isArabic ? 'سيتم مراجعة الصور قبل الموافقة' : 'Photos will be reviewed before approval'}

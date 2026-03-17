@@ -23,6 +23,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Task {
   id: string;
@@ -36,6 +37,7 @@ interface Task {
 }
 
 export default function AdvertiserTasks() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -272,7 +274,7 @@ export default function AdvertiserTasks() {
                               </div>
                               <div className="flex items-center gap-1">
                                 <DollarSign className="h-4 w-4" />
-                                {task.reward} ج.م
+                                {task.reward} {symbol}
                               </div>
                             </div>
                           </div>

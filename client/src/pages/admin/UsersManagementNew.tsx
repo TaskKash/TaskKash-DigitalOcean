@@ -23,6 +23,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Key, Search, UserCheck, UserX, ArrowLeft, UserPlus, AlertTriangle, ShieldAlert, Target } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface User {
   id: number;
@@ -43,6 +44,7 @@ interface User {
 }
 
 export default function UsersManagementNew() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -330,8 +332,8 @@ export default function UsersManagementNew() {
                       <div className="text-xs text-muted-foreground">{user.phone}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-bold text-green-700">{user.balance.toLocaleString()} EGP</div>
-                      <div className="text-xs text-muted-foreground">Lifetime: {user.totalEarnings?.toLocaleString() || 0} EGP</div>
+                      <div className="font-bold text-green-700">{user.balance.toLocaleString()} {symbol}</div>
+                      <div className="text-xs text-muted-foreground">Lifetime: {user.totalEarnings?.toLocaleString() || 0} {symbol}</div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2 mb-1">

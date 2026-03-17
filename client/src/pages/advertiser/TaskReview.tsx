@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { ArrowLeft, Download, CheckCircle, XCircle, Eye, User, Calendar, Award } from 'lucide-react';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Submission {
   id: number;
@@ -31,6 +32,7 @@ interface Task {
 }
 
 export default function TaskReview() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
 
@@ -325,7 +327,7 @@ export default function TaskReview() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-white">
                           <Award className="w-4 h-4 text-green-600" />
-                          {submission.rewardAmount} ج.م
+                          {submission.rewardAmount} {symbol}
                         </div>
                         {submission.rewardCredited && (
                           <div className="text-xs text-green-600 dark:text-green-400">Credited</div>

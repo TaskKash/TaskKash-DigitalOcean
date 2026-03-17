@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Clock, Gift, CheckCircle, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Question {
   id: number;
@@ -27,6 +28,7 @@ interface Question {
 }
 
 export default function TakeSurvey() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const params = useParams();
@@ -339,7 +341,7 @@ export default function TakeSurvey() {
                 {isRTL ? "لقد ربحت" : "You earned"}
               </p>
               <p className="text-3xl font-bold text-primary">
-                {completionResult.reward} EGP
+                {completionResult.reward} {symbol}
               </p>
             </div>
 

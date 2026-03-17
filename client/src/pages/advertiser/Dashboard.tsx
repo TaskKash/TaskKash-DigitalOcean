@@ -10,8 +10,10 @@ import { useLocation } from 'wouter';
 import { useApp } from '@/contexts/AppContext';
 import { AppHeader } from '@/components/AppHeader';
 import { useTranslation } from 'react-i18next';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function AdvertiserDashboard() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   const { currentAdvertiser, advertiserCampaigns, advertiserTasks, isInitialized } = useApp();
   const { t } = useTranslation();
@@ -64,7 +66,7 @@ export default function AdvertiserDashboard() {
     },
     { 
       label: 'الميزانية المتبقية', 
-      value: `${(remainingBudget || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م`, 
+      value: `${(remainingBudget || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {symbol}`, 
       icon: DollarSign, 
       color: 'text-orange-600', 
       bg: 'bg-orange-100' 
@@ -357,7 +359,7 @@ export default function AdvertiserDashboard() {
                     <div className="text-left">
                       <p className="text-sm text-muted-foreground">الميزانية</p>
                       <p className="font-semibold">
-                        {campaign.spent.toLocaleString('ar-EG')} / {campaign.budget.toLocaleString('ar-EG')} ج.م
+                        {campaign.spent.toLocaleString('ar-EG')} / {campaign.budget.toLocaleString('ar-EG')} {symbol}
                       </p>
                     </div>
                   </div>

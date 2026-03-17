@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Gift, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Question {
   key: string;
@@ -32,6 +33,7 @@ interface Section {
 }
 
 export default function ProfileQuestionsSection() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { sectionKey } = useParams<{ sectionKey: string }>();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
@@ -100,8 +102,8 @@ export default function ProfileQuestionsSection() {
         
         // Show success message
         toast.success(i18n.language === 'ar' 
-          ? `🎉 لقد ربحت ${data.bonusAwarded} ج.م!`
-          : `🎉 You earned ${data.bonusAwarded} EGP!`);
+          ? `🎉 لقد ربحت ${data.bonusAwarded} {symbol}!`
+          : `🎉 You earned ${data.bonusAwarded} {symbol}!`);
 
         // Show tier upgrade message if applicable
         if (data.tierChanged) {
@@ -275,7 +277,7 @@ export default function ProfileQuestionsSection() {
               </span>
             </div>
             <div className="text-3xl font-bold text-green-600">
-              +{reward} EGP
+              +{reward} {symbol}
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -309,7 +311,7 @@ export default function ProfileQuestionsSection() {
                   {i18n.language === 'ar' ? 'المكافأة:' : 'Reward:'}
                 </span>
                 <span className="font-bold text-green-600">
-                  +{section?.bonusAmount} EGP
+                  +{section?.bonusAmount} {symbol}
                 </span>
               </div>
             </div>

@@ -3,8 +3,10 @@ import MobileLayout from '@/components/layout/MobileLayout';
 import { Card } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function Terms() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { i18n } = useTranslation();
   const isArabic = i18n.language === 'ar';
   
@@ -184,11 +186,11 @@ export default function Terms() {
           <section>
             <h3 className="font-bold text-lg mb-3">5. Withdrawals & Payments</h3>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li>Minimum withdrawal: 50 Egyptian Pounds (EGP)</li>
+              <li>Minimum withdrawal: 50 Egyptian Pounds ({currency})</li>
               <li>Withdrawal processing takes 1-5 business days</li>
               <li>Withdrawal fees (if any) are clearly stated</li>
               <li>We reserve the right to delay withdrawals for security verification</li>
-              <li>Payments are made in Egyptian Pounds (EGP) only</li>
+              <li>Payments are made in Egyptian Pounds ({currency}) only</li>
               <li>Available withdrawal methods: Vodafone Cash, InstaPay, Bank Transfer</li>
             </ul>
           </section>

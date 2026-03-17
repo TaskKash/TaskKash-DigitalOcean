@@ -6,8 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Settings, DollarSign, Shield, Bell, Mail, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function PlatformSettings() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [settings, setSettings] = useState({
     minWithdrawal: 50,
     platformFee: 15,

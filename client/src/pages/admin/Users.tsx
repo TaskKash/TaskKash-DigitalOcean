@@ -7,6 +7,7 @@ import { Search, UserPlus, Edit, Trash2, Shield } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import EditUserDialog from '@/components/admin/EditUserDialog';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface User {
   id: number;
@@ -22,6 +23,7 @@ interface User {
 }
 
 export default function AdminUsers() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [editingUser, setEditingUser] = React.useState<User | null>(null);
   const [editDialogOpen, setEditDialogOpen] = React.useState(false);
@@ -126,7 +128,7 @@ export default function AdminUsers() {
                         <td className="p-4">
                           <span className="capitalize text-sm">{user.tier}</span>
                         </td>
-                        <td className="p-4 text-sm">{user.balance} EGP</td>
+                        <td className="p-4 text-sm">{user.balance} {symbol}</td>
                         <td className="p-4 text-sm">{user.completedTasks}</td>
                         <td className="p-4">
                           <span

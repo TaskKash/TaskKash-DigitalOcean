@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Vote, Clock, Gift, ChevronRight, Image } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface AvailableVote {
   voteId: number;
@@ -25,6 +26,7 @@ interface AvailableVote {
 }
 
 export default function AvailableVotes() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const { user } = useApp();
   const [, setLocation] = useLocation();
@@ -107,7 +109,7 @@ export default function AvailableVotes() {
                   <div className="flex flex-col items-end gap-2">
                     <div className="flex items-center gap-1 text-green-600 font-bold text-lg">
                       <Gift className="h-5 w-5" />
-                      {vote.userReward} EGP
+                      {vote.userReward} {symbol}
                     </div>
                     <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
                       {isRtl ? 'صوّت الآن' : 'Vote Now'}

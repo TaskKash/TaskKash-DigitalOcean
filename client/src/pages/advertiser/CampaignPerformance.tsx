@@ -8,8 +8,10 @@ import {
   Calendar, Download
 } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function CampaignPerformance() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
 
   const metrics = [
@@ -17,7 +19,7 @@ export default function CampaignPerformance() {
     { label: 'معدل التحويل', value: '3.8%', change: '+0.5%', trend: 'up', icon: Target },
     { label: 'المهام المكتملة', value: '470', change: '+12%', trend: 'up', icon: CheckCircle2 },
     { label: 'متوسط الوقت', value: '4.2 دقيقة', change: '-0.3', trend: 'down', icon: Clock },
-    { label: 'التكلفة لكل مهمة', value: '50 ج.م', change: '0%', trend: 'neutral', icon: DollarSign },
+    { label: 'التكلفة لكل مهمة', value: '50 {symbol}', change: '0%', trend: 'neutral', icon: DollarSign },
     { label: 'معدل الرفض', value: '8.7%', change: '-2.1%', trend: 'down', icon: XCircle }
   ];
 
@@ -151,7 +153,7 @@ export default function CampaignPerformance() {
                     </p>
                   </div>
                   <div className="text-left">
-                    <p className="font-bold text-primary">{performer.earnings} ج.م</p>
+                    <p className="font-bold text-primary">{performer.earnings} {symbol}</p>
                   </div>
                 </div>
               ))}
@@ -220,15 +222,15 @@ export default function CampaignPerformance() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-blue-700">المصروف</p>
-                    <p className="font-bold text-blue-900">23,500 ج.م</p>
+                    <p className="font-bold text-blue-900">23,500 {symbol}</p>
                   </div>
                   <div>
                     <p className="text-blue-700">المتبقي</p>
-                    <p className="font-bold text-blue-900">26,500 ج.م</p>
+                    <p className="font-bold text-blue-900">26,500 {symbol}</p>
                   </div>
                   <div>
                     <p className="text-blue-700">التكلفة/مهمة</p>
-                    <p className="font-bold text-blue-900">50 ج.م</p>
+                    <p className="font-bold text-blue-900">50 {symbol}</p>
                   </div>
                   <div>
                     <p className="text-blue-700">ROI المتوقع</p>

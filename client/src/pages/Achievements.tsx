@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, Star, Target, Zap, Award, Lock } from 'lucide-react';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const achievements = [
   {
@@ -75,6 +76,7 @@ const categories = [
 ];
 
 export default function Achievements() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [selectedCategory, setSelectedCategory] = React.useState('الكل');
 
   const filteredAchievements = achievements.filter(achievement => {
@@ -108,7 +110,7 @@ export default function Achievements() {
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-sm opacity-90">المكافآت المحققة</p>
-              <p className="text-xl font-bold">{totalRewards} ج.م</p>
+              <p className="text-xl font-bold">{totalRewards} {symbol}</p>
             </div>
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-sm opacity-90">نسبة الإكمال</p>
@@ -168,7 +170,7 @@ export default function Achievements() {
                       </p>
                     </div>
                     <Badge className="bg-secondary text-white border-0">
-                      +{achievement.reward} ج.م
+                      +{achievement.reward} {symbol}
                     </Badge>
                   </div>
 

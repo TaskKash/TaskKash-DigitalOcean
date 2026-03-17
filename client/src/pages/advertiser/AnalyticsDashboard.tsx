@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { 
   ArrowLeft, TrendingUp, TrendingDown, Users, Eye, CheckCircle, 
   DollarSign, Clock, Target, BarChart3, PieChart, Calendar,
@@ -30,6 +31,7 @@ const locationData = [
 ];
 
 export default function AnalyticsDashboard() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState('30d');
   const [activeTab, setActiveTab] = useState('overview');
@@ -189,7 +191,7 @@ export default function AnalyticsDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-amber-100 text-sm">Total Spend</p>
-                  <p className="text-3xl font-bold">{overview.totalSpend.toLocaleString()} EGP</p>
+                  <p className="text-3xl font-bold">{overview.totalSpend.toLocaleString()} {symbol}</p>
                   <p className="text-amber-100 text-xs mt-1">
                     across {overview.totalCampaigns} campaigns
                   </p>
@@ -245,7 +247,7 @@ export default function AnalyticsDashboard() {
                           <span className="text-xs text-white font-medium pl-2">{day.completions}</span>
                         </div>
                       </div>
-                      <span className="text-sm text-gray-600 w-20 text-right">{day.spent} EGP</span>
+                      <span className="text-sm text-gray-600 w-20 text-right">{day.spent} {symbol}</span>
                     </div>
                   ))}
                   {performance.length === 0 && (

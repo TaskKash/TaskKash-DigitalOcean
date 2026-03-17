@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { 
   Star, TrendingUp, Users, Target, Quote,
   Play, Eye
@@ -38,7 +39,7 @@ const stories = [
     metrics: [
       { label: 'المبيعات', value: '+180%', icon: TrendingUp },
       { label: 'العملاء الجدد', value: '8.5K', icon: Users },
-      { label: 'متوسط الطلب', value: '450 ج.م', icon: Target },
+      { label: 'متوسط الطلب', value: '450 {symbol}', icon: Target },
       { label: 'معدل العودة', value: '65%', icon: Star }
     ],
     quote: 'المنصة سهلة الاستخدام والنتائج واضحة وقابلة للقياس. ننصح بها بشدة لأي شركة تريد النمو السريع.',
@@ -78,7 +79,7 @@ const stories = [
     metrics: [
       { label: 'الطلبات', value: '+400%', icon: TrendingUp },
       { label: 'العملاء الجدد', value: '5.2K', icon: Users },
-      { label: 'متوسط الطلب', value: '180 ج.م', icon: Target },
+      { label: 'متوسط الطلب', value: '180 {symbol}', icon: Target },
       { label: 'التقييمات', value: '4.9/5', icon: Star }
     ],
     quote: 'أفضل استثمار تسويقي قمنا به. النتائج سريعة والتكلفة معقولة جداً مقارنة بالقنوات الأخرى.',
@@ -91,6 +92,7 @@ const stories = [
 ];
 
 export default function SuccessStories() {
+  const { currency, symbol, formatAmount } = useCurrency();
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}

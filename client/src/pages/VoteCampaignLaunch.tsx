@@ -12,8 +12,10 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Vote, Rocket, Users, DollarSign, Target, Calendar, CheckCircle } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function VoteCampaignLaunch() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const { user } = useApp();
   const [, setLocation] = useLocation();
@@ -153,7 +155,7 @@ export default function VoteCampaignLaunch() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>{isRtl ? 'إجمالي الميزانية (EGP)' : 'Total Budget (EGP)'}</Label>
+                  <Label>{isRtl ? 'إجمالي الميزانية ({currency})' : 'Total Budget ({currency})'}</Label>
                   <Input
                     type="number"
                     value={totalBudget}
@@ -162,7 +164,7 @@ export default function VoteCampaignLaunch() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{isRtl ? 'السعر لكل تصويت (EGP)' : 'Price per Vote (EGP)'}</Label>
+                  <Label>{isRtl ? 'السعر لكل تصويت ({currency})' : 'Price per Vote ({currency})'}</Label>
                   <Input
                     type="number"
                     value={pricePerVote}
@@ -171,7 +173,7 @@ export default function VoteCampaignLaunch() {
                   />
                   {selectedTier && (
                     <p className="text-xs text-muted-foreground">
-                      {isRtl ? 'النطاق الموصى به:' : 'Recommended range:'} {selectedTier.minPricePerVote}-{selectedTier.maxPricePerVote} EGP
+                      {isRtl ? 'النطاق الموصى به:' : 'Recommended range:'} {selectedTier.minPricePerVote}-{selectedTier.maxPricePerVote} {symbol}
                     </p>
                   )}
                 </div>
@@ -179,7 +181,7 @@ export default function VoteCampaignLaunch() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>{isRtl ? 'مكافأة المستخدم (EGP)' : 'User Reward (EGP)'}</Label>
+                  <Label>{isRtl ? 'مكافأة المستخدم ({currency})' : 'User Reward ({currency})'}</Label>
                   <Input
                     type="number"
                     value={userReward}
@@ -188,7 +190,7 @@ export default function VoteCampaignLaunch() {
                   />
                   {selectedTier && (
                     <p className="text-xs text-muted-foreground">
-                      {isRtl ? 'الافتراضي:' : 'Default:'} {selectedTier.defaultUserReward} EGP
+                      {isRtl ? 'الافتراضي:' : 'Default:'} {selectedTier.defaultUserReward} {symbol}
                     </p>
                   )}
                 </div>
@@ -292,7 +294,7 @@ export default function VoteCampaignLaunch() {
 
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{isRtl ? 'الميزانية' : 'Budget'}</span>
-                <span className="font-medium">{totalBudget || 0} EGP</span>
+                <span className="font-medium">{totalBudget || 0} {symbol}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{isRtl ? 'التصويتات المتوقعة' : 'Expected Votes'}</span>

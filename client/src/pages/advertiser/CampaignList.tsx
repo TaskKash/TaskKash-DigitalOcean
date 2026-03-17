@@ -9,8 +9,10 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useApp } from '@/contexts/AppContext';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function CampaignList() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   const { currentAdvertiser, advertiserCampaigns } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
@@ -189,11 +191,11 @@ export default function CampaignList() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">الميزانية</p>
-                    <p className="font-semibold">{campaign.budget.toLocaleString('ar-EG')} ج.م</p>
+                    <p className="font-semibold">{campaign.budget.toLocaleString('ar-EG')} {symbol}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">المنفق</p>
-                    <p className="font-semibold text-orange-600">{campaign.spent.toLocaleString('ar-EG')} ج.م</p>
+                    <p className="font-semibold text-orange-600">{campaign.spent.toLocaleString('ar-EG')} {symbol}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">المهام المكتملة</p>

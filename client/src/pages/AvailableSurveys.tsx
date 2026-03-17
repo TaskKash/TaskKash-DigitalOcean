@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Gift, FileText, CheckCircle, AlertCircle, ChevronRight, History } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function AvailableSurveys() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const { user } = useApp();
@@ -150,7 +152,7 @@ export default function AvailableSurveys() {
                           <div className="flex items-center gap-1 text-primary mb-2">
                             <Gift className="h-5 w-5" />
                             <span className="text-2xl font-bold">{survey.userReward}</span>
-                            <span className="text-sm">EGP</span>
+                            <span className="text-sm">${symbol}</span>
                           </div>
                           <Button
                             size="sm"
@@ -215,7 +217,7 @@ export default function AvailableSurveys() {
                           {survey.status === "completed" ? (
                             <div className="flex items-center gap-1 text-green-600">
                               <CheckCircle className="h-4 w-4" />
-                              <span className="font-bold">+{survey.userReward} EGP</span>
+                              <span className="font-bold">+{survey.userReward} {symbol}</span>
                             </div>
                           ) : survey.status === "disqualified" ? (
                             <div className="flex items-center gap-1 text-red-500">

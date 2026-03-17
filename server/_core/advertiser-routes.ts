@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { query } from './mysql-db';
 import { sdk } from './sdk';
 import { COOKIE_NAME } from '@shared/const';
+import { holdFunds } from '../services/escrow.service';
 
 export const requireAdvertiser = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -227,6 +228,61 @@ router.get('/advertiser/analytics/performance', requireAdvertiser, async (req: R
   }
 });
 
+/**
+ * GET /api/advertiser/campaigns/:id/report - Get demographic & ROI report
+ */
+router.get('/advertiser/campaigns/:id/report', requireAdvertiser, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const advertiserId = (req as any).user.advertiserId;
+
+    // Verify ownership
+    const tasks = await query('SELECT id FROM tasks WHERE id = ? AND advertiserId = ?', [id, advertiserId]);
+    if (tasks.length === 0) return res.status(403).json({ error: 'Not authorized' });
+
+    // Fetch demographics from completed users
+    const demographics = await query(`
+      SELECT 
+        u.gender,
+        FLOOR(DATEDIFF(CURDATE(), u.birthDate) / 365.25) as age,
+        u.tier
+      FROM userTasks ut
+      JOIN users u ON ut.userId = u.id
+      WHERE ut.taskId = ? AND ut.status = 'completed'
+    `, [id]);
+
+    const report = {
+      totalCompletions: demographics.length,
+      genderBreakdown: { male: 0, female: 0, other: 0 },
+      ageGroups: { '16-24': 0, '25-34': 0, '35-44': 0, '45+': 0 },
+      tiers: { bronze: 0, silver: 0, gold: 0, platinum: 0 }
+    };
+
+    demographics.forEach((d: any) => {
+      // Gender
+      if (d.gender === 'male') report.genderBreakdown.male++;
+      else if (d.gender === 'female') report.genderBreakdown.female++;
+      else report.genderBreakdown.other++;
+
+      // Age
+      if (d.age >= 16 && d.age <= 24) report.ageGroups['16-24']++;
+      else if (d.age >= 25 && d.age <= 34) report.ageGroups['25-34']++;
+      else if (d.age >= 35 && d.age <= 44) report.ageGroups['35-44']++;
+      else if (d.age >= 45) report.ageGroups['45+']++;
+
+      // Tier
+      if (d.tier === 'bronze') report.tiers.bronze++;
+      else if (d.tier === 'silver') report.tiers.silver++;
+      else if (d.tier === 'gold') report.tiers.gold++;
+      else if (d.tier === 'platinum') report.tiers.platinum++;
+    });
+
+    res.json(report);
+  } catch (error) {
+    console.error('Error fetching campaign report:', error);
+    res.status(500).json({ error: 'Failed to fetch campaign report' });
+  }
+});
 /**
  * GET /api/advertiser/dashboard - Get advertiser dashboard data
  */
@@ -559,9 +615,22 @@ router.post('/advertiser/campaigns/:id/launch', requireAdvertiser, async (req: R
       return res.status(400).json({ error: 'Campaign must have at least one task' });
     }
 
+    // Step: Hold funds in Escrow before launching
+    try {
+      await holdFunds({
+        advertiserId,
+        campaignId,
+        amount: campaign.budget,
+        currency: 'USD' // Platform acts in USD internally as primary base
+      });
+    } catch (err: any) {
+      return res.status(400).json({ error: 'Failed to hold funds: ' + err.message });
+    }
+
     await query(`
       UPDATE campaigns SET
         status = 'active',
+        approvalStatus = 'pending',
         launchDate = NOW(),
         updatedAt = NOW()
       WHERE id = ?

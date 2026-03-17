@@ -11,7 +11,11 @@ import {
   LogOut,
   Menu,
   X,
-  Wallet
+  Wallet,
+  ClipboardCheck,
+  ShieldAlert,
+  AlertOctagon,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trpc } from '@/lib/trpc';
@@ -19,6 +23,7 @@ import { toast } from 'sonner';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
+  title?: string;
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
@@ -66,6 +71,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { icon: Receipt, label: 'Financial Control', path: '/admin/financials' },
     { icon: Wallet, label: 'Wallet Hub', path: '/admin/wallet-hub' },
     { icon: Globe, label: 'Platform Operations', path: '/admin/operations' },
+    { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
+    { icon: Globe, label: 'Currency Rates', path: '/admin/currency-rates' },
+    { icon: ClipboardCheck, label: 'Campaign Review', path: '/admin/campaign-review' },
+    { icon: ShieldAlert, label: 'Disputes', path: '/admin/disputes' },
+    { icon: AlertOctagon, label: 'Fraud Detection', path: '/admin/fraud' },
     { icon: Briefcase, label: 'Settings', path: '/admin/settings' },
   ];
 

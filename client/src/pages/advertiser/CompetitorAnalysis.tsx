@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { 
   TrendingUp, TrendingDown, Target, DollarSign,
   Users, Clock, Star, AlertTriangle
@@ -90,6 +91,7 @@ const marketShare = [
 ];
 
 export default function CompetitorAnalysis() {
+  const { currency, symbol, formatAmount } = useCurrency();
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -163,7 +165,7 @@ export default function CompetitorAnalysis() {
                       </div>
                     </td>
                     <td className="text-center py-4 px-4">{comp.campaigns}</td>
-                    <td className="text-center py-4 px-4">{comp.avgReward} ج.م</td>
+                    <td className="text-center py-4 px-4">{comp.avgReward} {symbol}</td>
                     <td className="text-center py-4 px-4">{comp.avgTasks}</td>
                     <td className="text-center py-4 px-4">{comp.avgDuration} دقيقة</td>
                     <td className="text-center py-4 px-4">{comp.engagement}%</td>
@@ -251,7 +253,7 @@ export default function CompetitorAnalysis() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">متوسط السوق</p>
-                <p className="text-2xl font-bold">47.5 ج.م</p>
+                <p className="text-2xl font-bold">47.5 {symbol}</p>
               </div>
             </div>
             <p className="text-sm text-muted-foreground">

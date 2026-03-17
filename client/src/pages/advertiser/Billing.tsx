@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, Download, DollarSign, Calendar, CheckCircle2 } from 'lucide-react';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 // Invoices will be fetched from API
 
@@ -24,6 +25,7 @@ const paymentMethods = [
 ];
 
 export default function Billing() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [balanceData, setBalanceData] = React.useState({ balance: 0, totalSpent: 0, totalBudget: 0 });
   const [invoicesList, setInvoicesList] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -62,14 +64,14 @@ export default function Billing() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <p className="opacity-90 mb-1">الرصيد الحالي</p>
-              <h2 className="text-4xl font-bold">{currentBalance.toLocaleString()} ج.م</h2>
+              <h2 className="text-4xl font-bold">{currentBalance.toLocaleString()} {symbol}</h2>
             </div>
             <DollarSign className="w-16 h-16 opacity-20" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-sm opacity-90">إجمالي المصروفات</p>
-              <p className="text-xl font-bold">{totalSpent.toLocaleString()} ج.م</p>
+              <p className="text-xl font-bold">{totalSpent.toLocaleString()} {symbol}</p>
             </div>
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-sm opacity-90">عدد الفواتير</p>
@@ -166,7 +168,7 @@ export default function Billing() {
                 </div>
                 <div className="text-left">
                   <p className="text-xl font-bold mb-1">
-                    {invoice.amount.toLocaleString()} ج.م
+                    {invoice.amount.toLocaleString()} {symbol}
                   </p>
                   <Button variant="outline" size="sm">
                     <Download className="w-4 h-4 ml-2" />

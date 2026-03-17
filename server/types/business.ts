@@ -4,10 +4,10 @@
  */
 
 // User Tiers
-export type UserTier = 'tier1' | 'tier2' | 'tier3';
+export type UserTier = 'bronze' | 'silver' | 'gold' | 'platinum';
 
 // Advertiser Tiers
-export type AdvertiserTier = 'tier1' | 'tier2' | 'tier3' | 'tier4';
+export type AdvertiserTier = 'basic' | 'pro' | 'premium' | 'enterprise';
 
 // Payment Schedule based on User Tier
 export type PaymentSchedule = 'monthly' | 'weekly' | 'instant';

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getDb } from '../db';
-import { sql } from 'drizzle-orm';
+import { query } from './mysql-db';
+import { holdFunds, releaseFunds } from '../services/escrow.service';
 
 const router = Router();
 
@@ -372,23 +373,44 @@ router.post('/campaigns/:id/complete-task', async (req: Request, res: Response) 
         WHERE userId = ${userId} AND campaignId = ${campaignId}
       `);
 
-      // Get campaign reward
+      // Get campaign reward & advertiserId
       const campaignResult = await db.execute(sql`
-        SELECT reward FROM campaigns WHERE id = ${campaignId}
+        SELECT reward, advertiserId FROM campaigns WHERE id = ${campaignId}
       `);
-      const reward = (campaignResult[0] as any)[0].reward;
+      const campaign = (campaignResult[0] as any)[0];
+      const reward = campaign.reward;
+      const advertiserId = campaign.advertiserId;
 
-      // Add reward to user's balance
-      await db.execute(sql`
-        UPDATE users SET balance = balance + ${reward}, totalEarnings = totalEarnings + ${reward}
-        WHERE id = ${userId}
-      `);
+      // Get user tier and advertiser tier
+      const usersResult = await db.execute(sql`SELECT tier FROM users WHERE id = ${userId}`);
+      const userTier = (usersResult[0] as any)[0]?.tier || 'bronze';
 
-      // Create transaction record
-      await db.execute(sql`
-        INSERT INTO transactions (userId, type, amount, currency, status, campaignId, description)
-        VALUES (${userId}, 'earning', ${reward}, 'EGP', 'completed', ${campaignId}, 'Campaign completion reward')
-      `);
+      const adResult = await db.execute(sql`SELECT tier FROM advertisers WHERE id = ${advertiserId}`);
+      const advertiserTier = (adResult[0] as any)[0]?.tier || 'basic';
+
+      // Release funds from escrow, calculating commissions automatically
+      let finalPayout = reward;
+      try {
+        const result = await releaseFunds({
+          amountToRelease: reward,
+          userId,
+          advertiserTier,
+          userTier,
+          campaignId
+        });
+        finalPayout = result.payoutAmount;
+      } catch (e: any) {
+        console.error('Error in escrow release:', e.message);
+        // Fallback: update balance manually if escrow fails (temp fix for edge cases)
+        await db.execute(sql`
+          UPDATE users SET balance = balance + ${reward}, totalEarnings = totalEarnings + ${reward}
+          WHERE id = ${userId}
+        `);
+        await db.execute(sql`
+          INSERT INTO transactions (userId, type, amount, currency, status, campaignId, description)
+          VALUES (${userId}, 'earning', ${reward}, 'USD', 'completed', ${campaignId}, 'Fallback reward payout')
+        `);
+      }
 
       // Update campaign statistics
       await db.execute(sql`
@@ -398,13 +420,13 @@ router.post('/campaigns/:id/complete-task', async (req: Request, res: Response) 
       // Log campaign completion
       await db.execute(sql`
         INSERT INTO userJourneyLogs (userId, campaignId, eventType, eventData)
-        VALUES (${userId}, ${campaignId}, 'campaign_completed', ${JSON.stringify({ reward })})
+        VALUES (${userId}, ${campaignId}, 'campaign_completed', ${JSON.stringify({ reward: finalPayout, baseReward: reward })})
       `);
 
       return res.json({
         message: 'Congratulations! Campaign completed!',
         completed: true,
-        reward
+        reward: finalPayout
       });
     }
 

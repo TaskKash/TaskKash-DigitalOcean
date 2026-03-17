@@ -21,6 +21,7 @@ import {
   X
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface PaymentMethod {
   id: string;
@@ -32,6 +33,7 @@ interface PaymentMethod {
 }
 
 export default function PaymentMethodsPage() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const { user } = useApp();
   const isArabic = i18n.language === 'ar';
@@ -372,7 +374,7 @@ export default function PaymentMethodsPage() {
           <ul className="text-sm text-blue-600 dark:text-blue-400 space-y-1">
             <li>• {isArabic ? 'تأكد من صحة بيانات الحساب قبل الحفظ' : 'Verify account details before saving'}</li>
             <li>• {isArabic ? 'يمكنك تعيين طريقة دفع افتراضية للسحب السريع' : 'Set a default method for quick withdrawals'}</li>
-            <li>• {isArabic ? 'الحد الأدنى للسحب: 50 ج.م' : 'Minimum withdrawal: 50 EGP'}</li>
+            <li>• {isArabic ? 'الحد الأدنى للسحب: 50 {symbol}' : 'Minimum withdrawal: 50 {symbol}'}</li>
           </ul>
         </Card>
       </div>

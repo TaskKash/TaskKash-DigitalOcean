@@ -58,6 +58,9 @@ export default function TaskCompletion() {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [result, setResult] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [rating, setRating] = useState<number>(0);
+  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [isRatingSubmitted, setIsRatingSubmitted] = useState(false);
 
   const videoRef = useRef<HTMLIFrameElement>(null);
   const watchTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -192,6 +195,8 @@ export default function TaskCompletion() {
       
       setResult(data);
       setStep('result');
+      setRating(0);
+      setIsRatingSubmitted(false);
       // Refresh user data and transactions after successful task completion
       await refreshUser();
       await refreshTransactions();
@@ -199,6 +204,29 @@ export default function TaskCompletion() {
       console.error('Error submitting task:', error);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const submitRating = async (selectedRating: number) => {
+    if (!task || !result || !result.taskCompletionId || isRatingSubmitted) return;
+    
+    try {
+      setRating(selectedRating);
+      const res = await fetch('/api/ratings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          taskCompletionId: result.taskCompletionId,
+          campaignId: task.id,
+          rating: selectedRating
+        })
+      });
+      
+      if (res.ok) {
+        setIsRatingSubmitted(true);
+      }
+    } catch (error) {
+      console.error('Error submitting rating:', error);
     }
   };
 
@@ -590,10 +618,43 @@ export default function TaskCompletion() {
                         {language === 'ar' ? 'الصافي المضاف لمحفظتك' : 'Net Added to Wallet'}
                       </span>
                       <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {((result.reward || 0) * (1 - (user?.tier === 'bronze' ? 0.05 : user?.tier === 'silver' ? 0.10 : 0.20))).toFixed(2)} ج.م
+                        {((result.reward || 0) * (1 - (user?.tier === 'bronze' ? 0.05 : user?.tier === 'silver' ? 0.10 : 0.20))).toFixed(2)} {symbol}
                       </span>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Rating Prompt */}
+              {result.passed && (
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600 flex flex-col items-center">
+                  <h3 className="text-lg font-bold text-card-foreground dark:text-card-foreground mb-3">
+                    {language === 'ar' ? 'كيف كانت تجربتك مع هذه المهمة؟' : 'How was your experience with this task?'}
+                  </h3>
+                  <div className="flex gap-2 mb-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        disabled={isRatingSubmitted}
+                        onClick={() => submitRating(star)}
+                        onMouseEnter={() => !isRatingSubmitted && setHoverRating(star)}
+                        onMouseLeave={() => !isRatingSubmitted && setHoverRating(0)}
+                        className={`text-4xl transition-colors ${
+                          (hoverRating || rating) >= star 
+                            ? 'text-yellow-400' 
+                            : 'text-gray-300 dark:text-gray-600'
+                        }`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  {isRatingSubmitted && (
+                    <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                      {language === 'ar' ? 'شكراً لتقييمك!' : 'Thank you for your rating!'}
+                    </p>
+                  )}
                 </div>
               )}
 

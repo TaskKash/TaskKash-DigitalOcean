@@ -23,6 +23,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Key, Search, CheckCircle, XCircle, ArrowLeft, Building2, PlayCircle, AlertTriangle, DollarSign } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Advertiser {
   id: number;
@@ -38,11 +39,12 @@ interface Advertiser {
 }
 
 const mockPendingCampaigns = [
-  { id: 'CMP-001', advertiser: 'Samsung Egypt', title: 'Galaxy S25 Launch', type: 'Video', budget: '50,000 EGP', status: 'pending' },
-  { id: 'CMP-002', advertiser: 'Vodafone', title: 'Summer Offer', type: 'App Install', budget: '120,000 EGP', status: 'reviewing' },
+  { id: 'CMP-001', advertiser: 'Samsung Egypt', title: 'Galaxy S25 Launch', type: 'Video', budget: '50,000 {symbol}', status: 'pending' },
+  { id: 'CMP-002', advertiser: 'Vodafone', title: 'Summer Offer', type: 'App Install', budget: '120,000 {symbol}', status: 'reviewing' },
 ];
 
 export default function AdvertisersManagementNew() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   const [advertisers, setAdvertisers] = useState<Advertiser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -278,7 +280,7 @@ export default function AdvertisersManagementNew() {
             </Card>
             <Card className="px-4 py-2 border-l-4 border-l-green-500 shadow-sm">
               <span className="text-sm text-muted-foreground mr-2">Total Spend:</span>
-              <span className="font-bold">1,240,000 EGP</span>
+              <span className="font-bold">1,240,000 {symbol}</span>
             </Card>
           </div>
           <Button onClick={handleCreate} className="bg-purple-600 hover:bg-purple-700">
@@ -379,7 +381,7 @@ export default function AdvertisersManagementNew() {
                     <TableCell>
                       <div className="flex items-center gap-1.5 font-bold text-green-700">
                         <DollarSign className="w-4 h-4" />
-                        {advertiser.totalSpent?.toLocaleString() || 0} EGP
+                        {advertiser.totalSpent?.toLocaleString() || 0} {symbol}
                       </div>
                     </TableCell>
                     <TableCell>

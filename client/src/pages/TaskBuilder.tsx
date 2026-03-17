@@ -12,6 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { useCurrency } from "@/contexts/CurrencyContext";
 // Basic API request helper
 async function apiRequest(url: string, init?: RequestInit) {
   const res = await fetch(url, {
@@ -62,6 +63,7 @@ const TASK_TYPES = [
 ];
 
 export default function TaskBuilder() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   const [selectedType, setSelectedType] = useState<string>('survey');
   const [showPreview, setShowPreview] = useState(false);
@@ -463,7 +465,7 @@ export default function TaskBuilder() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Reward per Completion (EGP)</Label>
+                  <Label>Reward per Completion ({currency})</Label>
                   <Input
                     type="number"
                     value={taskData.reward}
@@ -473,7 +475,7 @@ export default function TaskBuilder() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Total Budget (EGP)</Label>
+                  <Label>Total Budget ({currency})</Label>
                   <Input
                     type="number"
                     value={taskData.totalBudget}

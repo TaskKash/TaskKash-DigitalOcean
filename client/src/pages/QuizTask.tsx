@@ -11,6 +11,7 @@ import { useNavigationWarning } from '@/hooks/useNavigationWarning';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface QuizQuestion {
   id: number;
@@ -31,6 +32,7 @@ interface QuizTaskData {
 }
 
 export default function QuizTask() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
@@ -98,7 +100,7 @@ export default function QuizTask() {
       setResults(data);
       setShowResults(true);
       if (data.passed) {
-        toast.success(isArabic ? `أحسنت! حصلت على ${task?.reward} ج.م` : `Great job! You earned ${task?.reward} EGP`);
+        toast.success(isArabic ? `أحسنت! حصلت على ${task?.reward} {symbol}` : `Great job! You earned ${task?.reward} {symbol}`);
       } else {
         toast.error(isArabic ? 'لم تجتاز الاختبار. حاول مرة أخرى.' : 'Quiz not passed. Try again.');
       }
@@ -182,7 +184,7 @@ export default function QuizTask() {
             </p>
             {results.passed && (
               <p className="text-green-600 font-semibold mt-4">
-                +{task?.reward} {isArabic ? 'ج.م' : 'EGP'}
+                +{task?.reward} {isArabic ? symbol : currency}
               </p>
             )}
           </Card>
@@ -330,7 +332,7 @@ export default function QuizTask() {
         <Card className="p-4 bg-primary/5 border-primary/20">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">{isArabic ? 'المكافأة:' : 'Reward:'}</span>
-            <span className="font-bold text-primary text-lg">{task?.reward} {isArabic ? 'ج.م' : 'EGP'}</span>
+            <span className="font-bold text-primary text-lg">{task?.reward} {isArabic ? symbol : currency}</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {isArabic ? `يجب الحصول على ${task?.passingScore}% للنجاح` : `${task?.passingScore}% required to pass`}

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Lock, Unlock, Star, CheckCircle2, Clock, DollarSign, Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface TargetingTier {
   id: number;
@@ -28,6 +29,7 @@ interface TargetingTiersProps {
 }
 
 export default function TargetingTiers({ userId, language = 'en' }: TargetingTiersProps) {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [tiers, setTiers] = useState<TargetingTier[]>([]);
   const [unlockedCount, setUnlockedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
@@ -200,7 +202,7 @@ export default function TargetingTiers({ userId, language = 'en' }: TargetingTie
                 <span className="font-semibold">
                   {language === 'ar' ? 'الحد الأدنى للمهام:' : 'Min Task Reward:'}
                 </span>
-                <span className="text-green-600 font-bold">{tier.minTaskReward} {language === 'ar' ? 'ج.م' : 'EGP'}</span>
+                <span className="text-green-600 font-bold">{tier.minTaskReward} {language === 'ar' ? symbol : currency}</span>
               </div>
 
               {!tier.isUnlocked && (
@@ -260,7 +262,7 @@ export default function TargetingTiers({ userId, language = 'en' }: TargetingTie
                     {language === 'ar' ? 'الحد الأدنى للمهام:' : 'Minimum Task Reward:'}
                   </span>
                   <span className="text-green-600 font-bold">
-                    {selectedTier.minTaskReward} {language === 'ar' ? 'ج.م' : 'EGP'}
+                    {selectedTier.minTaskReward} {language === 'ar' ? symbol : currency}
                   </span>
                 </div>
               </div>

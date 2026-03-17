@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, GripVertical, Save, Eye, Rocket, ArrowLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Question {
   id?: number;
@@ -26,6 +27,7 @@ interface Question {
 }
 
 export default function SurveyBuilder() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const { user } = useApp();
@@ -253,10 +255,10 @@ export default function SurveyBuilder() {
                         <CardContent className="p-3 text-center">
                           <p className="font-medium text-sm">{isRTL ? tier.displayNameAr : tier.displayName}</p>
                           <p className="text-xs text-gray-500 mt-1">
-                            {tier.minPricePerComplete}-{tier.maxPricePerComplete} EGP
+                            {tier.minPricePerComplete}-{tier.maxPricePerComplete} {symbol}
                           </p>
                           <Badge variant="secondary" className="mt-2 text-xs">
-                            {isRTL ? "مكافأة المستخدم" : "User Reward"}: {tier.defaultUserReward} EGP
+                            {isRTL ? "مكافأة المستخدم" : "User Reward"}: {tier.defaultUserReward} {symbol}
                           </Badge>
                         </CardContent>
                       </Card>

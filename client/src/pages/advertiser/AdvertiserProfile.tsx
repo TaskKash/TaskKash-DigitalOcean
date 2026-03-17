@@ -23,8 +23,10 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function AdvertiserProfile() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     companyName: "شركة التسويق الرقمي",
@@ -310,7 +312,7 @@ export default function AdvertiserProfile() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalSpent.toLocaleString()} ج.م
+                    {stats.totalSpent.toLocaleString()} {symbol}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
                     تقييم {stats.avgRating}/5.0

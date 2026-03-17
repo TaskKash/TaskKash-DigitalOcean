@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Check, X, Eye, Clock, DollarSign, User } from 'lucide-react';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 
 interface WithdrawalRequest {
@@ -25,6 +26,7 @@ interface WithdrawalRequest {
 }
 
 export default function AdminWithdrawals() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<WithdrawalRequest | null>(null);
@@ -144,7 +146,7 @@ export default function AdminWithdrawals() {
             <span className="text-sm text-muted-foreground">Amount:</span>
             <span className="font-semibold flex items-center gap-1">
               <DollarSign className="w-4 h-4" />
-              {parseFloat(withdrawal.amount.toString()).toFixed(2)} EGP
+              {parseFloat(withdrawal.amount.toString()).toFixed(2)} {symbol}
             </span>
           </div>
           <div className="flex justify-between">
@@ -292,7 +294,7 @@ export default function AdminWithdrawals() {
                 <span className="font-semibold">Email:</span> {selectedWithdrawal.user?.email}
               </div>
               <div>
-                <span className="font-semibold">Amount:</span> {parseFloat(selectedWithdrawal.amount.toString()).toFixed(2)} EGP
+                <span className="font-semibold">Amount:</span> {parseFloat(selectedWithdrawal.amount.toString()).toFixed(2)} {symbol}
               </div>
               <div>
                 <span className="font-semibold">Payment Method:</span> {selectedWithdrawal.paymentMethod}
@@ -321,7 +323,7 @@ export default function AdminWithdrawals() {
             <DialogTitle>Approve Withdrawal</DialogTitle>
             <DialogDescription>
               Are you sure you want to approve this withdrawal request for{' '}
-              {selectedWithdrawal && parseFloat(selectedWithdrawal.amount.toString()).toFixed(2)} EGP?
+              {selectedWithdrawal && parseFloat(selectedWithdrawal.amount.toString()).toFixed(2)} {symbol}?
             </DialogDescription>
           </DialogHeader>
           <div>

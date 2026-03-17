@@ -34,6 +34,9 @@ import pushNotificationRouter from "./push-notification-routes";
 import notificationRouter from "./notification-routes";
 import campaignRouter from "./campaign-routes";
 import privacyRouter from "./privacy-routes";
+import currencyRouter from "./currency-routes";
+import configRouter from "./config-routes";
+import disputeRouter from "./dispute-routes";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -132,6 +135,10 @@ async function startServer() {
   app.use("/api", campaignRouter);
   // Privacy & Data Rights endpoints (GDPR/CCPA/Egypt Law 2023/82)
   app.use("/api/privacy", privacyRouter);
+  // Currency, countries, and exchange rates endpoints
+  app.use("/api", currencyRouter);
+  // Business configurations
+  app.use("/api", configRouter);
   // tRPC API (tRPC handles its own body parsing)
   app.use(
     "/api/trpc",

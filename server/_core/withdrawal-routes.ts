@@ -12,7 +12,7 @@
 import { Router } from 'express';
 import { query as mysqlQuery } from './mysql-db';
 import { sdk } from './sdk';
-import { calculateUserWithdrawalCommission } from './commission.service';
+import { getUserTierConfig, isLaunchPhaseActive, LAUNCH_PHASE } from '../config/business.config';
 
 const router = Router();
 
@@ -190,16 +190,26 @@ router.post('/request', isUser, async (req, res) => {
 
     // Get user tier for commission calculation
     const userData = await mysqlQuery('SELECT tier FROM users WHERE id = ?', [userId]) as any;
-    const userTier = userData[0]?.tier || 'tier1';
+    const userTier = userData[0]?.tier || 'bronze';
     
-    // Calculate withdrawal commission
-    const commission = calculateUserWithdrawalCommission(withdrawalAmount, userTier);
+    // Calculate withdrawal commission using centralized business config
+    let commissionRateValue = 0;
+    if (isLaunchPhaseActive()) {
+      commissionRateValue = LAUNCH_PHASE.userCommissionRate; // e.g. 5
+    } else {
+      const config = getUserTierConfig(userTier);
+      commissionRateValue = config.commissionRate;
+    }
+    
+    const commissionRate = commissionRateValue / 100;
+    const commissionAmount = withdrawalAmount * commissionRate;
+    const netAmount = withdrawalAmount - commissionAmount;
     
     // Create withdrawal request with commission details
     const result = await mysqlQuery(`
       INSERT INTO withdrawal_requests (userId, amount, method, accountDetails, status, commissionRate, commissionAmount, netAmount)
       VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)
-    `, [userId, withdrawalAmount, method, JSON.stringify(accountDetails), commission.commissionRate, commission.commissionAmount, commission.netAmount]) as any;
+    `, [userId, withdrawalAmount, method, JSON.stringify(accountDetails), commissionRateValue, commissionAmount, netAmount]) as any;
 
     const withdrawalId = result.insertId;
 
@@ -236,11 +246,11 @@ router.post('/request', isUser, async (req, res) => {
     let actualProcessingTime = methodConfig.processingTime;
     
     // Enforce tier-based payout timing
-    if (userTier === 'tier1') {
+    if (userTier === 'bronze') {
       actualProcessingTime = 'Will be processed on the 21st of the month (Bronze Tier)';
-    } else if (userTier === 'tier2') {
+    } else if (userTier === 'silver') {
       actualProcessingTime = 'Will be processed next Monday (Silver Tier)';
-    } else if (userTier === 'tier3' || userTier === 'tier4') {
+    } else if (userTier === 'gold' || userTier === 'platinum') {
       actualProcessingTime = 'Within 3 hours (Gold/Platinum Tier)';
     }
 

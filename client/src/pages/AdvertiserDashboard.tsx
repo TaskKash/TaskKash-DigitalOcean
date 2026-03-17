@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { 
   BarChart3, 
   TrendingUp, 
@@ -52,6 +53,7 @@ interface DashboardData {
 }
 
 export default function AdvertiserDashboard() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
 
   const { data: dashboardData, isLoading } = useQuery<DashboardData>({
@@ -173,10 +175,10 @@ export default function AdvertiserDashboard() {
                 <div>
                   <p className="text-sm text-gray-500">Total Spent</p>
                   <p className="text-3xl font-bold text-gray-900">
-                    {(stats?.totalSpent || 0).toLocaleString()} EGP
+                    {(stats?.totalSpent || 0).toLocaleString()} {symbol}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    of {(stats?.totalBudget || 0).toLocaleString()} EGP budget
+                    of {(stats?.totalBudget || 0).toLocaleString()} {symbol} budget
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
@@ -217,7 +219,7 @@ export default function AdvertiserDashboard() {
                       dataKey="spent" 
                       stroke="#f97316" 
                       strokeWidth={2}
-                      name="Spent (EGP)"
+                      name="Spent ({currency})"
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -276,7 +278,7 @@ export default function AdvertiserDashboard() {
                     </div>
                   </div>
                   <span className="text-2xl font-bold text-orange-600">
-                    {(taskStats?.totalPaid || 0).toLocaleString()} EGP
+                    {(taskStats?.totalPaid || 0).toLocaleString()} {symbol}
                   </span>
                 </div>
               </div>
@@ -314,7 +316,7 @@ export default function AdvertiserDashboard() {
                       </div>
                     </div>
                     <Badge variant="outline" className="text-green-600 border-green-200">
-                      +{activity.amount} EGP
+                      +{activity.amount} {symbol}
                     </Badge>
                   </div>
                 ))

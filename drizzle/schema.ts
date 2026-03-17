@@ -181,6 +181,8 @@ export const advertisers = mysqlTable("advertisers", {
   reviewCount: int("reviewCount", { unsigned: true }).default(0).notNull(),
   countryId: int("countryId").notNull(),
   isActive: int("isActive", { unsigned: true }).default(1).notNull(),
+  tier: mysqlEnum("tier", ["basic", "pro", "premium", "enterprise"]).default("basic").notNull(),
+  totalSpend: int("totalSpend", { unsigned: true }).default(0).notNull(), // in smallest currency unit
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -262,6 +264,26 @@ export const transactions = mysqlTable("transactions", {
 
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = typeof transactions.$inferInsert;
+
+/**
+ * Escrow Ledger - Holds funds securely during an active campaign
+ */
+export const escrowLedger = mysqlTable("escrow_ledger", {
+  id: int("id").autoincrement().primaryKey(),
+  advertiserId: int("advertiserId").notNull(),
+  campaignId: int("campaignId"), // null if for a single task
+  taskId: int("taskId"), // null if for a multi-task campaign
+  amount: int("amount").notNull(), // in smallest currency unit
+  currency: varchar("currency", { length: 3 }).notNull(),
+  status: mysqlEnum("status", ["held", "released", "refunded"]).default("held").notNull(),
+  reason: varchar("reason", { length: 255 }),
+  releaseDate: timestamp("releaseDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EscrowLedger = typeof escrowLedger.$inferSelect;
+export type InsertEscrowLedger = typeof escrowLedger.$inferInsert;
 
 /**
  * Notifications table - stores user notifications

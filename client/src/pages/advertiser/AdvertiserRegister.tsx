@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { 
   Building, User, Mail, Phone, Lock, Check, Crown, Zap, Rocket,
-  Target, Users, BarChart3, Shield, ArrowRight, ArrowLeft
+  Target, Users, BarChart3, Shield, ArrowRight, ArrowLeft, Globe
 } from 'lucide-react';
 import { APP_LOGO, APP_TITLE } from '@/const';
 
@@ -102,6 +102,22 @@ export default function AdvertiserRegister() {
     industry: '',
     companySize: '',
   });
+  const [countries, setCountries] = useState<any[]>([]);
+  const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('/api/countries')
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.countries) {
+          setCountries(data.countries);
+          const egypt = data.countries.find((c: any) => c.code === 'EG');
+          if (egypt) setSelectedCountryId(egypt.id);
+          else if (data.countries.length > 0) setSelectedCountryId(data.countries[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleTierSelect = (tierId: string) => {
     setSelectedTier(tierId);
@@ -135,6 +151,7 @@ export default function AdvertiserRegister() {
         body: JSON.stringify({
           ...formData,
           tier: selectedTier,
+          countryId: selectedCountryId,
         }),
       });
       const data = await response.json();
@@ -366,6 +383,28 @@ export default function AdvertiserRegister() {
                     <option value="51-200">51-200 employees</option>
                     <option value="201-500">201-500 employees</option>
                     <option value="500+">500+ employees</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="country">Country *</Label>
+                <div className="relative">
+                  <Globe className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                  <select
+                    id="country"
+                    title="Country"
+                    value={selectedCountryId || ''}
+                    onChange={(e) => setSelectedCountryId(Number(e.target.value))}
+                    className="w-full h-10 px-3 pl-10 rounded-md border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary"
+                    required
+                  >
+                    <option value="">Select country</option>
+                    {countries.map((c: any) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nameEn} ({c.currency})
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

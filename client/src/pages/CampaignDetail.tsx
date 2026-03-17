@@ -21,7 +21,14 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-  Users
+  Users,
+  Share2,
+  Facebook,
+  Twitter,
+  Copy,
+  Link as LinkIcon,
+  BarChart3,
+  PieChart
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +36,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import MobileLayout from '@/components/layout/MobileLayout';
+import { useAuth } from '@/_core/hooks/useAuth';
 
 import { toast } from 'sonner';
 import {
@@ -69,6 +77,7 @@ interface Campaign {
   tasks: CampaignTask[];
   personas: any[];
   qualifications: any[];
+  advertiserId: number;
   userProgress?: {
     status: string;
     tasksCompleted: number;
@@ -87,6 +96,7 @@ export default function CampaignDetail() {
   const queryClient = useQueryClient();
   const isRTL = i18n.language === 'ar';
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
+  const { user: authUser } = useAuth();
 
   // Fetch campaign details
   const { data: campaign, isLoading, error } = useQuery<Campaign>({
@@ -101,6 +111,21 @@ export default function CampaignDetail() {
       return response.json();
     },
     enabled: !!id
+  });
+
+  const isOwner = authUser?.role === 'advertiser' && campaign?.advertiserId === authUser?.id;
+
+  // Fetch advertiser analytics (if owner)
+  const { data: analytics, isLoading: isAnalyticsLoading } = useQuery({
+    queryKey: ['campaign-analytics', id],
+    queryFn: async () => {
+      const response = await fetch(`/api/advertiser/campaigns/${id}/report`, {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch analytics');
+      return response.json();
+    },
+    enabled: !!id && !!isOwner
   });
 
   // Start campaign mutation
@@ -443,6 +468,120 @@ export default function CampaignDetail() {
                 </div>
               </AccordionContent>
             </AccordionItem>
+
+            {isOwner && (
+              <AccordionItem value="analytics" className="border-t">
+                <AccordionTrigger className="px-4">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                    Advertiser Analytics & ROI
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  {isAnalyticsLoading ? (
+                    <div className="py-8 flex justify-center"><Skeleton className="h-32 w-full" /></div>
+                  ) : analytics ? (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 flex flex-col items-center">
+                          <span className="text-3xl font-bold text-primary">{analytics.totalCompletions}</span>
+                          <span className="text-xs text-gray-500 font-medium tracking-wide uppercase">Completions</span>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-xl border border-green-200 flex flex-col items-center">
+                          <span className="text-3xl font-bold text-green-600">${(analytics.totalCompletions * campaign!.reward).toFixed(2)}</span>
+                          <span className="text-xs text-gray-500 font-medium tracking-wide uppercase">Spent (Reward)</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                          <PieChart className="w-4 h-4 text-gray-500" /> Gender Demographics
+                        </h4>
+                        <div className="h-4 w-full bg-gray-100 rounded-full overflow-hidden flex shadow-inner">
+                          {analytics.genderBreakdown.male > 0 && <div className="bg-blue-500 h-full" style={{ width: `${(analytics.genderBreakdown.male / analytics.totalCompletions) * 100}%` }} title={`Male: ${analytics.genderBreakdown.male}`} />}
+                          {analytics.genderBreakdown.female > 0 && <div className="bg-pink-500 h-full" style={{ width: `${(analytics.genderBreakdown.female / analytics.totalCompletions) * 100}%` }} title={`Female: ${analytics.genderBreakdown.female}`} />}
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>Male: {analytics.genderBreakdown.male}</span>
+                          <span>Female: {analytics.genderBreakdown.female}</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                          <BarChart3 className="w-4 h-4 text-gray-500" /> Age Distribution
+                        </h4>
+                        <div className="space-y-2">
+                          {Object.entries(analytics.ageGroups).map(([group, count]) => (
+                            <div key={group} className="flex items-center gap-2">
+                              <span className="w-12 text-xs font-medium">{group}</span>
+                              <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${(Number(count) / analytics.totalCompletions) * 100 || 0}%` }} />
+                              </div>
+                              <span className="w-8 text-right text-xs text-gray-500">{count as React.ReactNode}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                          <Trophy className="w-4 h-4 text-gray-500" /> Tasker Quality (Tier)
+                        </h4>
+                        <div className="space-y-2 flex gap-1 h-3 rounded-full overflow-hidden bg-gray-100 w-full mb-1">
+                          {['bronze', 'silver', 'gold', 'platinum'].map(tier => {
+                            const count = (analytics.tiers as any)[tier];
+                            if (!count) return null;
+                            const colors = { bronze: 'bg-amber-600', silver: 'bg-gray-400', gold: 'bg-yellow-400', platinum: 'bg-slate-800' };
+                            return <div key={tier} className={`${(colors as any)[tier]} h-full`} style={{ width: `${(count / analytics.totalCompletions) * 100}%` }} title={`${tier}: ${count}`} />
+                          })}
+                        </div>
+                        <div className="text-[10px] text-gray-400 uppercase flex gap-2 justify-between">
+                          <span>Bronze: {analytics.tiers.bronze}</span>
+                          <span>Silver: {analytics.tiers.silver}</span>
+                          <span>Gold: {analytics.tiers.gold}</span>
+                          <span>Platinum: {analytics.tiers.platinum}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-gray-500 text-sm">No data available yet.</div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            {isOwner && (
+              <AccordionItem value="share" className="border-t">
+                <AccordionTrigger className="px-4">
+                  <div className="flex items-center gap-2">
+                    <Share2 className="w-5 h-5 text-gray-500" />
+                    Share Campaign
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <p className="text-sm text-gray-600 mb-3">Share this direct link to attract taskers to your campaign:</p>
+                  <div className="flex gap-2 justify-center mb-4">
+                    <Button size="icon" variant="outline" className="rounded-full w-10 h-10 bg-[#1877F2] text-white hover:bg-[#1877F2]/90 hover:text-white border-0">
+                      <Facebook className="w-5 h-5" />
+                    </Button>
+                    <Button size="icon" variant="outline" className="rounded-full w-10 h-10 bg-black text-white hover:bg-black/90 hover:text-white border-0">
+                      <Twitter className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
+                    <LinkIcon className="w-4 h-4 text-gray-500 ml-2 shrink-0" />
+                    <input type="text" readOnly value={`${window.location.origin}/campaigns/${id}`} className="bg-transparent border-none outline-none text-xs text-gray-600 flex-1 w-full min-w-0" />
+                    <Button size="sm" variant="secondary" onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/campaigns/${id}`);
+                      toast.success("Link copied!");
+                    }} className="shrink-0 h-7 text-xs px-2">
+                       Copy
+                    </Button>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
           </Accordion>
         )}
       </div>

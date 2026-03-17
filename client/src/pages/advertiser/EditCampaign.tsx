@@ -7,8 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowRight, Save, X } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function EditCampaign() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   const [formData, setFormData] = useState({
     name: 'حملة إطلاق المنتج الجديد',
@@ -174,7 +176,7 @@ export default function EditCampaign() {
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm font-medium mb-1">الميزانية الإجمالية</p>
                 <p className="text-2xl font-bold text-primary">
-                  {(formData.reward * formData.totalTasks).toLocaleString()} ج.م
+                  {(formData.reward * formData.totalTasks).toLocaleString()} {symbol}
                 </p>
               </div>
             </div>

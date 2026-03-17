@@ -50,6 +50,7 @@ import {
 import { toast } from 'sonner';
 import { AppHeader } from '@/components/AppHeader';
 import { useApp } from '@/contexts/AppContext';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface CampaignTask {
   id: string;
@@ -114,6 +115,7 @@ const TASK_TYPES = [
 ];
 
 export default function MultiTaskCampaignBuilder() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const { currentAdvertiser, isInitialized } = useApp();
@@ -137,7 +139,7 @@ export default function MultiTaskCampaignBuilder() {
     descriptionEn: '',
     descriptionAr: '',
     reward: 0,
-    currency: 'EGP',
+    currency: currency,
     budget: 0,
     coverImage: '',
     tasks: [],

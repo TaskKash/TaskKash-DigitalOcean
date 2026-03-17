@@ -3,9 +3,14 @@ import MobileLayout from '@/components/layout/MobileLayout';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, XCircle, Clock, Calendar } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { CheckCircle2, XCircle, Clock, Calendar, ShieldAlert } from 'lucide-react';
+import { toast } from 'sonner';
 import { useLocalizedFieldGetter } from '@/lib/languageUtils';
 import { useTranslation } from 'react-i18next';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const taskHistory = [
   {
@@ -93,9 +98,45 @@ const statusConfig = {
 };
 
 export default function TaskHistory() {
-  const { t } = useTranslation();
+  const { currency, symbol, formatAmount } = useCurrency();
+  const { t, i18n } = useTranslation();
+  const language = i18n.language; // Assuming 'language' is derived from i18n
   const getLocalizedField = useLocalizedFieldGetter();
   const [filter, setFilter] = useState<'all' | 'completed' | 'pending' | 'rejected'>('all');
+  const [disputeTask, setDisputeTask] = useState<any>(null);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [isSubmittingDispute, setIsSubmittingDispute] = useState(false);
+
+  const handleDispute = async () => {
+    if (!disputeTask || !disputeReason.trim()) return;
+    setIsSubmittingDispute(true);
+    try {
+      // In a real app we'd get the csrf token if needed
+      const res = await fetch('/api/disputes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          taskCompletionId: disputeTask.id, // Replace with actual completion ID
+          campaignId: disputeTask.campaignId || disputeTask.id, // Fallback for dummy data
+          reason: disputeReason
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(language === 'ar' ? 'تم تقديم الاعتراض بنجاح' : 'Dispute submitted successfully');
+        setDisputeTask(null);
+        setDisputeReason('');
+      } else {
+        toast.error(data.error || 'Failed to submit dispute');
+      }
+    } catch (err) {
+      toast.error('Error submitting dispute');
+    } finally {
+      setIsSubmittingDispute(false);
+    }
+  };
 
   const filteredTasks = filter === 'all' 
     ? taskHistory 
@@ -171,7 +212,7 @@ export default function TaskHistory() {
                     </div>
                     <div className="text-left">
                       <p className={`font-bold ${task.status === 'completed' ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {task.status === 'completed' ? '+' : ''}{task.reward} ج.م
+                        {task.status === 'completed' ? '+' : ''}{task.reward} {symbol}
                       </p>
                     </div>
                   </div>
@@ -196,10 +237,19 @@ export default function TaskHistory() {
                     )}
 
                     {task.status === 'rejected' && task.rejectionReason && (
-                      <div className="bg-red-50 p-2 rounded">
-                        <p className="text-red-800 text-xs">
+                      <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded mt-2">
+                        <p className="text-red-800 dark:text-red-200 text-sm mb-2">
                           <strong>سبب الرفض:</strong> {task.rejectionReason}
                         </p>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="w-full flex items-center justify-center gap-2 border-red-200 text-red-700 hover:bg-red-100 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/40"
+                          onClick={() => setDisputeTask(task)}
+                        >
+                          <ShieldAlert className="w-4 h-4" />
+                          تقديم اعتراض (Dispute)
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -215,7 +265,38 @@ export default function TaskHistory() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={!!disputeTask} onOpenChange={(open) => !open && setDisputeTask(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-red-500" />
+              {language === 'ar' ? 'تقديم اعتراض' : 'File a Dispute'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              {language === 'ar' 
+                ? 'هل تعتقد أن مهمتك رُفضت عن طريق الخطأ؟ يرجى توضيح سبب اعتراضك وسيقوم فريق الدعم بمراجعته.'
+                : 'Do you believe your task was rejected by mistake? Please explain your reason and our support team will review it.'}
+            </p>
+            <Textarea 
+              placeholder={language === 'ar' ? 'اكتب سبب اعتراضك هنا...' : 'Write your dispute reason here...'}
+              value={disputeReason}
+              onChange={(e) => setDisputeReason(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDisputeTask(null)} disabled={isSubmittingDispute}>
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </Button>
+            <Button onClick={handleDispute} disabled={!disputeReason.trim() || isSubmittingDispute}>
+              {isSubmittingDispute ? (language === 'ar' ? 'جاري التقديم...' : 'Submitting...') : (language === 'ar' ? 'تأكيد الاعتراض' : 'Submit Dispute')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MobileLayout>
   );
 }
-

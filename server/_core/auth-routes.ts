@@ -184,7 +184,7 @@ authRouter.get("/me", async (req, res) => {
 authRouter.post("/register", async (req, res) => {
   console.log('[Auth] POST /api/auth/register - Body keys:', Object.keys(req.body));
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, countryId } = req.body;
 
     console.log('[Auth] Registration attempt:', { name, email, phone });
 
@@ -239,14 +239,15 @@ authRouter.post("/register", async (req, res) => {
 
       // Insert new user
       const [result] = await pool.execute(
-        `INSERT INTO users (openId, name, email, password, phone, role, balance, tier, isVerified, profileStrength, completedTasks, totalEarnings, createdAt, updatedAt) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        `INSERT INTO users (openId, name, email, password, phone, countryId, role, balance, tier, isVerified, profileStrength, completedTasks, totalEarnings, createdAt, updatedAt) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
         [
           openId,
           name,
           email,
           hashedPassword,
           phone || null,
+          countryId || null,
           'user',
           0,
           'bronze',
@@ -303,7 +304,7 @@ authRouter.post("/register", async (req, res) => {
 // Advertiser Registration endpoint
 authRouter.post("/advertiser/register", async (req, res) => {
   try {
-    const { companyName, contactPerson, email, phone, industry, companySize, password, tier = "basic" } = req.body;
+    const { companyName, contactPerson, email, phone, industry, companySize, password, tier = "basic", countryId } = req.body;
     if (!companyName || !contactPerson || !email || !password) {
       return res.status(400).json({ success: false, error: "Company name, contact person, email, and password are required" });
     }
@@ -321,8 +322,8 @@ authRouter.post("/advertiser/register", async (req, res) => {
     const slug = `${baseSlug}-${Math.random().toString(36).substr(2, 6)}`;
 
     const [result] = await pool.execute(
-      `INSERT INTO advertisers (openId, email, password, nameEn, nameAr, slug, tier, isActive, balance, totalSpent, countryId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, NULL, NOW(), NOW())`,
-      [openId, email, hashedPassword, companyName, companyName, slug, tier]
+      `INSERT INTO advertisers (openId, email, password, nameEn, nameAr, slug, tier, isActive, balance, totalSpent, countryId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, ?, NOW(), NOW())`,
+      [openId, email, hashedPassword, companyName, companyName, slug, tier, countryId || null]
     );
 
     const insertId = (result as any).insertId;

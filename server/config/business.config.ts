@@ -9,29 +9,37 @@ import type { UserTierConfig, AdvertiserTierConfig, LaunchPhaseConfig } from '..
  * User Tier Configurations
  */
 export const USER_TIERS: Record<string, UserTierConfig> = {
-  tier1: {
-    tier: 'tier1',
+  bronze: {
+    tier: 'bronze',
     commissionRate: 5,
     paymentSchedule: 'monthly',
     paymentDelay: 720, // 30 days in hours
     minTasksRequired: 0,
     minRatingRequired: 0,
   },
-  tier2: {
-    tier: 'tier2',
+  silver: {
+    tier: 'silver',
     commissionRate: 10,
     paymentSchedule: 'weekly',
     paymentDelay: 168, // 7 days in hours
     minTasksRequired: 20,
     minRatingRequired: 4.0,
   },
-  tier3: {
-    tier: 'tier3',
+  gold: {
+    tier: 'gold',
     commissionRate: 20,
     paymentSchedule: 'instant',
     paymentDelay: 3, // 3 hours
     minTasksRequired: 50,
     minRatingRequired: 4.5,
+  },
+  platinum: {
+    tier: 'platinum',
+    commissionRate: 25,
+    paymentSchedule: 'instant',
+    paymentDelay: 0,
+    minTasksRequired: 100,
+    minRatingRequired: 4.8,
   },
 };
 
@@ -39,26 +47,26 @@ export const USER_TIERS: Record<string, UserTierConfig> = {
  * Advertiser Tier Configurations
  */
 export const ADVERTISER_TIERS: Record<string, AdvertiserTierConfig> = {
-  tier1: {
-    tier: 'tier1',
+  basic: {
+    tier: 'basic',
     commissionRate: 10,
     minMonthlySpend: 0,
     benefits: ['Basic support', 'Standard reporting'],
   },
-  tier2: {
-    tier: 'tier2',
+  pro: {
+    tier: 'pro',
     commissionRate: 15,
     minMonthlySpend: 1000,
     benefits: ['Priority support', 'Advanced reporting', 'Custom targeting'],
   },
-  tier3: {
-    tier: 'tier3',
+  premium: {
+    tier: 'premium',
     commissionRate: 20,
     minMonthlySpend: 5000,
     benefits: ['Dedicated account manager', 'Real-time analytics', 'API access'],
   },
-  tier4: {
-    tier: 'tier4',
+  enterprise: {
+    tier: 'enterprise',
     commissionRate: 25,
     minMonthlySpend: 10000,
     benefits: ['Premium support', 'Custom integrations', 'White-label options'],

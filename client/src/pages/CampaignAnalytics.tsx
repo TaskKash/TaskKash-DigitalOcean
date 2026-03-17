@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { 
   ArrowLeft,
   TrendingUp, 
@@ -55,6 +56,7 @@ interface AnalyticsData {
 const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
 export default function CampaignAnalytics() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const params = useParams();
   const campaignId = params.id;
   const [, setLocation] = useLocation();
@@ -167,7 +169,7 @@ export default function CampaignAnalytics() {
                 <div>
                   <p className="text-sm text-gray-500">Cost Per Completion</p>
                   <p className="text-3xl font-bold text-orange-600">
-                    {kpis?.costPerCompletion || 0} EGP
+                    {kpis?.costPerCompletion || 0} {symbol}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
@@ -186,8 +188,8 @@ export default function CampaignAnalytics() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span>Spent: {kpis?.totalSpent?.toLocaleString() || 0} EGP</span>
-                <span>Budget: {campaign?.budget?.toLocaleString() || 0} EGP</span>
+                <span>Spent: {kpis?.totalSpent?.toLocaleString() || 0} {symbol}</span>
+                <span>Budget: {campaign?.budget?.toLocaleString() || 0} {symbol}</span>
               </div>
               <Progress value={parseFloat(kpis?.budgetUtilization || "0")} className="h-3" />
               <p className="text-sm text-gray-500 text-center">

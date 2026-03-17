@@ -119,6 +119,11 @@ import AdminWithdrawals from "./pages/AdminWithdrawals";
 import FinancialControl from "./pages/admin/FinancialControl";
 import PlatformOperations from "./pages/admin/PlatformOperations";
 import WalletDashboard from "./pages/admin/WalletDashboard";
+import AdminCurrencyRates from "./pages/admin/AdminCurrencyRates";
+import AdminCampaignReview from "./pages/admin/AdminCampaignReview";
+import AdminDisputes from "./pages/admin/AdminDisputes";
+import AdminFraudDashboard from "./pages/admin/AdminFraudDashboard";
+import AdminAnalyticsDashboard from "./pages/admin/AdminAnalyticsDashboard";
 import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import AdvertiserLayout from "./components/layout/AdvertiserLayout";
@@ -266,8 +271,23 @@ function Router() {
       <Route path="/admin/settings">
         <AdminProtectedRoute><PlatformSettings /></AdminProtectedRoute>
       </Route>
+      <Route path="/admin/currency-rates">
+        <AdminProtectedRoute><AdminCurrencyRates /></AdminProtectedRoute>
+      </Route>
       <Route path="/admin/withdrawals">
         <AdminProtectedRoute><AdminWithdrawals /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/campaign-review">
+        <AdminProtectedRoute><AdminCampaignReview /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/disputes">
+        <AdminProtectedRoute><AdminDisputes /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/fraud">
+        <AdminProtectedRoute><AdminFraudDashboard /></AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/analytics">
+        <AdminProtectedRoute><AdminAnalyticsDashboard /></AdminProtectedRoute>
       </Route>
 
       {/* Advertiser Routes */}

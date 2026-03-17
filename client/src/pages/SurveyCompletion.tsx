@@ -4,6 +4,7 @@ import { useApp } from '../contexts/AppContext';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle, Clock, Award, ChevronRight, ChevronLeft } from 'lucide-react';
 import MobileLayout from '../components/layout/MobileLayout';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface SurveyQuestion {
   id: number;
@@ -35,6 +36,7 @@ interface Task {
 type Step = 'intro' | 'survey' | 'result';
 
 export default function SurveyCompletion() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { t, i18n } = useTranslation();
@@ -234,7 +236,7 @@ export default function SurveyCompletion() {
                     {language === 'ar' ? 'المكافأة' : 'Reward'}
                   </p>
                   <p className="font-semibold text-primary text-sm">
-                    {task.reward} {language === 'ar' ? 'ج.م' : 'EGP'}
+                    {task.reward} {language === 'ar' ? symbol : currency}
                   </p>
                 </div>
               </div>
@@ -458,7 +460,7 @@ export default function SurveyCompletion() {
                 {language === 'ar' ? 'المكافأة المكتسبة' : 'Reward Earned'}
               </p>
               <p className="text-3xl font-bold text-primary">
-                +{task.reward} {language === 'ar' ? 'ج.م' : 'EGP'}
+                +{task.reward} {language === 'ar' ? symbol : currency}
               </p>
             </div>
             

@@ -5,6 +5,7 @@ import MobileLayout from '@/components/layout/MobileLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { 
   Award, TrendingUp, Lock, Unlock, ChevronRight, 
   DollarSign, Zap, Clock, Star, Gift 
@@ -33,6 +34,7 @@ interface TierProgress {
 }
 
 export default function MyTier() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const [sections, setSections] = useState<ProfileSection[]>([]);
@@ -291,7 +293,7 @@ export default function MyTier() {
               </div>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{progress?.totalBonusEarned || 0} EGP</div>
+              <div className="text-2xl font-bold text-green-600">{progress?.totalBonusEarned || 0} {symbol}</div>
               <div className="text-sm text-muted-foreground mt-1">
                 {i18n.language === 'ar' ? 'مكافآت مكتسبة' : 'Bonuses Earned'}
               </div>
@@ -321,7 +323,7 @@ export default function MyTier() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className="bg-green-500 text-white">
-                      +{section.bonusAmount} EGP
+                      +{section.bonusAmount} {symbol}
                     </Badge>
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   </div>
@@ -349,7 +351,7 @@ export default function MyTier() {
                       {i18n.language === 'ar' ? section.nameAr : section.nameEn}
                     </h4>
                     <p className="text-sm text-muted-foreground">
-                      {i18n.language === 'ar' ? 'مكتمل' : 'Completed'} • {section.bonusAwarded} EGP {i18n.language === 'ar' ? 'مكتسب' : 'earned'}
+                      {i18n.language === 'ar' ? 'مكتمل' : 'Completed'} • {section.bonusAwarded} {symbol} {i18n.language === 'ar' ? 'مكتسب' : 'earned'}
                     </p>
                   </div>
                   <Unlock className="w-5 h-5 text-green-500" />

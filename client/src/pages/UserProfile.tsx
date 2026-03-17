@@ -15,8 +15,10 @@ import {
 } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import Header from "@/components/layout/Header";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function UserProfile() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { userId } = useParams();
   const [, setLocation] = useLocation();
 
@@ -56,7 +58,7 @@ export default function UserProfile() {
       {
         id: 2,
         title: "أكملت 50 مهمة في شهر واحد",
-        description: "تحدي شخصي لإكمال 50 مهمة خلال شهر. النتيجة: 12,500 ج.م وخبرة رائعة!",
+        description: "تحدي شخصي لإكمال 50 مهمة خلال شهر. النتيجة: 12,500 {symbol} وخبرة رائعة!",
         date: "منذ شهر",
         likes: 42,
         comments: 15
@@ -171,7 +173,7 @@ export default function UserProfile() {
             <div className="text-sm text-muted-foreground">مهمة مكتملة</div>
           </Card>
           <Card className="p-4 text-center">
-            <div className="text-2xl font-bold text-secondary">{user?.stats.totalEarnings.toLocaleString()} ج.م</div>
+            <div className="text-2xl font-bold text-secondary">{user?.stats.totalEarnings.toLocaleString()} {symbol}</div>
             <div className="text-sm text-muted-foreground">إجمالي الأرباح</div>
           </Card>
           <Card className="p-4 text-center">

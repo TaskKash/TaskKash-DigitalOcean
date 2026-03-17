@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Medal, Award, TrendingUp } from 'lucide-react';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const leaderboardData = {
   daily: [
@@ -47,6 +48,7 @@ const getRankIcon = (rank: number) => {
 };
 
 export default function Leaderboard() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
 
   const LeaderboardList = ({ data }: { data: typeof leaderboardData.daily }) => {
@@ -88,7 +90,7 @@ export default function Leaderboard() {
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                   <span>{user?.tasks} مهمة</span>
                   <span>•</span>
-                  <span className="text-primary font-semibold">{user?.earnings} ج.م</span>
+                  <span className="text-primary font-semibold">{user?.earnings} {symbol}</span>
                 </div>
               </div>
 
@@ -130,7 +132,7 @@ export default function Leaderboard() {
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <span>{currentUser?.tasks} مهمة</span>
                     <span>•</span>
-                    <span className="text-primary font-semibold">{currentUser?.earnings} ج.م</span>
+                    <span className="text-primary font-semibold">{currentUser?.earnings} {symbol}</span>
                   </div>
                 </div>
               </div>
@@ -187,21 +189,21 @@ export default function Leaderboard() {
                 <Trophy className="w-4 h-4 text-secondary" />
                 المركز الأول
               </span>
-              <span className="font-bold text-yellow-600">500 ج.م</span>
+              <span className="font-bold text-yellow-600">500 {symbol}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <Medal className="w-4 h-4 text-gray-400" />
                 المركز الثاني
               </span>
-              <span className="font-bold text-gray-600">300 ج.م</span>
+              <span className="font-bold text-gray-600">300 {symbol}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-amber-700" />
                 المركز الثالث
               </span>
-              <span className="font-bold text-amber-700">200 ج.م</span>
+              <span className="font-bold text-amber-700">200 {symbol}</span>
             </div>
           </div>
         </Card>

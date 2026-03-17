@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { 
   Search, Filter, MoreVertical, Ban, CheckCircle2, Mail,
   Eye, Trash2, Download
@@ -20,6 +21,7 @@ const users = [
 ];
 
 export default function UsersManagement() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -144,7 +146,7 @@ export default function UsersManagement() {
                   </td>
                   <td className="p-4 text-muted-foreground">{user.phone}</td>
                   <td className="p-4">
-                    <span className="font-semibold">{user.balance.toFixed(2)} ج.م</span>
+                    <span className="font-semibold">{user.balance.toFixed(2)} {symbol}</span>
                   </td>
                   <td className="p-4">{user.tasks}</td>
                   <td className="p-4">{getStatusBadge(user.status)}</td>

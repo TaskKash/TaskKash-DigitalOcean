@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Target, Clock, DollarSign, Users, TrendingUp, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface DataBounty {
   id: number;
@@ -34,6 +35,7 @@ interface DataBountiesProps {
 }
 
 export default function DataBounties({ userId, language = 'en' }: DataBountiesProps) {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [bounties, setBounties] = useState<DataBounty[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBounty, setSelectedBounty] = useState<DataBounty | null>(null);
@@ -90,7 +92,7 @@ export default function DataBounties({ userId, language = 'en' }: DataBountiesPr
       if (data.success) {
         toast.success(language === 'ar' 
           ? `🎉 تم الإرسال بنجاح! حصلت على ${data.rewardAwarded} جنيه!`
-          : `🎉 Response Submitted! You earned ${data.rewardAwarded} EGP!`);
+          : `🎉 Response Submitted! You earned ${data.rewardAwarded} {symbol}!`);
         setSelectedBounty(null);
         setAnswer('');
         setMultipleChoiceAnswers([]);
@@ -278,7 +280,7 @@ export default function DataBounties({ userId, language = 'en' }: DataBountiesPr
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-2xl font-bold text-green-600">
-                      {bounty.rewardAmount} {language === 'ar' ? 'ج.م' : 'EGP'}
+                      {bounty.rewardAmount} {language === 'ar' ? symbol : currency}
                     </div>
                   </div>
                 </div>
@@ -305,7 +307,7 @@ export default function DataBounties({ userId, language = 'en' }: DataBountiesPr
                     setSelectedBounty(bounty);
                   }}
                 >
-                  {language === 'ar' ? 'الإجابة الآن' : 'Answer Now'} • +{bounty.rewardAmount} {language === 'ar' ? 'ج.م' : 'EGP'}
+                  {language === 'ar' ? 'الإجابة الآن' : 'Answer Now'} • +{bounty.rewardAmount} {language === 'ar' ? symbol : currency}
                 </Button>
               </div>
             </Card>
@@ -338,7 +340,7 @@ export default function DataBounties({ userId, language = 'en' }: DataBountiesPr
                     {language === 'ar' ? 'المكافأة:' : 'Reward:'}
                   </span>
                   <span className="text-lg font-bold text-green-600">
-                    +{selectedBounty.rewardAmount} {language === 'ar' ? 'ج.م' : 'EGP'}
+                    +{selectedBounty.rewardAmount} {language === 'ar' ? symbol : currency}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">

@@ -6,6 +6,7 @@ import {
   Check, X, Star, Zap, Crown, HelpCircle
 } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const plans = [
   {
@@ -93,6 +94,7 @@ const faqs = [
 ];
 
 export default function Pricing() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
 
   return (
@@ -145,7 +147,7 @@ export default function Pricing() {
                 {typeof plan.price === 'number' ? (
                   <>
                     <span className="text-4xl font-bold">{plan.price.toLocaleString()}</span>
-                    <span className="text-muted-foreground"> ج.م</span>
+                    <span className="text-muted-foreground"> {symbol}</span>
                     <p className="text-sm text-muted-foreground mt-1">{plan.period}</p>
                   </>
                 ) : (

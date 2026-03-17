@@ -3,12 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { 
   Target, CheckCircle2, Users, DollarSign, TrendingUp, 
   BarChart3, Plus, Settings, Play, ArrowRight, Eye, MousePointerClick
 } from 'lucide-react';
 
 export default function NewDashboard() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const [currentAdvertiser, setCurrentAdvertiser] = useState<any>(null);
@@ -45,7 +47,7 @@ export default function NewDashboard() {
   const stats = [
     { 
       label: isRTL ? 'إجمالي الإنفاق' : 'Total Spend', 
-      value: statsData ? (isRTL ? `ج.م ${(statsData.taskStats?.totalPaid || 0).toLocaleString()}` : `EGP ${(statsData.taskStats?.totalPaid || 0).toLocaleString()}`) : '...',
+      value: statsData ? (isRTL ? `${symbol} ${(statsData.taskStats?.totalPaid || 0).toLocaleString()}` : `${symbol} ${(statsData.taskStats?.totalPaid || 0).toLocaleString()}`) : '...',
       icon: DollarSign, 
       color: 'text-gray-900',
       trend: statsData ? '+5%' : '...'

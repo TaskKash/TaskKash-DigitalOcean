@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 // Mock data - in production this would come from API
 const mockAdvertisers: Record<string, any> = {
@@ -83,6 +84,7 @@ const mockAdvertisers: Record<string, any> = {
 };
 
 export default function AdvertiserPage() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, params] = useRoute('/advertiser/:slug');
   const slug = params?.slug || '';
   const advertiser = mockAdvertisers[slug];
@@ -253,7 +255,7 @@ export default function AdvertiserPage() {
                 التأثير الاجتماعي
               </h3>
               <p className="text-sm text-white/90">
-                دفعنا {(advertiser.stats.totalPaid / 1000000).toFixed(1)} مليون ج.م لـ {(advertiser.stats.totalUsers / 1000).toFixed(0)}K مستخدم
+                دفعنا {(advertiser.stats.totalPaid / 1000000).toFixed(1)} مليون {symbol} لـ {(advertiser.stats.totalUsers / 1000).toFixed(0)}K مستخدم
               </p>
             </div>
             <div className="text-4xl">🎯</div>
@@ -289,7 +291,7 @@ export default function AdvertiserPage() {
                       </span>
                       <span className="flex items-center gap-1 text-primary font-semibold">
                         <DollarSign className="h-3 w-3" />
-                        {task.reward} ج.م
+                        {task.reward} {symbol}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -332,7 +334,7 @@ export default function AdvertiserPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-secondary">{task.reward} ج.م</div>
+                    <div className="text-lg font-bold text-secondary">{task.reward} {symbol}</div>
                     <div className="text-xs text-muted-foreground">مكافأة</div>
                   </div>
                 </div>

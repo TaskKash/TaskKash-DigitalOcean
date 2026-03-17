@@ -6,8 +6,10 @@ import {
   Download, Printer, Mail, ArrowRight, CheckCircle2
 } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function InvoiceDetail() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
 
   const invoice = {
@@ -144,9 +146,9 @@ export default function InvoiceDetail() {
                   <tr key={index} className="border-b">
                     <td className="py-4">{item.description}</td>
                     <td className="text-center py-4">{item.quantity}</td>
-                    <td className="text-center py-4">{item.unitPrice.toLocaleString()} ج.م</td>
+                    <td className="text-center py-4">{item.unitPrice.toLocaleString()} {symbol}</td>
                     <td className="text-left py-4 font-semibold">
-                      {item.total.toLocaleString()} ج.م
+                      {item.total.toLocaleString()} {symbol}
                     </td>
                   </tr>
                 ))}
@@ -159,23 +161,23 @@ export default function InvoiceDetail() {
             <div className="w-64 space-y-3">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">المجموع الفرعي:</span>
-                <span className="font-semibold">{invoice.subtotal.toLocaleString()} ج.م</span>
+                <span className="font-semibold">{invoice.subtotal.toLocaleString()} {symbol}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">ضريبة القيمة المضافة (15%):</span>
-                <span className="font-semibold">{invoice.tax.toLocaleString()} ج.م</span>
+                <span className="font-semibold">{invoice.tax.toLocaleString()} {symbol}</span>
               </div>
               <div className="flex justify-between pt-3 border-t">
                 <span className="font-bold">الإجمالي:</span>
-                <span className="font-bold text-xl">{invoice.total.toLocaleString()} ج.م</span>
+                <span className="font-bold text-xl">{invoice.total.toLocaleString()} {symbol}</span>
               </div>
               <div className="flex justify-between text-primary">
                 <span className="font-semibold">المدفوع:</span>
-                <span className="font-semibold">{invoice.paid.toLocaleString()} ج.م</span>
+                <span className="font-semibold">{invoice.paid.toLocaleString()} {symbol}</span>
               </div>
               <div className="flex justify-between pt-3 border-t">
                 <span className="font-bold">الرصيد المتبقي:</span>
-                <span className="font-bold text-xl">{invoice.balance.toLocaleString()} ج.م</span>
+                <span className="font-bold text-xl">{invoice.balance.toLocaleString()} {symbol}</span>
               </div>
             </div>
           </div>

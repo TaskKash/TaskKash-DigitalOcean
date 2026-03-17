@@ -8,8 +8,10 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useApp } from '@/contexts/AppContext';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function Analytics() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   const { currentAdvertiser, advertiserCampaigns } = useApp();
 
@@ -68,7 +70,7 @@ export default function Analytics() {
     },
     { 
       label: 'تكلفة الإكمال', 
-      value: `${avgCostPerCompletion} ج.م`, 
+      value: `${avgCostPerCompletion} {symbol}`, 
       change: '-2.3%', 
       trend: 'down',
       icon: DollarSign,
@@ -165,7 +167,7 @@ export default function Analytics() {
                         </div>
                         <div className="text-left">
                           <p className="text-sm text-muted-foreground">الإنفاق</p>
-                          <p className="font-semibold">{campaign.spent.toLocaleString('ar-EG')} ج.م</p>
+                          <p className="font-semibold">{campaign.spent.toLocaleString('ar-EG')} {symbol}</p>
                         </div>
                       </div>
                       
@@ -249,7 +251,7 @@ export default function Analytics() {
                           <span className="text-xs text-white font-medium pr-2 text-right w-full">{day.completions}</span>
                         </div>
                       </div>
-                      <span className="text-sm font-semibold w-24 text-left">{day.spent} ج.م</span>
+                      <span className="text-sm font-semibold w-24 text-left">{day.spent} {symbol}</span>
                     </div>
                   );
                 })}

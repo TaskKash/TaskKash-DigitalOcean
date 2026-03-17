@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Award, Lock, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge as BadgeUI } from '@/components/ui/badge';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Badge {
   id: number;
@@ -16,6 +17,7 @@ interface Badge {
 }
 
 export default function Badges() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [allBadges, setAllBadges] = useState<Badge[]>([]);
   const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,7 +128,7 @@ export default function Badges() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {earnedBadges.reduce((sum, b) => sum + b.rewardAmount, 0).toFixed(2)} EGP
+              {earnedBadges.reduce((sum, b) => sum + b.rewardAmount, 0).toFixed(2)} {symbol}
             </div>
             <p className="text-xs text-muted-foreground">From badges</p>
           </CardContent>
@@ -208,7 +210,7 @@ export default function Badges() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Reward:</span>
-                    <span className="font-semibold text-green-600">+{badge.rewardAmount} EGP</span>
+                    <span className="font-semibold text-green-600">+{badge.rewardAmount} {symbol}</span>
                   </div>
 
                   {earned && earnedBadge?.earnedAt && (
@@ -227,7 +229,7 @@ export default function Badges() {
                         {badge.requirement.type === 'tasks_completed' && 
                           `Complete ${badge.requirement.value} tasks`}
                         {badge.requirement.type === 'total_earnings' && 
-                          `Earn ${badge.requirement.value} EGP total`}
+                          `Earn ${badge.requirement.value} {symbol} total`}
                         {badge.requirement.type === 'referrals' && 
                           `Refer ${badge.requirement.value} friends`}
                         {badge.requirement.type === 'streak' && 

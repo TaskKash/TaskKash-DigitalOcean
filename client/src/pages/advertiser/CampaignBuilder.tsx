@@ -14,7 +14,8 @@ import {
   ArrowLeft, ArrowRight, Check, Target, Users, FileText, Rocket,
   Lock, Crown, Zap, Info, DollarSign, Calendar, Clock, AlertTriangle, Monitor,
   Activity, Briefcase, Tag, Globe, Car, Home, Video, HelpCircle, Receipt,
-  CheckCircle2, Loader2, UploadCloud, X as XIcon, FileVideo
+  CheckCircle2, Loader2, UploadCloud, X as XIcon, FileVideo,
+  Share2, Copy, Facebook, Twitter, Link as LinkIcon
 } from 'lucide-react';
 
 const COUNTRIES = ['Egypt', 'Saudi Arabia', 'United Arab Emirates', 'Kuwait', 'Qatar'];
@@ -222,6 +223,33 @@ export default function CampaignBuilder() {
             <div className="flex justify-between"><span className="text-gray-500">TaskKash Commission</span><span className="font-semibold text-blue-600">${totalCommission.toFixed(2)}</span></div>
             <div className="flex justify-between border-t pt-2 mt-2"><span className="font-semibold">Target Completions</span><span className="font-bold">{campaign.completionsNeeded}</span></div>
           </div>
+          
+          {/* Social Sharing */}
+          <div className="border-t pt-5 mb-6">
+            <p className="font-medium text-gray-700 text-sm mb-3">Attract your audience directly by sharing your campaign link:</p>
+            <div className="flex gap-2 justify-center mb-4">
+              <Button size="icon" variant="outline" className="rounded-full w-10 h-10 bg-[#1877F2] text-white hover:bg-[#1877F2]/90 hover:text-white border-0">
+                <Facebook className="w-5 h-5" />
+              </Button>
+              <Button size="icon" variant="outline" className="rounded-full w-10 h-10 bg-black text-white hover:bg-black/90 hover:text-white border-0">
+                <Twitter className="w-5 h-5" />
+              </Button>
+              <Button size="icon" variant="outline" className="rounded-full w-10 h-10 bg-[#25D366] text-white hover:bg-[#25D366]/90 hover:text-white border-0">
+                <Share2 className="w-5 h-5" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-lg border">
+              <LinkIcon className="w-4 h-4 text-gray-500 ml-2" />
+              <input type="text" readOnly value="https://taskkash.com/tasks/demo-preview" className="bg-transparent border-none outline-none text-sm text-gray-600 flex-1 w-full" />
+              <Button size="sm" variant="secondary" onClick={() => {
+                navigator.clipboard.writeText("https://taskkash.com/tasks/demo-preview");
+                toast.success("Link copied to clipboard!");
+              }} className="shrink-0 h-8">
+                <Copy className="w-4 h-4 mr-1" /> Copy
+              </Button>
+            </div>
+          </div>
+
           <Button onClick={() => setLocation('/advertiser/new-dashboard')} className="w-full">Back to Dashboard</Button>
         </Card>
       </div>
@@ -257,6 +285,93 @@ export default function CampaignBuilder() {
         </div>
         <div className="bg-white rounded-lg p-3 border border-blue-200 text-xs text-gray-500 mt-2">
           💡 Full budget is escrowed on launch. You are only charged per verified completion.
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── MOBILE SIMULATOR PANEL ──────────────────────────────────
+  const MobileSimulator = () => (
+    <div className="bg-gray-900 rounded-[2rem] p-3 shadow-xl w-full max-w-[320px] border-4 border-gray-800 mx-auto relative overflow-hidden">
+      {/* Notch */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-800 rounded-b-xl z-10"></div>
+      
+      {/* Screen */}
+      <div className="bg-gray-100 h-[600px] rounded-[1.5rem] overflow-hidden flex flex-col relative text-left">
+        {/* Header */}
+        <div className="bg-white px-4 pt-8 pb-3 border-b border-gray-200 flex justify-between items-center shadow-sm z-10">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 flex items-center justify-center bg-primary rounded-full">
+               <span className="text-xs font-bold text-white">TK</span>
+            </div>
+            <span className="font-bold text-sm text-gray-800">Task Preview</span>
+          </div>
+          <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-0 flex items-center gap-1">
+            <DollarSign className="w-3 h-3" />
+            {(rewardPerTask * 0.9).toFixed(2)}
+          </Badge>
+        </div>
+        
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto pb-16">
+          {/* Video Header Area */}
+          <div className="bg-black w-full aspect-video flex items-center justify-center relative shadow-sm">
+            {campaign.videoUrl ? (
+              <video src={campaign.videoUrl} className="w-full h-full object-cover" />
+            ) : (
+              <div className="flex flex-col items-center">
+                <Video className="w-8 h-8 text-gray-600 mb-2" />
+                <span className="text-gray-500 text-xs">Video Content</span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+               <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 cursor-pointer">
+                 <div className="w-0 h-0 border-t-[8px] border-t-transparent border-l-[14px] border-l-primary border-b-[8px] border-b-transparent ml-1"></div>
+               </div>
+            </div>
+            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded backdrop-blur-sm">Req. Watch: {campaign.minWatchPercent}%</div>
+          </div>
+
+          <div className="p-4 space-y-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                 <Badge variant="outline" className="text-[10px] h-5 px-1.5 bg-blue-50 text-blue-700 border-blue-200">Video Task</Badge>
+                 <span className="text-[10px] text-gray-500 bg-gray-200/50 px-1.5 py-0.5 rounded">Duration: 2m</span>
+              </div>
+              <h2 className="font-bold text-lg leading-tight text-gray-900 mt-1">{campaign.titleEn || 'Your Campaign Title Goes Here'}</h2>
+            </div>
+          
+            <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Instructions</h3>
+              <p className="text-sm text-gray-700 leading-relaxed">{campaign.descriptionEn || 'Describe the objective of this task to the user. This section tells them what to expect out of your video.'}</p>
+            </div>
+          
+            <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm opacity-80 pointer-events-none">
+              <h3 className="font-bold text-sm text-gray-800 mb-2 flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-blue-500" /> Completion Quiz
+              </h3>
+              <p className="text-sm text-gray-700 mb-3 font-medium">{campaign.quizQuestion || 'Users must answer this question to pass?'}</p>
+              <div className="space-y-2">
+                {['A', 'B', 'C', 'D'].map((opt) => {
+                  const text = (campaign as any)[`quizOption${opt}`];
+                  if (!text && opt !== 'A' && opt !== 'B') return null;
+                  return (
+                    <div key={opt} className={`p-2 rounded border text-xs font-medium ${campaign.correctAnswer === opt ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-500 bg-gray-50'}`}>
+                      {text || `Answer option ${opt}`}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-gray-400 mt-2 text-center flex items-center justify-center gap-1">
+                 <Lock className="w-3 h-3" /> Unlocks after watching {campaign.minWatchPercent}%
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Footer actions */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+           <Button className="w-full rounded-lg font-bold shadow-sm opacity-50 cursor-not-allowed">Start Task</Button>
         </div>
       </div>
     </div>
@@ -657,38 +772,47 @@ export default function CampaignBuilder() {
 
         {/* ── STEP 4: REVIEW ── */}
         {step === 4 && (
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-6">
-              <h2 className="text-xl font-bold mb-5 flex items-center gap-2"><Rocket className="text-primary" /> Campaign Summary</h2>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Title</span><span className="font-medium">{campaign.titleEn || '—'}</span></div>
-                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Task Type</span><span className="font-medium capitalize">Video + Quiz</span></div>
-                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Video File</span><span className="font-medium text-blue-600 truncate max-w-xs">{campaign.videoFileName || 'Not Uploaded'}</span></div>
-                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Min. Watch</span><span className="font-medium">{campaign.minWatchPercent}%</span></div>
-                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Audience Reach</span><span className="font-bold text-primary">{reachData.totalReach.toLocaleString()}</span></div>
-                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Target Cities</span><span className="font-medium">{campaign.targeting.cities.length ? campaign.targeting.cities.join(', ') : 'All'}</span></div>
-                <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Gender</span><span className="font-medium capitalize">{campaign.targeting.gender}</span></div>
-              </div>
-            </Card>
+          <div className="grid lg:grid-cols-3 gap-8 items-start">
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="p-6">
+                <h2 className="text-xl font-bold mb-5 flex items-center gap-2"><Rocket className="text-primary" /> Campaign Summary</h2>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Title</span><span className="font-medium">{campaign.titleEn || '—'}</span></div>
+                  <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Task Type</span><span className="font-medium capitalize">Video + Quiz</span></div>
+                  <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Video File</span><span className="font-medium text-blue-600 truncate max-w-xs">{campaign.videoFileName || 'Not Uploaded'}</span></div>
+                  <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Min. Watch</span><span className="font-medium">{campaign.minWatchPercent}%</span></div>
+                  <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Audience Reach</span><span className="font-bold text-primary">{reachData.totalReach.toLocaleString()}</span></div>
+                  <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Target Cities</span><span className="font-medium">{campaign.targeting.cities.length ? campaign.targeting.cities.join(', ') : 'All'}</span></div>
+                  <div className="flex justify-between py-2 border-b"><span className="text-gray-500">Gender</span><span className="font-medium capitalize">{campaign.targeting.gender}</span></div>
+                </div>
+              </Card>
 
-            <div className="space-y-4">
-              <CommissionPanel />
-              {!reachData.meetsMinimum ? (
-                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-                  <h4 className="font-bold mb-1">Launch Blocked</h4>
-                  <p className="text-sm">Audience is below 500. Go back to Step 2 and broaden your filters.</p>
-                </div>
-              ) : !campaign.titleEn || !campaign.videoUrl || !campaign.quizQuestion ? (
-                <div className="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-lg">
-                  <h4 className="font-bold mb-1">Incomplete Fields</h4>
-                  <p className="text-sm">Please complete: {[!campaign.titleEn && 'Campaign Title', !campaign.videoUrl && 'Video URL', !campaign.quizQuestion && 'Quiz Question'].filter(Boolean).join(', ')}</p>
-                </div>
-              ) : (
-                <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg">
-                  <h4 className="font-bold mb-1 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Ready for Review</h4>
-                  <p className="text-sm">Your campaign will be submitted to admin for approval before going live.</p>
-                </div>
-              )}
+              <div className="space-y-4">
+                <CommissionPanel />
+                {!reachData.meetsMinimum ? (
+                  <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+                    <h4 className="font-bold mb-1">Launch Blocked</h4>
+                    <p className="text-sm">Audience is below 500. Go back to Step 2 and broaden your filters.</p>
+                  </div>
+                ) : !campaign.titleEn || !campaign.videoUrl || !campaign.quizQuestion ? (
+                  <div className="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-lg">
+                    <h4 className="font-bold mb-1">Incomplete Fields</h4>
+                    <p className="text-sm">Please complete: {[!campaign.titleEn && 'Campaign Title', !campaign.videoUrl && 'Video URL', !campaign.quizQuestion && 'Quiz Question'].filter(Boolean).join(', ')}</p>
+                  </div>
+                ) : (
+                  <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg">
+                    <h4 className="font-bold mb-1 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Ready for Review</h4>
+                    <p className="text-sm">Your campaign will be submitted to admin for approval before going live.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="lg:col-span-1 lg:sticky lg:top-32">
+              <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                 <Monitor className="w-4 h-4" /> Mobile User Preview
+              </h3>
+              <MobileSimulator />
             </div>
           </div>
         )}

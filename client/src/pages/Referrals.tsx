@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Share2, Copy, Users, TrendingUp, Gift } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface ReferralData {
   referralCode: string;
@@ -24,6 +25,7 @@ interface Referral {
 }
 
 export default function Referrals() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [referralData, setReferralData] = useState<ReferralData | null>(null);
   const [referralList, setReferralList] = useState<Referral[]>([]);
   const [copied, setCopied] = useState(false);
@@ -92,7 +94,7 @@ export default function Referrals() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Invite Friends & Earn Together</h1>
         <p className="text-muted-foreground">
-          Share your referral code and earn 20 EGP for each friend who joins. They get 10 EGP too!
+          Share your referral code and earn 20 {symbol} for each friend who joins. They get 10 {symbol} too!
         </p>
       </div>
 
@@ -115,7 +117,7 @@ export default function Referrals() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{referralData?.totalEarnings?.toFixed(2) || '0.00'} EGP</div>
+            <div className="text-2xl font-bold">{referralData?.totalEarnings?.toFixed(2) || '0.00'} {symbol}</div>
             <p className="text-xs text-muted-foreground">From referrals</p>
           </CardContent>
         </Card>
@@ -126,7 +128,7 @@ export default function Referrals() {
             <Gift className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">20 EGP</div>
+            <div className="text-2xl font-bold">20 {symbol}</div>
             <p className="text-xs text-muted-foreground">You earn per referral</p>
           </CardContent>
         </Card>
@@ -192,14 +194,14 @@ export default function Referrals() {
                 <span className="text-xl font-bold text-primary">2</span>
               </div>
               <h3 className="font-semibold mb-2">They Sign Up</h3>
-              <p className="text-sm text-muted-foreground">Your friend registers using your code and gets 10 EGP welcome bonus</p>
+              <p className="text-sm text-muted-foreground">Your friend registers using your code and gets 10 {symbol} welcome bonus</p>
             </div>
             <div className="text-center">
               <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-xl font-bold text-primary">3</span>
               </div>
               <h3 className="font-semibold mb-2">You Both Earn</h3>
-              <p className="text-sm text-muted-foreground">You receive 20 EGP instantly! No limits on referrals</p>
+              <p className="text-sm text-muted-foreground">You receive 20 {symbol} instantly! No limits on referrals</p>
             </div>
           </div>
         </CardContent>
@@ -223,7 +225,7 @@ export default function Referrals() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-green-600">+{referral.referrerReward} EGP</p>
+                    <p className="font-semibold text-green-600">+{referral.referrerReward} {symbol}</p>
                     <p className="text-xs text-muted-foreground capitalize">{referral.status}</p>
                   </div>
                 </div>

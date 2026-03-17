@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Users, Gift, Copy, Share2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const referralData = {
   code: 'AHMED2024',
@@ -25,6 +26,7 @@ const referralHistory = [
 ];
 
 export default function Referral() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [copied, setCopied] = useState(false);
 
   const handleCopyCode = () => {
@@ -53,7 +55,7 @@ export default function Referral() {
             <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Gift className="w-10 h-10" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">اربح 30 ج.م</h2>
+            <h2 className="text-2xl font-bold mb-2">اربح 30 {symbol}</h2>
             <p className="opacity-90">عن كل صديق تدعوه</p>
           </div>
 
@@ -103,7 +105,7 @@ export default function Referral() {
               { step: '1', title: 'شارك كود الإحالة', desc: 'أرسل كودك لأصدقائك' },
               { step: '2', title: 'صديقك يسجل', desc: 'يستخدم الكود عند التسجيل' },
               { step: '3', title: 'صديقك يكمل مهمة', desc: 'يكمل أول مهمة بنجاح' },
-              { step: '4', title: 'تحصل على 30 ج.م', desc: 'تضاف فوراً لمحفظتك' }
+              { step: '4', title: 'تحصل على 30 {symbol}', desc: 'تضاف فوراً لمحفظتك' }
             ].map((item, index) => (
               <div key={index} className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0 font-bold">
@@ -140,7 +142,7 @@ export default function Referral() {
                 <div className="text-left">
                   {referral.status === 'active' ? (
                     <>
-                      <p className="font-bold text-primary">+{referral.earned} ج.م</p>
+                      <p className="font-bold text-primary">+{referral.earned} {symbol}</p>
                       <Badge className="bg-green-100 text-green-800 border-0 text-xs">
                         نشط
                       </Badge>

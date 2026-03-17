@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Vote, Plus, Trash2, Image, ArrowRight, CheckCircle } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface PricingTier {
   id: number;
@@ -46,6 +47,7 @@ interface Question {
 }
 
 export default function VoteBuilder() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const { user } = useApp();
   const [, setLocation] = useLocation();
@@ -238,7 +240,7 @@ export default function VoteBuilder() {
                     </Badge>
                   </div>
                   <CardTitle className="text-lg mt-2">
-                    {tier.minPricePerVote}-{tier.maxPricePerVote} EGP
+                    {tier.minPricePerVote}-{tier.maxPricePerVote} {symbol}
                   </CardTitle>
                   <CardDescription>
                     {isRtl ? tier.descriptionAr : tier.description}
@@ -248,7 +250,7 @@ export default function VoteBuilder() {
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p>• {tier.minQuestions}-{tier.maxQuestions} {isRtl ? 'أسئلة' : 'questions'}</p>
                     <p>• {tier.minOptions}-{tier.maxOptions} {isRtl ? 'خيارات لكل سؤال' : 'options per question'}</p>
-                    <p>• {tier.defaultUserReward} EGP {isRtl ? 'مكافأة المستخدم' : 'user reward'}</p>
+                    <p>• {tier.defaultUserReward} {symbol} {isRtl ? 'مكافأة المستخدم' : 'user reward'}</p>
                   </div>
                 </CardContent>
               </Card>

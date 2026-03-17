@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useApp } from "@/contexts/AppContext";
 
 interface WithdrawMethod {
   id: string;
@@ -36,17 +38,20 @@ interface WithdrawDialogProps {
 }
 
 export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess }: WithdrawDialogProps) {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
+  const { user } = useApp();
   const isRTL = i18n.language === 'ar';
   
   const [methods, setMethods] = useState<WithdrawMethod[]>([]);
+  const [config, setConfig] = useState<any>(null);
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [accountDetails, setAccountDetails] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingMethods, setIsFetchingMethods] = useState(true);
 
-  // Fetch withdrawal methods
+  // Fetch withdrawal methods and commission config
   useEffect(() => {
     if (isOpen) {
       fetchMethods();
@@ -57,12 +62,20 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
     setIsLoading(true);
     try {
       setIsFetchingMethods(true);
-      const response = await fetch('/api/withdrawals/methods');
-      const data = await response.json();
-      setMethods(data.methods || []);
+      const [methodsRes, configRes] = await Promise.all([
+        fetch('/api/withdrawals/methods'),
+        fetch('/api/config/commissions').catch(() => null)
+      ]);
+      const methodsData = await methodsRes.json();
+      setMethods(methodsData.methods || []);
+      
+      if (configRes && configRes.ok) {
+        const configData = await configRes.json();
+        setConfig(configData);
+      }
     } catch (error) {
-      console.error('Error fetching withdrawal methods:', error);
-      toast.error('Failed to load withdrawal methods');
+      console.error('Error fetching withdrawal data:', error);
+      toast.error('Failed to load withdrawal data');
     } finally {
       setIsFetchingMethods(false);
     }
@@ -84,6 +97,28 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
     }));
   };
 
+  // Calculate commission breakdown
+  const getCommissionBreakdown = () => {
+    if (!amount || !config) return null;
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) return null;
+
+    const userTier = (user as any)?.tier || 'bronze';
+    let commissionRate = 0;
+
+    if (config.isLaunchPhase) {
+      commissionRate = config.launchPhaseConfig?.userCommissionRate || 0;
+    } else {
+      const tierConfig = config.userTiers?.[userTier] || config.userTiers?.['bronze'];
+      commissionRate = tierConfig?.commissionRate || 0;
+    }
+
+    const commAmount = amountNum * (commissionRate / 100);
+    const netAmount = amountNum - commAmount;
+
+    return { commissionRate, commAmount, netAmount };
+  };
+
   const validateForm = (): boolean => {
     const amountNum = parseFloat(amount);
 
@@ -102,8 +137,8 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
     if (amountNum < selectedMethodConfig.minAmount) {
       toast.error(
         isRTL 
-          ? `الحد الأدنى للسحب هو ${selectedMethodConfig.minAmount} جنيه`
-          : `Minimum withdrawal is ${selectedMethodConfig.minAmount} EGP`
+          ? `الحد الأدنى للسحب هو ${selectedMethodConfig.minAmount} ${symbol}`
+          : `Minimum withdrawal is ${selectedMethodConfig.minAmount} ${symbol}`
       );
       return false;
     }
@@ -111,8 +146,8 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
     if (amountNum > selectedMethodConfig.maxAmount) {
       toast.error(
         isRTL
-          ? `الحد الأقصى للسحب هو ${selectedMethodConfig.maxAmount} جنيه`
-          : `Maximum withdrawal is ${selectedMethodConfig.maxAmount} EGP`
+          ? `الحد الأقصى للسحب هو ${selectedMethodConfig.maxAmount} ${symbol}`
+          : `Maximum withdrawal is ${selectedMethodConfig.maxAmount} ${symbol}`
       );
       return false;
     }
@@ -149,6 +184,7 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
       return null;
     }
   };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
     const csrfToken = await getCsrfToken();
@@ -199,6 +235,8 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
     onClose();
   };
 
+  const commissionBreakdown = getCommissionBreakdown();
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -216,7 +254,7 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
               {isRTL ? 'رصيدك الحالي' : 'Current Balance'}
             </p>
             <p className="text-2xl font-bold text-primary">
-              {userBalance.toFixed(2)} {isRTL ? 'جنيه' : 'EGP'}
+              {formatAmount(userBalance)} {symbol}
             </p>
           </div>
 
@@ -248,10 +286,10 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
               <div className="bg-primary/5 p-3 rounded-md border border-primary/20 mt-2">
                 <p className="text-sm font-medium text-primary flex items-center gap-2">
                   <span>{isRTL ? 'الحد الأدنى للسحب:' : 'Minimum Withdrawal:'}</span>
-                  <strong>{selectedMethodConfig.minAmount} EGP</strong>
+                  <strong>{selectedMethodConfig.minAmount} {symbol}</strong>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {isRTL ? 'الحد الأقصى:' : 'Max:'} {selectedMethodConfig.maxAmount} EGP • 
+                  {isRTL ? 'الحد الأقصى:' : 'Max:'} {selectedMethodConfig.maxAmount} {symbol} • 
                   {isRTL ? ' وقت المعالجة:' : ' Processing:'} {selectedMethodConfig.processingTime}
                 </p>
               </div>
@@ -260,7 +298,7 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
 
           {/* Amount */}
           <div className="space-y-2">
-            <Label>{isRTL ? 'المبلغ (جنيه)' : 'Amount (EGP)'}</Label>
+            <Label>{isRTL ? 'المبلغ' : 'Amount'}</Label>
             <Input
               type="text"
               inputMode="decimal"
@@ -272,8 +310,22 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
             />
             {selectedMethodConfig && amount && parseFloat(amount) < selectedMethodConfig.minAmount && (
               <p className="text-xs text-red-500 mt-1">
-                {isRTL ? `يجب أن يكون المبلغ ${selectedMethodConfig.minAmount} جنيه على الأقل` : `Amount must be at least ${selectedMethodConfig.minAmount} EGP`}
+                {isRTL ? `يجب أن يكون المبلغ ${selectedMethodConfig.minAmount} ${symbol} على الأقل` : `Amount must be at least ${selectedMethodConfig.minAmount} ${symbol}`}
               </p>
+            )}
+
+            {/* Commission Breakdown */}
+            {commissionBreakdown && (
+              <div className="mt-2 p-3 bg-secondary/10 rounded-lg text-sm space-y-1.5">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{isRTL ? 'رسوم السحب' : 'Withdrawal Fee'} ({commissionBreakdown.commissionRate}%):</span>
+                  <span className="text-red-500">-{formatAmount(commissionBreakdown.commAmount)} {symbol}</span>
+                </div>
+                <div className="flex justify-between font-bold text-foreground pt-1.5 border-t border-border/50">
+                  <span>{isRTL ? 'المبلغ الصافي' : 'Net Amount'}:</span>
+                  <span className="text-primary">{formatAmount(commissionBreakdown.netAmount)} {symbol}</span>
+                </div>
+              </div>
             )}
           </div>
 

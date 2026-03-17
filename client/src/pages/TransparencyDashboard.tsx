@@ -16,8 +16,10 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function TransparencyDashboard() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   const [reward, setReward] = useState("50");
   const [duration, setDuration] = useState("10");
@@ -43,7 +45,7 @@ export default function TransparencyDashboard() {
     {
       icon: <DollarSign className="w-6 h-6" />,
       label: "متوسط المكافأة",
-      value: "65 ج.م",
+      value: "65 {symbol}",
       change: "+5.4%",
       color: "text-purple-600 dark:text-purple-400",
     },
@@ -157,7 +159,7 @@ export default function TransparencyDashboard() {
 
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="reward">المكافأة (ج.م)</Label>
+                  <Label htmlFor="reward">المكافأة (${symbol})</Label>
                   <Input
                     id="reward"
                     type="number"
@@ -185,7 +187,7 @@ export default function TransparencyDashboard() {
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground mb-2">المعدل الساعي</p>
                     <p className="text-4xl font-bold mb-2">
-                      {isNaN(hourlyRate) ? "0.00" : hourlyRate.toFixed(2)} ج.م/ساعة
+                      {isNaN(hourlyRate) ? "0.00" : hourlyRate.toFixed(2)} {symbol}/ساعة
                     </p>
                     {isGoodRate ? (
                       <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded-full text-sm">
@@ -194,7 +196,7 @@ export default function TransparencyDashboard() {
                       </div>
                     ) : (
                       <div className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-600 text-white rounded-full text-sm">
-                        <span>⚠️ أقل من الحد الأدنى (50 ج.م/ساعة)</span>
+                        <span>⚠️ أقل من الحد الأدنى (50 {symbol}/ساعة)</span>
                       </div>
                     )}
                   </div>
@@ -204,7 +206,7 @@ export default function TransparencyDashboard() {
                 <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
                   <p className="text-sm font-semibold mb-2">الحد الأدنى للأجر الساعي</p>
                   <p className="text-sm text-muted-foreground">
-                    نعتبر أن تحصل المهام على الحصول نحو <strong>50 ج.م/ساعة</strong> على الأقل. 
+                    نعتبر أن تحصل المهام على الحصول نحو <strong>50 {symbol}/ساعة</strong> على الأقل. 
                     إذا كانت أقل، احذر أخبر تحصل على قيمة منخفضة عنه القيمة ⚠️
                   </p>
                 </Card>

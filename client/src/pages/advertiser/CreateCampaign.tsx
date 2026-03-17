@@ -10,8 +10,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Play, Save, CheckCircle2, Languages, Target, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function CreateCampaign() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const isRTL = i18n.language === 'ar';
@@ -350,7 +352,7 @@ export default function CreateCampaign() {
                   <div className="flex justify-between items-center border-b border-blue-200/50 pb-2">
                     <span className="text-sm text-blue-700">{isRTL ? 'إجمالي الميزانية:' : 'Total Budget:'}</span>
                     <span className="font-bold text-blue-900">
-                      {(calculateBudget() / 100).toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                      {(calculateBudget() / 100).toFixed(2)} {isRTL ? symbol : currency}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-xs">

@@ -11,6 +11,7 @@ import { ProgressTracker, TaskStep } from '@/components/ProgressTracker';
 import { ProofUpload, ProofImage } from '@/components/ProofUpload';
 import { useLocalizedFieldGetter } from '@/lib/languageUtils';
 import { useTranslation } from 'react-i18next';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const taskTypeIcons: Record<string, string> = {
   survey: '📋',
@@ -33,6 +34,7 @@ const taskTypeNames: Record<string, string> = {
 };
 
 export default function TaskDetail() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t } = useTranslation();
   const getLocalizedField = useLocalizedFieldGetter();
   const [, params] = useRoute('/tasks/:id');
@@ -175,7 +177,7 @@ export default function TaskDetail() {
 
       setCurrentStep(6);
       completeTask(task.id);
-      toast.success(`تهانينا! حصلت على ${task.reward} ج.م`);
+      toast.success(`تهانينا! حصلت على ${task.reward} {symbol}`);
 
       // Redirect after 2 seconds
       setTimeout(() => {
@@ -219,7 +221,7 @@ export default function TaskDetail() {
 
           <div className="flex items-center gap-2 mb-4">
             <Badge className="bg-secondary text-white border-0 text-lg px-3 py-1">
-              {task.reward} ج.م
+              {task.reward} {symbol}
             </Badge>
             <Badge variant="outline">{taskTypeNames[task.type]}</Badge>
             <Badge className={difficultyColors[task.difficulty]}>
@@ -361,7 +363,7 @@ export default function TaskDetail() {
           <Card className="p-4 bg-green-50 border-green-200">
             <div className="flex items-center gap-2 text-green-800">
               <CheckCircle2 className="w-5 h-5" />
-              <span className="font-semibold">تم إكمال المهمة وحصلت على {task.reward} ج.م!</span>
+              <span className="font-semibold">تم إكمال المهمة وحصلت على {task.reward} {symbol}!</span>
             </div>
           </Card>
         )}

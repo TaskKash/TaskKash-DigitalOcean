@@ -10,6 +10,7 @@ import {
   Users, TrendingUp, AlertCircle, Search, RefreshCw, ShieldCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 type WithdrawalStatus = 'pending' | 'approved' | 'rejected';
 
@@ -66,6 +67,7 @@ function generateWithdrawals(): Withdrawal[] {
 }
 
 export default function WalletDashboard() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>(generateWithdrawals());
   const [filter, setFilter] = useState<'all' | WithdrawalStatus>('all');
   const [search, setSearch] = useState('');
@@ -111,7 +113,7 @@ export default function WalletDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Wallet Hub</h1>
-          <p className="text-sm text-muted-foreground">Manage user withdrawals, wallet balances & EGP exchange rate</p>
+          <p className="text-sm text-muted-foreground">Manage user withdrawals, wallet balances & {symbol} exchange rate</p>
         </div>
         <Badge variant="outline" className="gap-1 px-3 py-1.5">
           <ShieldCheck className="w-4 h-4 text-green-500" /> Admin Control
@@ -124,7 +126,7 @@ export default function WalletDashboard() {
           { label: 'Platform Balance', value: `$${totalWalletBalance.toLocaleString()}`, icon: Wallet, color: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Pending Withdrawals', value: `$${totalPendingUSD.toFixed(2)}`, sub: `${pending.length} requests`, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Approved (This Month)', value: `$${totalApprovedUSD.toFixed(2)}`, sub: `${approved.length} payouts`, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'EGP Rate (1 USD)', value: `EGP ${egpRate}`, sub: 'Manual override', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: '${symbol} Rate (1 USD)', value: `EGP ${egpRate}`, sub: 'Manual override', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
         ].map(({ label, value, sub, icon: Icon, color, bg }) => (
           <Card key={label} className="border shadow-sm">
             <CardContent className="p-4">
@@ -141,23 +143,23 @@ export default function WalletDashboard() {
         ))}
       </div>
 
-      {/* EGP Rate Override */}
+      {/* {symbol} Rate Override */}
       <Card className="border shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-primary" /> EGP Exchange Rate Override
+            <DollarSign className="w-4 h-4 text-primary" /> {symbol} Exchange Rate Override
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-end gap-3">
             <div className="flex-1 max-w-xs">
-              <Label className="text-xs mb-1 block">1 USD = ? EGP</Label>
+              <Label className="text-xs mb-1 block">1 USD = ? {symbol}</Label>
               <Input type="number" step="0.01" value={rateInput} onChange={e => setRateInput(e.target.value)} placeholder="31.50" />
             </div>
             <Button onClick={updateRate} variant="outline">
               <RefreshCw className="w-4 h-4 mr-2" /> Update Rate
             </Button>
-            <p className="text-xs text-gray-400 pb-1">Last updated: just now<br />All EGP amounts will recalculate.</p>
+            <p className="text-xs text-gray-400 pb-1">Last updated: just now<br />All {symbol} amounts will recalculate.</p>
           </div>
         </CardContent>
       </Card>
@@ -219,7 +221,7 @@ export default function WalletDashboard() {
                 {/* Amount */}
                 <div className="text-right shrink-0">
                   <p className="font-bold text-gray-900">${w.amount.toFixed(2)}</p>
-                  <p className="text-xs text-gray-500">EGP {w.amountEGP.toFixed(0)}</p>
+                  <p className="text-xs text-gray-500">${symbol} {w.amountEGP.toFixed(0)}</p>
                 </div>
 
                 {/* Status / Actions */}

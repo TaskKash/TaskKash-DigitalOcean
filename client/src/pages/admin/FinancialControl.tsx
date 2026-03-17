@@ -8,6 +8,7 @@ import {
   Search, Filter, CheckCircle, XCircle, DollarSign, ArrowUpRight, ArrowDownRight, CreditCard
 } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const platformLedger = {
   totalDeposits: 5840000,
@@ -26,6 +27,7 @@ const withdrawalRequests = [
 ];
 
 export default function FinancialControl() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   const [filterTier, setFilterTier] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,7 +61,7 @@ export default function FinancialControl() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-900">{platformLedger.totalDeposits.toLocaleString()} EGP</div>
+            <div className="text-3xl font-bold text-blue-900">{platformLedger.totalDeposits.toLocaleString()} {symbol}</div>
             <p className="text-xs text-blue-600 mt-1">From Advertiser Wallets</p>
           </CardContent>
         </Card>
@@ -72,7 +74,7 @@ export default function FinancialControl() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-900">{platformLedger.totalPayouts.toLocaleString()} EGP</div>
+            <div className="text-3xl font-bold text-red-900">{platformLedger.totalPayouts.toLocaleString()} {symbol}</div>
             <p className="text-xs text-red-600 mt-1">To User Wallets</p>
           </CardContent>
         </Card>
@@ -88,7 +90,7 @@ export default function FinancialControl() {
             </CardTitle>
           </CardHeader>
           <CardContent className="relative z-10">
-            <div className="text-3xl font-bold text-green-900">{platformLedger.platformProfit.toLocaleString()} EGP</div>
+            <div className="text-3xl font-bold text-green-900">{platformLedger.platformProfit.toLocaleString()} {symbol}</div>
             <p className="text-xs text-green-700 mt-1">Retained commission across all tasks</p>
           </CardContent>
         </Card>
@@ -100,7 +102,7 @@ export default function FinancialControl() {
           <CardContent className="p-6 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active Campaign Escrow</p>
-              <h3 className="text-2xl font-bold mt-1">{platformLedger.activeEscrow.toLocaleString()} EGP</h3>
+              <h3 className="text-2xl font-bold mt-1">{platformLedger.activeEscrow.toLocaleString()} {symbol}</h3>
               <p className="text-xs text-muted-foreground mt-1">Locked funds for running campaigns</p>
             </div>
             <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
@@ -112,7 +114,7 @@ export default function FinancialControl() {
           <CardContent className="p-6 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pending Withdrawal Volume</p>
-              <h3 className="text-2xl font-bold mt-1 text-orange-600">{platformLedger.pendingWithdrawals.toLocaleString()} EGP</h3>
+              <h3 className="text-2xl font-bold mt-1 text-orange-600">{platformLedger.pendingWithdrawals.toLocaleString()} {symbol}</h3>
               <p className="text-xs text-muted-foreground mt-1">Across 42 active requests</p>
             </div>
             <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
@@ -187,7 +189,7 @@ export default function FinancialControl() {
                     </Badge>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="font-bold text-gray-900 dark:text-gray-100">{req.amount.toLocaleString()} EGP</div>
+                    <div className="font-bold text-gray-900 dark:text-gray-100">{req.amount.toLocaleString()} {symbol}</div>
                     <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                       <CreditCard className="w-3 h-3" />
                       {req.method}

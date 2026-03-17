@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { 
   Users, Building2, CheckCircle2, DollarSign, TrendingUp,
   Target, Clock, Star, ArrowUp, ArrowDown
@@ -38,7 +39,7 @@ const recentActivity = [
   { type: 'task', action: 'مهمة جديدة تم نشرها', time: 'منذ 5 دقائق', icon: Target },
   { type: 'advertiser', action: 'معلن جديد سجل', time: 'منذ 12 دقيقة', icon: Building2 },
   { type: 'task', action: '50 مهمة تم إكمالها', time: 'منذ 18 دقيقة', icon: CheckCircle2 },
-  { type: 'revenue', action: 'دفعة جديدة: 15,000 ج.م', time: 'منذ 25 دقيقة', icon: DollarSign }
+  { type: 'revenue', action: 'دفعة جديدة: 15,000 {symbol}', time: 'منذ 25 دقيقة', icon: DollarSign }
 ];
 
 const topCategories = [
@@ -59,6 +60,7 @@ const monthlyData = [
 ];
 
 export default function PlatformDashboard() {
+  const { currency, symbol, formatAmount } = useCurrency();
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -137,10 +139,10 @@ export default function PlatformDashboard() {
                 {stats.revenue.growth}
               </Badge>
             </div>
-            <p className="text-3xl font-bold mb-1">{(stats.revenue.total / 1000000).toFixed(1)}M ج.م</p>
+            <p className="text-3xl font-bold mb-1">{(stats.revenue.total / 1000000).toFixed(1)}M {symbol}</p>
             <p className="text-sm text-muted-foreground mb-2">إجمالي الإيرادات</p>
             <p className="text-xs text-muted-foreground">
-              {stats.revenue.monthly.toLocaleString()} ج.م شهرياً
+              {stats.revenue.monthly.toLocaleString()} {symbol} شهرياً
             </p>
           </Card>
         </div>
@@ -157,7 +159,7 @@ export default function PlatformDashboard() {
                     <span className="text-sm font-medium">{data.month}</span>
                     <div className="flex items-center gap-4 text-sm">
                       <span className="text-blue-600">{data.users.toLocaleString()} مستخدم</span>
-                      <span className="text-primary">{data.revenue.toLocaleString()} ج.م</span>
+                      <span className="text-primary">{data.revenue.toLocaleString()} {symbol}</span>
                     </div>
                   </div>
                   <div className="flex gap-2">

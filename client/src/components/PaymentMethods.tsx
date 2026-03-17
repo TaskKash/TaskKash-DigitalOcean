@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Clock, Zap } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface PaymentMethod {
   id: string;
@@ -35,7 +36,7 @@ const paymentMethods: PaymentMethod[] = [
     processingTime: "فوري",
     fee: 2,
     isInstant: true,
-    description: "رسوم 2 ج.م",
+    description: "رسوم 2 {symbol}",
   },
   {
     id: "instapay",
@@ -72,6 +73,7 @@ export default function PaymentMethods({
   onClose,
   onWithdrawSuccess,
 }: PaymentMethodsProps) {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [selectedMethod, setSelectedMethod] = useState<string>("vodafone-cash");
   const [accountNumber, setAccountNumber] = useState("");
   const [amount, setAmount] = useState("");
@@ -91,7 +93,7 @@ export default function PaymentMethods({
     }
 
     if (withdrawAmount < 50) {
-      toast.error("الحد الأدنى للسحب هو 50 ج.م");
+      toast.error("الحد الأدنى للسحب هو 50 {symbol}");
       return;
     }
 
@@ -105,7 +107,7 @@ export default function PaymentMethods({
       onWithdrawSuccess(withdrawAmount);
     }
     
-    toast.success(`تم طلب السحب بنجاح! ستستلم ${netAmount} ج.م`);
+    toast.success(`تم طلب السحب بنجاح! ستستلم ${netAmount} {symbol}`);
     onClose();
   };
 
@@ -216,7 +218,7 @@ export default function PaymentMethods({
             className="mt-2"
           />
           <p className="text-xs text-muted-foreground mt-1">
-            الحد الأدنى: 50 ج.م | الرصيد المتاح: {balance} ج.م
+            الحد الأدنى: 50 {symbol} | الرصيد المتاح: {balance} {symbol}
           </p>
         </div>
 
@@ -225,17 +227,17 @@ export default function PaymentMethods({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>المبلغ:</span>
-                <span className="font-semibold">{withdrawAmount} ج.م</span>
+                <span className="font-semibold">{withdrawAmount} {symbol}</span>
               </div>
               {fee > 0 && (
                 <div className="flex justify-between text-muted-foreground">
                   <span>الرسوم:</span>
-                  <span>-{fee} ج.م</span>
+                  <span>-{fee} {symbol}</span>
                 </div>
               )}
               <div className="flex justify-between text-lg font-bold border-t pt-2">
                 <span>المبلغ الصافي:</span>
-                <span className="text-primary">{netAmount} ج.م</span>
+                <span className="text-primary">{netAmount} {symbol}</span>
               </div>
             </div>
           </Card>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Gift, Flame, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface DailyRewardData {
   success?: boolean;
@@ -13,6 +14,7 @@ interface DailyRewardData {
 }
 
 export default function DailyReward() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [claimed, setClaimed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rewardData, setRewardData] = useState<DailyRewardData | null>(null);
@@ -49,7 +51,7 @@ export default function DailyReward() {
       if (data.success) {
         setClaimed(true);
         // Show success notification
-        alert(`🎉 ${data.message}\n\nYou earned ${data.reward} EGP!`);
+        alert(`🎉 ${data.message}\n\nYou earned ${data.reward} {symbol}!`);
         
         // Reload page to update balance
         setTimeout(() => window.location.reload(), 1500);
@@ -110,7 +112,7 @@ export default function DailyReward() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-3xl font-bold text-green-600 mb-1">
-              2+ EGP
+              2+ {symbol}
             </p>
             <p className="text-sm text-muted-foreground">
               Increases with your streak!

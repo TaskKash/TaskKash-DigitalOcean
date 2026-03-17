@@ -13,8 +13,10 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Rocket, Calculator, Users, Target, Shield, Calendar } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function CampaignLaunch() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const params = useParams();
@@ -190,7 +192,7 @@ export default function CampaignLaunch() {
                 <SelectContent>
                   {pricingTiers.data?.map((tier: any) => (
                     <SelectItem key={tier.tierName} value={tier.tierName}>
-                      {isRTL ? tier.displayNameAr : tier.displayName} ({tier.minPricePerComplete}-{tier.maxPricePerComplete} EGP)
+                      {isRTL ? tier.displayNameAr : tier.displayName} ({tier.minPricePerComplete}-{tier.maxPricePerComplete} {symbol})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -199,7 +201,7 @@ export default function CampaignLaunch() {
 
             {/* Price Per Complete */}
             <div className="space-y-2">
-              <Label>{isRTL ? "السعر لكل استجابة مكتملة" : "Price Per Complete"} (EGP)</Label>
+              <Label>{isRTL ? "السعر لكل استجابة مكتملة" : "Price Per Complete"} ({currency})</Label>
               <div className="flex items-center gap-4">
                 <Slider
                   value={[pricePerComplete]}
@@ -220,7 +222,7 @@ export default function CampaignLaunch() {
 
             {/* User Reward */}
             <div className="space-y-2">
-              <Label>{isRTL ? "مكافأة المستخدم" : "User Reward"} (EGP)</Label>
+              <Label>{isRTL ? "مكافأة المستخدم" : "User Reward"} ({currency})</Label>
               <div className="flex items-center gap-4">
                 <Slider
                   value={[userReward]}
@@ -238,13 +240,13 @@ export default function CampaignLaunch() {
                 />
               </div>
               <p className="text-sm text-gray-500">
-                {isRTL ? "هامش المنصة" : "Platform margin"}: {platformMargin.toFixed(2)} EGP ({platformMarginPercent}%)
+                {isRTL ? "هامش المنصة" : "Platform margin"}: {platformMargin.toFixed(2)} {symbol} ({platformMarginPercent}%)
               </p>
             </div>
 
             {/* Total Budget */}
             <div className="space-y-2">
-              <Label>{isRTL ? "إجمالي الميزانية" : "Total Budget"} (EGP)</Label>
+              <Label>{isRTL ? "إجمالي الميزانية" : "Total Budget"} ({currency})</Label>
               <Input
                 type="number"
                 value={totalBudget}
@@ -441,7 +443,7 @@ export default function CampaignLaunch() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold text-primary">{totalBudget.toLocaleString()} EGP</p>
+                <p className="text-2xl font-bold text-primary">{totalBudget.toLocaleString()} {symbol}</p>
                 <p className="text-sm text-gray-500">{isRTL ? "إجمالي الميزانية" : "Total Budget"}</p>
               </div>
               <div>
@@ -449,11 +451,11 @@ export default function CampaignLaunch() {
                 <p className="text-sm text-gray-500">{isRTL ? "الاستجابات المستهدفة" : "Target Responses"}</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-primary">{pricePerComplete} EGP</p>
+                <p className="text-2xl font-bold text-primary">{pricePerComplete} {symbol}</p>
                 <p className="text-sm text-gray-500">{isRTL ? "لكل استجابة" : "Per Response"}</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-primary">{userReward} EGP</p>
+                <p className="text-2xl font-bold text-primary">{userReward} {symbol}</p>
                 <p className="text-sm text-gray-500">{isRTL ? "مكافأة المستخدم" : "User Reward"}</p>
               </div>
             </div>

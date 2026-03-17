@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { 
   Search, Download, Filter, ArrowUpCircle, ArrowDownCircle,
   Calendar, CreditCard, FileText
@@ -11,6 +12,7 @@ import {
 // Transactions will be fetched from API
 
 export default function TransactionHistory() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -124,7 +126,7 @@ export default function TransactionHistory() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-red-600">
-                  {totalSpent.toLocaleString()} ج.م
+                  {totalSpent.toLocaleString()} {symbol}
                 </p>
                 <p className="text-sm text-muted-foreground">إجمالي المصروفات</p>
               </div>
@@ -137,7 +139,7 @@ export default function TransactionHistory() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-primary">
-                  {totalRefunded.toLocaleString()} ج.م
+                  {totalRefunded.toLocaleString()} {symbol}
                 </p>
                 <p className="text-sm text-muted-foreground">إجمالي الاستردادات</p>
               </div>
@@ -197,7 +199,7 @@ export default function TransactionHistory() {
                   <p className={`text-2xl font-bold ${
                     txn.amount < 0 ? 'text-red-600' : 'text-primary'
                   }`}>
-                    {txn.amount > 0 ? '+' : ''}{txn.amount.toLocaleString()} ج.م
+                    {txn.amount > 0 ? '+' : ''}{txn.amount.toLocaleString()} {symbol}
                   </p>
                   <Button variant="ghost" size="sm" className="mt-2">
                     <FileText className="w-4 h-4 ml-1" />

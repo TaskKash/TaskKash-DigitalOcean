@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, Plus, Trash2, Eye, Save, Send } from 'lucide-react';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Question {
   questionText: string;
@@ -14,6 +15,7 @@ interface Question {
 }
 
 export default function CreateTask() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [, setLocation] = useLocation();
   
   const [step, setStep] = useState(1);
@@ -567,7 +569,7 @@ export default function CreateTask() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Reward per Completion (ج.م) *
+                    Reward per Completion (${symbol}) *
                   </label>
                   <input
                     id="reward"
@@ -605,11 +607,11 @@ export default function CreateTask() {
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span>Total Budget:</span>
-                    <span className="font-semibold">{budget.total.toFixed(2)} ج.م</span>
+                    <span className="font-semibold">{budget.total.toFixed(2)} {symbol}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Minimum Required (20%):</span>
-                    <span className="font-semibold">{budget.minimum.toFixed(2)} ج.م</span>
+                    <span className="font-semibold">{budget.minimum.toFixed(2)} {symbol}</span>
                   </div>
                 </div>
               </div>
@@ -754,7 +756,7 @@ export default function CreateTask() {
                   <dl className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <dt className="text-gray-600 dark:text-gray-400">Reward:</dt>
-                      <dd className="font-medium">{reward} ج.م</dd>
+                      <dd className="font-medium">{reward} {symbol}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-gray-600 dark:text-gray-400">Completions:</dt>
@@ -762,7 +764,7 @@ export default function CreateTask() {
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-gray-600 dark:text-gray-400">Total Budget:</dt>
-                      <dd className="font-semibold text-lg">{budget.total.toFixed(2)} ج.م</dd>
+                      <dd className="font-semibold text-lg">{budget.total.toFixed(2)} {symbol}</dd>
                     </div>
                   </dl>
                 </div>

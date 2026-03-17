@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, Award, Lock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Level {
   id: number;
@@ -33,6 +34,7 @@ interface LevelProgress {
 }
 
 export default function Levels() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [levels, setLevels] = useState<Level[]>([]);
   const [progress, setProgress] = useState<LevelProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,7 +121,7 @@ export default function Levels() {
                   <div className="bg-muted p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-1">Total Earnings</p>
                     <p className="text-2xl font-bold">
-                      {progress.progress.currentEarnings.toFixed(0)} / {progress.progress.requiredEarnings.toFixed(0)} EGP
+                      {progress.progress.currentEarnings.toFixed(0)} / {progress.progress.requiredEarnings.toFixed(0)} {symbol}
                     </p>
                   </div>
                 </div>
@@ -166,7 +168,7 @@ export default function Levels() {
                         )}
                       </CardTitle>
                       <CardDescription>
-                        {bonusPercent}% bonus rewards • {level.minTasks} tasks • {level.minEarnings} EGP earned
+                        {bonusPercent}% bonus rewards • {level.minTasks} tasks • {level.minEarnings} {symbol} earned
                       </CardDescription>
                     </div>
                   </div>
@@ -190,7 +192,7 @@ export default function Levels() {
                   <div className="mt-4 p-3 bg-muted rounded-lg">
                     <p className="text-sm font-medium">Requirements to unlock:</p>
                     <p className="text-sm text-muted-foreground">
-                      Complete {level.minTasks} tasks and earn {level.minEarnings} EGP total
+                      Complete {level.minTasks} tasks and earn {level.minEarnings} {symbol} total
                     </p>
                   </div>
                 )}

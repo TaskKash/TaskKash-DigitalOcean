@@ -15,12 +15,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface AdvertiserLayoutProps {
   children: React.ReactNode;
 }
 
 export default function AdvertiserLayout({ children }: AdvertiserLayoutProps) {
+  const { currency, symbol, formatAmount } = useCurrency();
   const { t, i18n } = useTranslation();
   const [location, setLocation] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -147,7 +149,7 @@ export default function AdvertiserLayout({ children }: AdvertiserLayoutProps) {
             <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
               <span className="text-sm text-gray-500">{isRTL ? 'الرصيد:' : 'Balance:'}</span>
               <span className="font-bold text-gray-900">
-                {isRTL ? `ج.م ${(advertiser.balance / 100).toFixed(2)}` : `EGP ${(advertiser.balance / 100).toFixed(2)}`}
+                {isRTL ? `${symbol} ${(advertiser.balance / 100).toFixed(2)}` : `${symbol} ${(advertiser.balance / 100).toFixed(2)}`}
               </span>
             </div>
             <Button size="sm" onClick={() => setLocation('/advertiser/campaigns/new')} className="bg-blue-600 hover:bg-blue-700">

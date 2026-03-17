@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { 
   Search, Eye, Ban, CheckCircle2, Mail, Download, Building2
 } from 'lucide-react';
@@ -17,6 +18,7 @@ const advertisers = [
 ];
 
 export default function AdvertisersManagement() {
+  const { currency, symbol, formatAmount } = useCurrency();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -61,7 +63,7 @@ export default function AdvertisersManagement() {
           </Card>
           <Card className="p-6">
             <p className="text-sm text-muted-foreground mb-1">إجمالي الإنفاق</p>
-            <p className="text-3xl font-bold text-secondary">4.58M ج.م</p>
+            <p className="text-3xl font-bold text-secondary">4.58M {symbol}</p>
           </Card>
           <Card className="p-6">
             <p className="text-sm text-muted-foreground mb-1">الحملات النشطة</p>
@@ -143,7 +145,7 @@ export default function AdvertisersManagement() {
                   <td className="p-4 text-muted-foreground">{adv.phone}</td>
                   <td className="p-4">{adv.campaigns}</td>
                   <td className="p-4">
-                    <span className="font-semibold">{adv.spent.toLocaleString()} ج.م</span>
+                    <span className="font-semibold">{adv.spent.toLocaleString()} {symbol}</span>
                   </td>
                   <td className="p-4">{getStatusBadge(adv.status)}</td>
                   <td className="p-4 text-muted-foreground">{adv.joined}</td>
