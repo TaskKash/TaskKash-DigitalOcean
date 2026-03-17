@@ -195,17 +195,18 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     
     // Scale count to simulate the 100,000 user database requested
     const TARGET_DB_COUNT = 100000;
-    // We treat the current actual raw count (roughly 33,000) as reaching 100k when no filters are applied.
-    // Let's find out the max possible count.
-    const maxDbQuery = await query('SELECT COUNT(DISTINCT id) as cnt FROM users', []);
-    const DB_USER_COUNT = maxDbQuery[0]?.cnt || 1;
+    
+    // We treat the current actual eligible baseline (active verified users) as our benchmark for "100k".
+    // This perfectly aligns the "no filters" reach with exactly 100,000.
+    const maxDbQuery = await query("SELECT COUNT(DISTINCT id) as cnt FROM users WHERE kycStatus = 'verified'", []);
+    const ACTIVE_USER_COUNT = maxDbQuery[0]?.cnt || 1;
     
     // Scale count to simulate 100,000 baseline
-    const scaleFactor = TARGET_DB_COUNT / DB_USER_COUNT;
+    const scaleFactor = TARGET_DB_COUNT / ACTIVE_USER_COUNT;
     const scaledRawCount = Math.floor(rawCount * scaleFactor);
     
     const meetsMinimum = scaledRawCount >= 500;
-    // Cap at 100,000 to be perfectly accurate
+    // Cap at 100,000 to be perfectly accurate, even if there are slight decimal roundings
     const totalReach = roundReach(Math.min(TARGET_DB_COUNT, scaledRawCount));
 
     if (rawCount === 0) {
