@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Cookie, X, Settings2, Check } from 'lucide-react';
 
@@ -13,6 +14,7 @@ interface Preferences {
 }
 
 export default function CookieConsentBanner() {
+  const { t } = useTranslation();
   const [show, setShow] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [preferences, setPreferences] = useState<Preferences>({
@@ -61,22 +63,21 @@ export default function CookieConsentBanner() {
                 <Cookie className="w-5 h-5 text-amber-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 mb-1">We use cookies 🍪</h3>
+                <h3 className="font-semibold text-gray-900 mb-1">{t('cookie.title')}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">
-                  TaskKash uses cookies to enhance your experience, analyze performance, and show relevant content.
-                  We comply with <strong>GDPR</strong> and <strong>Egyptian PDPL (Law 82/2021)</strong>. You can manage your preferences anytime.
+                  {t('cookie.description')}
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 mt-4 justify-end">
               <Button variant="ghost" size="sm" className="text-gray-500 text-xs" onClick={() => setShowPreferences(true)}>
-                <Settings2 className="w-3.5 h-3.5 mr-1" /> Manage Preferences
+                <Settings2 className="w-3.5 h-3.5 mr-1" /> {t('cookie.managePreferences')}
               </Button>
               <Button variant="outline" size="sm" className="text-xs" onClick={rejectOptional}>
-                Reject Optional
+                {t('cookie.rejectOptional')}
               </Button>
               <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs" onClick={accept}>
-                <Check className="w-3.5 h-3.5 mr-1" /> Accept All
+                <Check className="w-3.5 h-3.5 mr-1" /> {t('cookie.acceptAll')}
               </Button>
             </div>
           </div>
@@ -84,14 +85,14 @@ export default function CookieConsentBanner() {
           /* Preferences Panel */
           <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Cookie Preferences</h3>
+              <h3 className="font-semibold text-gray-900">{t('cookie.preferences.title')}</h3>
               <button title="Close preferences" onClick={() => setShowPreferences(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
             </div>
             <div className="space-y-3">
               {[
-                { key: 'functional' as const, label: 'Functional Cookies', desc: 'Remember your language, region, and session settings.', required: false },
-                { key: 'analytics' as const, label: 'Analytics Cookies', desc: 'Help us understand how you use TaskKash (anonymous data only).', required: false },
-                { key: 'marketing' as const, label: 'Marketing Cookies', desc: 'Used to show you relevant campaign content and retargeting.', required: false },
+                { key: 'functional' as const, label: t('cookie.preferences.functional.title'), desc: t('cookie.preferences.functional.desc'), required: false },
+                { key: 'analytics' as const, label: t('cookie.preferences.analytics.title'), desc: t('cookie.preferences.analytics.desc'), required: false },
+                { key: 'marketing' as const, label: t('cookie.preferences.marketing.title'), desc: t('cookie.preferences.marketing.desc'), required: false },
               ].map(({ key, label, desc }) => (
                 <div key={key} className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg">
                   <div className="flex-1">
@@ -110,8 +111,8 @@ export default function CookieConsentBanner() {
               {/* Essential — always on */}
               <div className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-100 rounded-lg opacity-70">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800">Essential Cookies <span className="text-xs text-gray-400 ml-1">(Always Active)</span></p>
-                  <p className="text-xs text-gray-500 mt-0.5">Required for login, security, and basic platform functionality.</p>
+                  <p className="text-sm font-medium text-gray-800">{t('cookie.preferences.essential.title')} <span className="text-xs text-gray-400 ml-1">{t('cookie.preferences.essential.active')}</span></p>
+                  <p className="text-xs text-gray-500 mt-0.5">{t('cookie.preferences.essential.desc')}</p>
                 </div>
                 <div className="w-10 h-5 rounded-full bg-green-500 relative mt-0.5">
                   <span className="absolute top-0.5 left-5 w-4 h-4 bg-white rounded-full shadow" />
@@ -119,8 +120,8 @@ export default function CookieConsentBanner() {
               </div>
             </div>
             <div className="flex gap-2 mt-4 justify-end">
-              <Button variant="outline" size="sm" className="text-xs" onClick={rejectOptional}>Reject Optional</Button>
-              <Button size="sm" className="bg-primary text-white text-xs" onClick={savePreferences}>Save My Preferences</Button>
+              <Button variant="outline" size="sm" className="text-xs" onClick={rejectOptional}>{t('cookie.rejectOptional')}</Button>
+              <Button size="sm" className="bg-primary text-white text-xs" onClick={savePreferences}>{t('cookie.preferences.save')}</Button>
             </div>
           </div>
         )}

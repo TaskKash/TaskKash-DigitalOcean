@@ -655,6 +655,24 @@ const resources = {
       "profileComplete.cat.gaming": "ألعاب",
       "profileComplete.cat.beauty": "جمال",
       "profileComplete.cat.automotive": "سيارات",
+
+      // Cookie Consent Banner
+      "cookie.title": "نحن نستخدم ملفات تعريف الارتباط 🍪",
+      "cookie.description": "تستخدم تاسك كاش ملفات تعريف الارتباط لتحسين تجربتك، وتحليل الأداء، وعرض محتوى مخصص. نحن نلتزم باللائحة العامة لحماية البيانات (GDPR) وقانون حماية البيانات الشخصية المصري (رقم 82/2021). يمكنك إدارة تفضيلاتك في أي وقت.",
+      "cookie.managePreferences": "إدارة التفضيلات",
+      "cookie.rejectOptional": "رفض الاختياري",
+      "cookie.acceptAll": "قبول الكل",
+      "cookie.preferences.title": "تفضيلات ملفات تعريف الارتباط",
+      "cookie.preferences.functional.title": "ملفات وظيفية",
+      "cookie.preferences.functional.desc": "لحفظ إعدادات اللغة والمنطقة والجلسة الخاصة بك.",
+      "cookie.preferences.analytics.title": "ملفات تحليلية",
+      "cookie.preferences.analytics.desc": "تساعدنا على فهم كيفية استخدامك لتاسك كاش (بيانات مجهولة الهوية فقط).",
+      "cookie.preferences.marketing.title": "ملفات تسويقية",
+      "cookie.preferences.marketing.desc": "تُستخدم لعرض الحملات الإعلانية المناسبة لك.",
+      "cookie.preferences.essential.title": "ملفات أساسية",
+      "cookie.preferences.essential.active": "(دائماً مفعلة)",
+      "cookie.preferences.essential.desc": "ضرورية لتسجيل الدخول والأمان والوظائف الأساسية للمنصة.",
+      "cookie.preferences.save": "حفظ تفضيلاتي",
     }
   },
   en: {
@@ -1308,6 +1326,24 @@ const resources = {
       "profileComplete.cat.gaming": "Gaming",
       "profileComplete.cat.beauty": "Beauty",
       "profileComplete.cat.automotive": "Automotive",
+
+      // Cookie Consent Banner
+      "cookie.title": "We use cookies 🍪",
+      "cookie.description": "TaskKash uses cookies to enhance your experience, analyze performance, and show relevant content. We comply with GDPR and Egyptian PDPL (Law 82/2021). You can manage your preferences anytime.",
+      "cookie.managePreferences": "Manage Preferences",
+      "cookie.rejectOptional": "Reject Optional",
+      "cookie.acceptAll": "Accept All",
+      "cookie.preferences.title": "Cookie Preferences",
+      "cookie.preferences.functional.title": "Functional Cookies",
+      "cookie.preferences.functional.desc": "Remember your language, region, and session settings.",
+      "cookie.preferences.analytics.title": "Analytics Cookies",
+      "cookie.preferences.analytics.desc": "Help us understand how you use TaskKash (anonymous data only).",
+      "cookie.preferences.marketing.title": "Marketing Cookies",
+      "cookie.preferences.marketing.desc": "Used to show you relevant campaign content and retargeting.",
+      "cookie.preferences.essential.title": "Essential Cookies",
+      "cookie.preferences.essential.active": "(Always Active)",
+      "cookie.preferences.essential.desc": "Required for login, security, and basic platform functionality.",
+      "cookie.preferences.save": "Save My Preferences",
     }
   }
 };
