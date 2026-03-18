@@ -69,19 +69,19 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     }
     if (filters.cities && filters.cities.length > 0) {
       const placeholders = filters.cities.map(() => '?').join(', ');
-      conditions.push(`u.city IN (${placeholders})`);
+      conditions.push(`(u.city IN (${placeholders}) OR u.city IS NULL OR u.city = '')`);
       params.push(...filters.cities);
     }
     if (filters.districts && filters.districts.length > 0) {
       const placeholders = filters.districts.map(() => '?').join(', ');
-      conditions.push(`u.district IN (${placeholders})`);
+      conditions.push(`(u.district IN (${placeholders}) OR u.district IS NULL OR u.district = '')`);
       params.push(...filters.districts);
     }
 
     // CATEGORY 2: Financial & Income
     if (filters.incomeLevels && filters.incomeLevels.length > 0) {
       const placeholders = filters.incomeLevels.map(() => '?').join(', ');
-      conditions.push(`u.incomeLevel IN (${placeholders})`);
+      conditions.push(`(u.incomeLevel IN (${placeholders}) OR u.incomeLevel IS NULL OR u.incomeLevel = '')`);
       params.push(...filters.incomeLevels);
     }
     if (filters.homeOwnership) {
@@ -92,26 +92,26 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     // CATEGORY 3: Device & Connectivity
     if (filters.deviceTiers && filters.deviceTiers.length > 0) {
       const placeholders = filters.deviceTiers.map(() => '?').join(', ');
-      conditions.push(`up.deviceTier IN (${placeholders})`);
+      conditions.push(`(up.deviceTier IN (${placeholders}) OR up.deviceTier IS NULL OR up.deviceTier = '')`);
       params.push(...filters.deviceTiers);
     }
     if (filters.deviceOs) {
-      conditions.push('up.deviceOs = ?');
+      conditions.push('(up.deviceOs = ? OR up.deviceOs IS NULL OR up.deviceOs = \'\')');
       params.push(filters.deviceOs);
     }
     if (filters.networkCarriers && filters.networkCarriers.length > 0) {
       const placeholders = filters.networkCarriers.map(() => '?').join(', ');
-      conditions.push(`up.networkCarrier IN (${placeholders})`);
+      conditions.push(`(up.networkCarrier IN (${placeholders}) OR up.networkCarrier IS NULL OR up.networkCarrier = '')`);
       params.push(...filters.networkCarriers);
     }
     if (filters.deviceModels && filters.deviceModels.length > 0) {
       const placeholders = filters.deviceModels.map(() => '?').join(', ');
-      conditions.push(`up.deviceModel IN (${placeholders})`);
+      conditions.push(`(up.deviceModel IN (${placeholders}) OR up.deviceModel IS NULL OR up.deviceModel = '')`);
       params.push(...filters.deviceModels);
     }
     if (filters.connectionTypes && filters.connectionTypes.length > 0) {
       const placeholders = filters.connectionTypes.map(() => '?').join(', ');
-      conditions.push(`up.connectionType IN (${placeholders})`);
+      conditions.push(`(up.connectionType IN (${placeholders}) OR up.connectionType IS NULL OR up.connectionType = '')`);
       params.push(...filters.connectionTypes);
     }
 
@@ -121,21 +121,21 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     buildJsonContains('up.values', filters.values, filters.valuesMatchAll, conditions, params);
     if (filters.lifeStages && filters.lifeStages.length > 0) {
       const placeholders = filters.lifeStages.map(() => '?').join(', ');
-      conditions.push(`up.lifeStage IN (${placeholders})`);
+      conditions.push(`(up.lifeStage IN (${placeholders}) OR up.lifeStage IS NULL OR up.lifeStage = '')`);
       params.push(...filters.lifeStages);
     }
 
     // CATEGORY 5: Behavioral
     if (filters.shoppingFrequencies && filters.shoppingFrequencies.length > 0) {
       const placeholders = filters.shoppingFrequencies.map(() => '?').join(', ');
-      conditions.push(`up.shoppingFrequency IN (${placeholders})`);
+      conditions.push(`(up.shoppingFrequency IN (${placeholders}) OR up.shoppingFrequency IS NULL OR up.shoppingFrequency = '')`);
       params.push(...filters.shoppingFrequencies);
     }
     buildJsonContains('up.preferredStores', filters.preferredStores, filters.preferredStoresMatchAll, conditions, params);
     buildJsonContains('up.nextPurchaseIntent', filters.nextPurchaseIntent, filters.nextPurchaseIntentMatchAll, conditions, params);
     if (filters.activityPatterns && filters.activityPatterns.length > 0) {
       const placeholders = filters.activityPatterns.map(() => '?').join(', ');
-      conditions.push(`up.activityPattern IN (${placeholders})`);
+      conditions.push(`(up.activityPattern IN (${placeholders}) OR up.activityPattern IS NULL OR up.activityPattern = '')`);
       params.push(...filters.activityPatterns);
     }
 
@@ -146,12 +146,12 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     }
     if (filters.vehicleBrands && filters.vehicleBrands.length > 0) {
       const placeholders = filters.vehicleBrands.map(() => '?').join(', ');
-      conditions.push(`up.vehicleBrand IN (${placeholders})`);
+      conditions.push(`(up.vehicleBrand IN (${placeholders}) OR up.vehicleBrand IS NULL OR up.vehicleBrand = '')`);
       params.push(...filters.vehicleBrands);
     }
     if (filters.workTypes && filters.workTypes.length > 0) {
       const placeholders = filters.workTypes.map(() => '?').join(', ');
-      conditions.push(`up.workType IN (${placeholders})`);
+      conditions.push(`(up.workType IN (${placeholders}) OR up.workType IS NULL OR up.workType = '')`);
       params.push(...filters.workTypes);
     }
     if (filters.householdSizeMin) { conditions.push('up.householdSize >= ?'); params.push(filters.householdSizeMin); }
@@ -169,7 +169,7 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     // Specific exact tiers selected via array
     if (filters.tiers && filters.tiers.length > 0) {
       const placeholders = filters.tiers.map(() => '?').join(', ');
-      conditions.push(`u.tier IN (${placeholders})`);
+      conditions.push(`(u.tier IN (${placeholders}) OR u.tier IS NULL OR u.tier = '')`);
       params.push(...filters.tiers);
     }
     if (filters.profileStrengthMin) {
