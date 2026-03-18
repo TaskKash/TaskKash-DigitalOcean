@@ -218,7 +218,11 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
           byTier: { bronze: 0, silver: 0, gold: 0, platinum: 0 },
           byCountry: {},
           byGender: { male: 0, female: 0 },
-          byDeviceTier: { A: 0, B: 0, C: 0 }
+          byDeviceTier: { A: 0, B: 0, C: 0 },
+          byCarrier: {},
+          byBrand: {},
+          byIncomeLevel: {},
+          byWorkType: {}
         }
       });
     }
@@ -247,6 +251,30 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     const byDeviceTier: any = { A: 0, B: 0, C: 0 };
     deviceTierResult.forEach((r: any) => { if (r.deviceTier) byDeviceTier[r.deviceTier] = Math.floor(r.cnt * scaleFactor); });
 
+    // Carrier Breakdown
+    const carrierSql = `SELECT up.networkCarrier, COUNT(DISTINCT u.id) as cnt FROM users u LEFT JOIN userProfiles up ON u.id = up.userId WHERE ${whereClause} AND up.networkCarrier IS NOT NULL GROUP BY up.networkCarrier`;
+    const carrierResult = await query(carrierSql, params);
+    const byCarrier: any = {};
+    carrierResult.forEach((r: any) => { if (r.networkCarrier) byCarrier[r.networkCarrier] = Math.floor(r.cnt * scaleFactor); });
+
+    // Device Brand Breakdown
+    const brandSql = `SELECT up.deviceBrand, COUNT(DISTINCT u.id) as cnt FROM users u LEFT JOIN userProfiles up ON u.id = up.userId WHERE ${whereClause} AND up.deviceBrand IS NOT NULL GROUP BY up.deviceBrand`;
+    const brandResult = await query(brandSql, params);
+    const byBrand: any = {};
+    brandResult.forEach((r: any) => { if (r.deviceBrand) byBrand[r.deviceBrand] = Math.floor(r.cnt * scaleFactor); });
+
+    // Income Level Breakdown
+    const incomeSql = `SELECT u.incomeLevel, COUNT(DISTINCT u.id) as cnt FROM users u LEFT JOIN userProfiles up ON u.id = up.userId WHERE ${whereClause} AND u.incomeLevel IS NOT NULL GROUP BY u.incomeLevel`;
+    const incomeResult = await query(incomeSql, params);
+    const byIncomeLevel: any = {};
+    incomeResult.forEach((r: any) => { if (r.incomeLevel) byIncomeLevel[r.incomeLevel] = Math.floor(r.cnt * scaleFactor); });
+
+    // Work Type Breakdown
+    const workTypeSql = `SELECT up.workType, COUNT(DISTINCT u.id) as cnt FROM users u LEFT JOIN userProfiles up ON u.id = up.userId WHERE ${whereClause} AND up.workType IS NOT NULL GROUP BY up.workType`;
+    const workTypeResult = await query(workTypeSql, params);
+    const byWorkType: any = {};
+    workTypeResult.forEach((r: any) => { if (r.workType) byWorkType[r.workType] = Math.floor(r.cnt * scaleFactor); });
+
     // Country Breakdown
     const countrySql = `
       SELECT c.code, COUNT(DISTINCT u.id) as cnt 
@@ -268,7 +296,11 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
         byTier,
         byCountry,
         byGender,
-        byDeviceTier
+        byDeviceTier,
+        byCarrier,
+        byBrand,
+        byIncomeLevel,
+        byWorkType
       }
     });
 

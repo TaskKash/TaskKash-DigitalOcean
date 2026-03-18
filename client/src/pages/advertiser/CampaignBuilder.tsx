@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useApp } from '@/contexts/AppContext';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +21,13 @@ import {
 
 const COUNTRIES = ['Egypt', 'Saudi Arabia', 'United Arab Emirates', 'Kuwait', 'Qatar'];
 const DEVICE_BRANDS = ['Samsung', 'Apple', 'Xiaomi', 'Huawei', 'Google', 'Oppo', 'Vivo', 'Realme', 'Nokia', 'OnePlus'];
-const CARRIERS = ['Vodafone', 'Orange', 'Etisalat', 'WE', 'STC', 'Zain', 'Mobily', 'du', 'Ooredoo'];
+const CARRIERS_BY_COUNTRY: Record<string, string[]> = {
+  'Egypt': ['Vodafone', 'Orange', 'Etisalat', 'WE'],
+  'Saudi Arabia': ['STC', 'Zain', 'Mobily'],
+  'United Arab Emirates': ['du', 'Etisalat UAE'],
+  'Kuwait': ['Zain', 'Ooredoo', 'stc'],
+  'Qatar': ['Ooredoo', 'Vodafone Qatar']
+};
 const INTERESTS = ['Technology', 'Fashion', 'Sports', 'Gaming', 'Travel', 'Food & Dining', 'Health & Fitness', 'Finance & Investing', 'Automotive', 'Beauty & Cosmetics', 'Real Estate', 'Education', 'Entertainment', 'Photography'];
 const PURCHASE_INTENTS = ['Smartphone', 'TV', 'Laptop', 'Car', 'Home Appliances', 'Fashion', 'Travel & Tourism', 'Real Estate', 'Furniture', 'Electronics'];
 const VEHICLE_BRANDS = ['Toyota', 'Hyundai', 'Kia', 'Nissan', 'BMW', 'Mercedes', 'Volkswagen', 'Ford', 'Chevrolet', 'Honda', 'Suzuki', 'Mitsubishi'];
@@ -55,19 +60,42 @@ const STEPS = [
   { id: 4, title: 'Review & Launch', icon: Rocket },
 ];
 
+const SelectAllControls = ({ options, current, onChange }: { options: string[], current: string[], onChange: (val: string[]) => void }) => (
+  <div className="flex gap-3 mb-3 mt-1">
+    <button type="button" onClick={() => onChange(options)} className="text-xs font-semibold text-blue-600 hover:text-blue-800 justify-center flex items-center gap-1"><Check className="w-3 h-3" /> Select All</button>
+    <button type="button" onClick={() => onChange([])} className="text-xs font-semibold text-gray-500 hover:text-gray-800 justify-center flex items-center gap-1"><XIcon className="w-3 h-3" /> Clear All</button>
+  </div>
+);
+
+const showOption = (dict: Record<string, number>, key: string) => {
+  if (!dict || Object.keys(dict).length === 0) return true;
+  return (dict[key] || 0) > 0;
+};
+
 export default function CampaignBuilder() {
   const [, setLocation] = useLocation();
   const { user } = useApp();
-  const symbol = user?.currency || 'USD';
 
   const [step, setStep] = useState(1);
   const [advertiserTier, setAdvertiserTier] = useState('basic');
+  const [advertiserCountry, setAdvertiserCountry] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [launched, setLaunched] = useState(false);
 
+  const symbol = advertiserCountry === 'Egypt' ? 'EGP' : (user?.currency || 'USD');
+
   const [reachData, setReachData] = useState({
     totalReach: 0, rawCount: 0, meetsMinimum: true,
-    breakdown: { byTier: { bronze: 0, silver: 0, gold: 0, platinum: 0 }, byGender: { male: 0, female: 0 }, byDeviceTier: { A: 0, B: 0, C: 0 } }
+    breakdown: { 
+      byTier: {} as Record<string, number>, 
+      byGender: {} as Record<string, number>, 
+      byDeviceTier: {} as Record<string, number>,
+      byCarrier: {} as Record<string, number>,
+      byBrand: {} as Record<string, number>,
+      byIncomeLevel: {} as Record<string, number>,
+      byWorkType: {} as Record<string, number>,
+      byCountry: {} as Record<string, number>
+    }
   });
   const [isCalculating, setIsCalculating] = useState(false);
 
@@ -118,7 +146,11 @@ export default function CampaignBuilder() {
 
   useEffect(() => {
     const info = localStorage.getItem('advertiser-info');
-    if (info) setAdvertiserTier(JSON.parse(info).tier || 'basic');
+    if (info) {
+      const parsed = JSON.parse(info);
+      setAdvertiserTier(parsed.tier || 'basic');
+      if (parsed.country) setAdvertiserCountry(parsed.country);
+    }
   }, []);
 
   useEffect(() => {
@@ -147,6 +179,10 @@ export default function CampaignBuilder() {
       const next = arr.includes(value) ? arr.filter(i => i !== value) : [...arr, value];
       return { ...prev, targeting: { ...prev.targeting, [key]: next } };
     });
+  };
+
+  const setTargetingArray = (key: keyof typeof campaign.targeting, values: string[]) => {
+    setCampaign(prev => ({ ...prev, targeting: { ...prev.targeting, [key]: values } }));
   };
 
   // Commission calculations
@@ -489,13 +525,13 @@ export default function CampaignBuilder() {
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-teal-100 rounded text-teal-600"><Globe className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">Geography & Location</span>
-                    {campaign.targeting.countries.length > 0 && <span className="ml-2 text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">{campaign.targeting.countries.length} selected</span>}
+                    <span className="font-semibold text-lg">1. Geography & Location</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 pb-6 space-y-4">
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Target Countries</Label>
+                    <SelectAllControls options={COUNTRIES} current={campaign.targeting.countries} onChange={v => setTargetingArray('countries', v)} />
                     <div className="flex flex-wrap gap-2">
                       {COUNTRIES.map(c => (
                         <label key={c} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.countries.includes(c) ? 'bg-teal-50 border-teal-500' : 'bg-white hover:bg-gray-50'}`}>
@@ -512,14 +548,17 @@ export default function CampaignBuilder() {
                         Please select at least one country first to view cities.
                       </div>
                     ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {campaign.targeting.countries.flatMap(country => CITIES_BY_COUNTRY[country] || []).map(city => (
-                          <label key={city} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.cities.includes(city) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
-                            <Checkbox checked={campaign.targeting.cities.includes(city)} onCheckedChange={() => toggleArrayItem('cities', city)} />
-                            <span>{city}</span>
-                          </label>
-                        ))}
-                      </div>
+                      <>
+                        <SelectAllControls options={campaign.targeting.countries.flatMap(country => CITIES_BY_COUNTRY[country] || [])} current={campaign.targeting.cities} onChange={v => setTargetingArray('cities', v)} />
+                        <div className="flex flex-wrap gap-2">
+                          {campaign.targeting.countries.flatMap(country => CITIES_BY_COUNTRY[country] || []).map(city => (
+                            <label key={city} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.cities.includes(city) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
+                              <Checkbox checked={campaign.targeting.cities.includes(city)} onCheckedChange={() => toggleArrayItem('cities', city)} />
+                              <span>{city}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </>
                     )}
                   </div>
                 </AccordionContent>
@@ -532,7 +571,7 @@ export default function CampaignBuilder() {
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 rounded text-blue-600"><Users className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">1. Demographics</span>
+                    <span className="font-semibold text-lg">2. Demographics</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 pb-6 space-y-4">
@@ -561,14 +600,15 @@ export default function CampaignBuilder() {
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-100 rounded text-green-600"><DollarSign className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">2. Financial & Income</span>
+                    <span className="font-semibold text-lg">3. Financial & Income</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 pb-6 space-y-4">
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Income Level Segments</Label>
+                    <SelectAllControls options={INCOME_LEVELS.filter(inc => showOption(reachData.breakdown.byIncomeLevel, inc))} current={campaign.targeting.incomeLevels} onChange={v => setTargetingArray('incomeLevels', v)} />
                     <div className="flex flex-wrap gap-2">
-                      {INCOME_LEVELS.map(inc => (
+                      {INCOME_LEVELS.filter(inc => showOption(reachData.breakdown.byIncomeLevel, inc)).map(inc => (
                         <label key={inc} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.incomeLevels.includes(inc) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
                           <Checkbox checked={campaign.targeting.incomeLevels.includes(inc)} onCheckedChange={() => toggleArrayItem('incomeLevels', inc)} />
                           <span className="capitalize">{inc.replace('_', ' ')}</span>
@@ -595,12 +635,13 @@ export default function CampaignBuilder() {
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-pink-100 rounded text-pink-600"><Activity className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">3. Psychographics & Interests</span>
+                    <span className="font-semibold text-lg">4. Psychographics & Interests</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 pb-6">
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Primary Interests</Label>
+                    <SelectAllControls options={INTERESTS} current={campaign.targeting.interests} onChange={v => setTargetingArray('interests', v)} />
                     <div className="flex flex-wrap gap-2">
                       {INTERESTS.map(int => (
                         <label key={int} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.interests.includes(int) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
@@ -620,14 +661,15 @@ export default function CampaignBuilder() {
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 rounded text-purple-600"><Monitor className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">4. Technology & Devices</span>
+                    <span className="font-semibold text-lg">5. Technology & Devices</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 pb-6 space-y-4">
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Device Brands</Label>
+                    <SelectAllControls options={DEVICE_BRANDS.filter(brand => showOption(reachData.breakdown.byBrand, brand))} current={campaign.targeting.deviceBrands} onChange={v => setTargetingArray('deviceBrands', v)} />
                     <div className="flex flex-wrap gap-2">
-                      {DEVICE_BRANDS.map(brand => (
+                      {DEVICE_BRANDS.filter(brand => showOption(reachData.breakdown.byBrand, brand)).map(brand => (
                         <label key={brand} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.deviceBrands.includes(brand) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
                           <Checkbox checked={campaign.targeting.deviceBrands.includes(brand)} onCheckedChange={() => toggleArrayItem('deviceBrands', brand)} />
                           <span>{brand}</span>
@@ -637,15 +679,26 @@ export default function CampaignBuilder() {
                   </div>
                   <div className="border-t pt-4 grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="mb-2 block">Network Carriers</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {CARRIERS.map(carrier => (
-                          <label key={carrier} className={`flex items-center gap-1 px-2 py-1 border rounded cursor-pointer text-xs ${campaign.targeting.networkCarriers.includes(carrier) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
-                            <Checkbox checked={campaign.targeting.networkCarriers.includes(carrier)} onCheckedChange={() => toggleArrayItem('networkCarriers', carrier)} className="w-3 h-3" />
-                            <span>{carrier}</span>
-                          </label>
-                        ))}
-                      </div>
+                      <Label className="mb-2 block">Network Carriers (Based on Target Countries)</Label>
+                      {campaign.targeting.countries.length === 0 ? (
+                        <div className="text-sm text-gray-500 italic bg-gray-50 p-2 rounded border">
+                          Please select countries first.
+                        </div>
+                      ) : (
+                        <>
+                          <SelectAllControls options={campaign.targeting.countries.flatMap(c => CARRIERS_BY_COUNTRY[c] || []).filter(c => showOption(reachData.breakdown.byCarrier, c))} current={campaign.targeting.networkCarriers} onChange={v => setTargetingArray('networkCarriers', v)} />
+                          <div className="flex flex-wrap gap-2">
+                            {campaign.targeting.countries.flatMap(c => CARRIERS_BY_COUNTRY[c] || [])
+                              .filter(carrier => showOption(reachData.breakdown.byCarrier, carrier))
+                              .map(carrier => (
+                              <label key={carrier} className={`flex items-center gap-1 px-2 py-1 border rounded cursor-pointer text-xs ${campaign.targeting.networkCarriers.includes(carrier) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
+                                <Checkbox checked={campaign.targeting.networkCarriers.includes(carrier)} onCheckedChange={() => toggleArrayItem('networkCarriers', carrier)} className="w-3 h-3" />
+                                <span>{carrier}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </div>
                     <div>
                       <Label className="mb-2 block">Connection Type</Label>
@@ -667,12 +720,13 @@ export default function CampaignBuilder() {
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-rose-100 rounded text-rose-600"><Tag className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">5. Shopping, Work & Life Stage</span>
+                    <span className="font-semibold text-lg">6. Shopping, Work & Life Stage</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 pb-6 space-y-4">
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Purchase Intents</Label>
+                    <SelectAllControls options={PURCHASE_INTENTS} current={campaign.targeting.nextPurchaseIntent || []} onChange={v => setTargetingArray('nextPurchaseIntent', v)} />
                     <div className="flex flex-wrap gap-2">
                       {PURCHASE_INTENTS.map(intent => (
                         <label key={intent} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.nextPurchaseIntent?.includes(intent) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
@@ -684,6 +738,7 @@ export default function CampaignBuilder() {
                   </div>
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Life Stages</Label>
+                    <SelectAllControls options={LIFE_STAGES} current={campaign.targeting.lifeStages || []} onChange={v => setTargetingArray('lifeStages', v)} />
                     <div className="flex flex-wrap gap-2">
                       {LIFE_STAGES.map(stage => (
                         <label key={stage} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.lifeStages?.includes(stage) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
@@ -695,8 +750,9 @@ export default function CampaignBuilder() {
                   </div>
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Work Types</Label>
+                    <SelectAllControls options={WORK_TYPES.filter(w => showOption(reachData.breakdown.byWorkType, w))} current={campaign.targeting.workTypes || []} onChange={v => setTargetingArray('workTypes', v)} />
                     <div className="flex flex-wrap gap-2">
-                      {WORK_TYPES.map(work => (
+                      {WORK_TYPES.filter(w => showOption(reachData.breakdown.byWorkType, w)).map(work => (
                         <label key={work} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.workTypes?.includes(work) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
                           <Checkbox checked={campaign.targeting.workTypes?.includes(work)} onCheckedChange={() => toggleArrayItem('workTypes', work)} />
                           <span>{work.replace(/_/g, ' ')}</span>
@@ -714,15 +770,16 @@ export default function CampaignBuilder() {
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-yellow-100 rounded text-yellow-600"><Crown className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">6. Engagement & Trust Tiers</span>
+                    <span className="font-semibold text-lg">7. Engagement & Trust Tiers</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 pb-6 space-y-4">
                   <div className="grid md:grid-cols-2 gap-8 border-t pt-4">
                     <div>
                       <Label className="mb-2 block">Target User Tiers</Label>
+                      <SelectAllControls options={['bronze', 'silver', 'gold', 'platinum'].filter(t => showOption(reachData.breakdown.byTier, t))} current={campaign.targeting.tiers} onChange={v => setTargetingArray('tiers', v)} />
                       <div className="flex gap-2 flex-wrap">
-                        {['bronze', 'silver', 'gold', 'platinum'].map(t => (
+                        {['bronze', 'silver', 'gold', 'platinum'].filter(t => showOption(reachData.breakdown.byTier, t)).map(t => (
                           <label key={t} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.tiers.includes(t) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
                             <Checkbox checked={campaign.targeting.tiers.includes(t)} onCheckedChange={() => toggleArrayItem('tiers', t)} />
                             <span>{t}</span>
