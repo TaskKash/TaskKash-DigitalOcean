@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useApp } from '@/contexts/AppContext';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
@@ -55,6 +57,9 @@ const STEPS = [
 
 export default function CampaignBuilder() {
   const [, setLocation] = useLocation();
+  const { user } = useApp();
+  const symbol = user?.currency || 'USD';
+
   const [step, setStep] = useState(1);
   const [advertiserTier, setAdvertiserTier] = useState('basic');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,12 +80,13 @@ export default function CampaignBuilder() {
     // Content (Step 3)
     videoUrl: '',
     minWatchPercent: 80,
-    quizQuestion: '',
-    quizOptionA: '',
-    quizOptionB: '',
-    quizOptionC: '',
-    quizOptionD: '',
-    correctAnswer: 'A',
+    quizQuestions: [
+      {
+        question: '',
+        options: { A: '', B: '', C: '', D: '' },
+        correctAnswer: 'A'
+      }
+    ],
     targeting: {
       countries: [] as string[], cities: [] as string[], districts: [] as string[],
       ageMin: '' as any, ageMax: '' as any, gender: 'all' as 'all' | 'male' | 'female',
@@ -145,11 +151,17 @@ export default function CampaignBuilder() {
 
   // Commission calculations
   const commissionRate = TIER_COMMISSION[advertiserTier] ?? 0.10;
-  const rewardPerTask = campaign.reward;
-  const commissionPerTask = rewardPerTask * commissionRate;
+  
+  // The advertiser inputs the Total Campaign Budget and Target Completions
+  const totalCampaignCost = campaign.totalBudget || 0;
+  
+  // totalCampaignCost = RewardBudget * (1 + commissionRate)
+  const rewardBudget = totalCampaignCost / (1 + commissionRate);
+  const totalCommission = totalCampaignCost - rewardBudget;
+  
+  const rewardPerTask = rewardBudget / (campaign.completionsNeeded || 1);
+  const commissionPerTask = totalCommission / (campaign.completionsNeeded || 1);
   const totalCostPerTask = rewardPerTask + commissionPerTask;
-  const totalCampaignCost = totalCostPerTask * campaign.completionsNeeded;
-  const totalCommission = commissionPerTask * campaign.completionsNeeded;
 
   const handleNext = () => setStep(p => Math.min(p + 1, 4));
   const handleBack = () => setStep(p => Math.max(p - 1, 1));
@@ -159,8 +171,9 @@ export default function CampaignBuilder() {
       toast.error('Audience is below 500 minimum threshold.');
       return;
     }
-    if (!campaign.titleEn || !campaign.videoUrl || !campaign.quizQuestion) {
-      toast.error('Please complete all required fields (title, video URL, quiz question).');
+    const hasIncompleteQuestions = campaign.quizQuestions.some(q => !q.question || !q.options.A || !q.options.B);
+    if (!campaign.titleEn || !campaign.videoUrl || hasIncompleteQuestions) {
+      toast.error('Please complete all required fields (title, video URL, all quiz questions with at least 2 options).');
       return;
     }
     setIsSubmitting(true);
@@ -174,14 +187,12 @@ export default function CampaignBuilder() {
           titleAr: campaign.titleAr,
           description: campaign.descriptionEn,
           type: 'video',
-          reward: campaign.reward,
+          reward: rewardPerTask,
           totalBudget: totalCampaignCost,
           completionsNeeded: campaign.completionsNeeded,
           videoUrl: campaign.videoUrl,
           minWatchPercent: campaign.minWatchPercent,
-          quizQuestion: campaign.quizQuestion,
-          quizOptions: { A: campaign.quizOptionA, B: campaign.quizOptionB, C: campaign.quizOptionC, D: campaign.quizOptionD },
-          correctAnswer: campaign.correctAnswer,
+          quizQuestions: campaign.quizQuestions,
           targeting: campaign.targeting,
           status: 'pending_review',
         })
@@ -218,9 +229,9 @@ export default function CampaignBuilder() {
             <p className="text-xs text-amber-700">Your campaign is in the moderation queue. Typical review time is 1–4 hours. Once approved, it will be distributed to your target audience automatically.</p>
           </div>
           <div className="bg-gray-50 border rounded-lg p-4 mb-6 text-left space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-gray-500">Campaign Budget</span><span className="font-semibold">${totalCampaignCost.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Reward per Tasker</span><span className="font-semibold">${rewardPerTask.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">TaskKash Commission</span><span className="font-semibold text-blue-600">${totalCommission.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Campaign Budget</span><span className="font-semibold">{totalCampaignCost.toFixed(2)} {symbol}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Reward per Tasker</span><span className="font-semibold">{rewardPerTask.toFixed(2)} {symbol}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">TaskKash Commission</span><span className="font-semibold text-blue-600">{totalCommission.toFixed(2)} {symbol}</span></div>
             <div className="flex justify-between border-t pt-2 mt-2"><span className="font-semibold">Target Completions</span><span className="font-bold">{campaign.completionsNeeded}</span></div>
           </div>
           
@@ -269,19 +280,19 @@ export default function CampaignBuilder() {
       <div className="space-y-3 text-sm">
         <div className="flex justify-between items-center">
           <span className="text-gray-600">Reward per completion</span>
-          <span className="font-semibold">${rewardPerTask.toFixed(2)}</span>
+          <span className="font-semibold">{rewardPerTask.toFixed(2)} {symbol}</span>
         </div>
         <div className="flex justify-between items-center text-blue-600">
           <span>TaskKash commission ({(commissionRate * 100).toFixed(0)}%)</span>
-          <span className="font-semibold">+${commissionPerTask.toFixed(2)}</span>
+          <span className="font-semibold">{commissionPerTask.toFixed(2)} {symbol}</span>
         </div>
         <div className="flex justify-between items-center border-t border-blue-200 pt-3">
-          <span className="text-gray-600">Cost per completion</span>
-          <span className="font-bold">${totalCostPerTask.toFixed(2)}</span>
+          <span className="text-gray-600">Total cost per completion</span>
+          <span className="font-bold">{totalCostPerTask.toFixed(2)} {symbol}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-600">× {campaign.completionsNeeded} completions</span>
-          <span className="font-bold text-lg text-blue-700">${totalCampaignCost.toFixed(2)}</span>
+          <span className="font-bold text-lg text-blue-700">{totalCampaignCost.toFixed(2)} {symbol}</span>
         </div>
         <div className="bg-white rounded-lg p-3 border border-blue-200 text-xs text-gray-500 mt-2">
           💡 Full budget is escrowed on launch. You are only charged per verified completion.
@@ -307,8 +318,8 @@ export default function CampaignBuilder() {
             <span className="font-bold text-sm text-gray-800">Task Preview</span>
           </div>
           <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-0 flex items-center gap-1">
-            <DollarSign className="w-3 h-3" />
-            {(rewardPerTask * 0.9).toFixed(2)}
+            <span className="font-bold leading-none">{symbol === 'EGP' ? 'ج.م' : '$'}</span>
+            {rewardPerTask.toFixed(2)}
           </Badge>
         </div>
         
@@ -348,15 +359,15 @@ export default function CampaignBuilder() {
           
             <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm opacity-80 pointer-events-none">
               <h3 className="font-bold text-sm text-gray-800 mb-2 flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-blue-500" /> Completion Quiz
+                <HelpCircle className="w-4 h-4 text-blue-500" /> Completion Quiz ({campaign.quizQuestions.length} Qs)
               </h3>
-              <p className="text-sm text-gray-700 mb-3 font-medium">{campaign.quizQuestion || 'Users must answer this question to pass?'}</p>
+              <p className="text-sm text-gray-700 mb-3 font-medium">{campaign.quizQuestions[0]?.question || 'Users must answer questions to pass?'}</p>
               <div className="space-y-2">
-                {['A', 'B', 'C', 'D'].map((opt) => {
-                  const text = (campaign as any)[`quizOption${opt}`];
+                {(['A', 'B', 'C', 'D'] as const).map((opt) => {
+                  const text = campaign.quizQuestions[0]?.options[opt];
                   if (!text && opt !== 'A' && opt !== 'B') return null;
                   return (
-                    <div key={opt} className={`p-2 rounded border text-xs font-medium ${campaign.correctAnswer === opt ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-500 bg-gray-50'}`}>
+                    <div key={opt} className={`p-2 rounded border text-xs font-medium ${campaign.quizQuestions[0]?.correctAnswer === opt ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-500 bg-gray-50'}`}>
                       {text || `Answer option ${opt}`}
                     </div>
                   );
@@ -433,10 +444,10 @@ export default function CampaignBuilder() {
                   <Input dir="rtl" value={campaign.titleAr} onChange={e => setCampaign({ ...campaign, titleAr: e.target.value })} placeholder="مثال: جرب قهوتنا الجديدة" />
                 </div>
                 <div>
-                  <Label>Task Reward (USD per completion) *</Label>
+                  <Label>Campaign Budget ({symbol}) *</Label>
                   <div className="flex items-center gap-3">
-                    <Input type="number" min={1} value={campaign.reward} onChange={e => setCampaign({ ...campaign, reward: +e.target.value })} className="w-32" />
-                    <span className="text-sm text-gray-500">/ completion</span>
+                    <Input type="number" min={10} value={campaign.totalBudget} onChange={e => setCampaign({ ...campaign, totalBudget: +e.target.value })} className="w-32" />
+                    <span className="text-sm text-gray-500">Total spent</span>
                   </div>
                 </div>
                 <div>
@@ -603,13 +614,107 @@ export default function CampaignBuilder() {
               </AccordionItem>
             </Accordion>
 
+            {/* Technology & Devices */}
+            <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
+              <AccordionItem value="cat-tech" className="border-b-0 px-6">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded text-purple-600"><Monitor className="w-4 h-4" /></div>
+                    <span className="font-semibold text-lg">4. Technology & Devices</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-6 space-y-4">
+                  <div className="border-t pt-4">
+                    <Label className="mb-2 block">Device Brands</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {DEVICE_BRANDS.map(brand => (
+                        <label key={brand} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.deviceBrands.includes(brand) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
+                          <Checkbox checked={campaign.targeting.deviceBrands.includes(brand)} onCheckedChange={() => toggleArrayItem('deviceBrands', brand)} />
+                          <span>{brand}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t pt-4 grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="mb-2 block">Network Carriers</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {CARRIERS.map(carrier => (
+                          <label key={carrier} className={`flex items-center gap-1 px-2 py-1 border rounded cursor-pointer text-xs ${campaign.targeting.networkCarriers.includes(carrier) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
+                            <Checkbox checked={campaign.targeting.networkCarriers.includes(carrier)} onCheckedChange={() => toggleArrayItem('networkCarriers', carrier)} className="w-3 h-3" />
+                            <span>{carrier}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="mb-2 block">Connection Type</Label>
+                      <div className="flex gap-2">
+                        {CONNECTION_TYPES.map((type) => (
+                          <button type="button" key={type} onClick={() => toggleArrayItem('connectionTypes', type)}
+                            className={`px-3 py-1 border rounded-md text-sm ${campaign.targeting.connectionTypes.includes(type) ? 'bg-primary text-white' : 'bg-gray-50'}`}>{type}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            {/* Shopping & Life Stage */}
+            <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
+              <AccordionItem value="cat-shopping" className="border-b-0 px-6">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-rose-100 rounded text-rose-600"><Tag className="w-4 h-4" /></div>
+                    <span className="font-semibold text-lg">5. Shopping, Work & Life Stage</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-6 space-y-4">
+                  <div className="border-t pt-4">
+                    <Label className="mb-2 block">Purchase Intents</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {PURCHASE_INTENTS.map(intent => (
+                        <label key={intent} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.nextPurchaseIntent?.includes(intent) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
+                          <Checkbox checked={campaign.targeting.nextPurchaseIntent?.includes(intent)} onCheckedChange={() => toggleArrayItem('nextPurchaseIntent', intent)} />
+                          <span>{intent}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t pt-4">
+                    <Label className="mb-2 block">Life Stages</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {LIFE_STAGES.map(stage => (
+                        <label key={stage} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.lifeStages?.includes(stage) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
+                          <Checkbox checked={campaign.targeting.lifeStages?.includes(stage)} onCheckedChange={() => toggleArrayItem('lifeStages', stage)} />
+                          <span>{stage.replace(/_/g, ' ')}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t pt-4">
+                    <Label className="mb-2 block">Work Types</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {WORK_TYPES.map(work => (
+                        <label key={work} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.workTypes?.includes(work) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
+                          <Checkbox checked={campaign.targeting.workTypes?.includes(work)} onCheckedChange={() => toggleArrayItem('workTypes', work)} />
+                          <span>{work.replace(/_/g, ' ')}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
             {/* Engagement Tiers */}
             <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
               <AccordionItem value="cat-7" className="border-b-0 px-6">
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-yellow-100 rounded text-yellow-600"><Crown className="w-4 h-4" /></div>
-                    <span className="font-semibold text-lg">4. Engagement & Trust Tiers</span>
+                    <span className="font-semibold text-lg">6. Engagement & Trust Tiers</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 pb-6 space-y-4">
@@ -712,36 +817,95 @@ export default function CampaignBuilder() {
               </Card>
 
               <Card className="p-6">
-                <div className="flex items-center gap-2 mb-5">
-                  <HelpCircle className="w-5 h-5 text-primary" />
-                  <h2 className="text-xl font-bold">Comprehension Quiz</h2>
-                  <span className="text-xs text-gray-400 ml-1">(proves they watched)</span>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="w-5 h-5 text-primary" />
+                    <h2 className="text-xl font-bold">Comprehension Quiz</h2>
+                    <span className="text-xs text-gray-400 ml-1">(proves they watched)</span>
+                  </div>
+                  {campaign.quizQuestions.length < 4 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCampaign(p => ({
+                        ...p, 
+                        quizQuestions: [...p.quizQuestions, { question: '', options: { A: '', B: '', C: '', D: '' }, correctAnswer: 'A' }] 
+                      }))}
+                    >
+                      + Add Question
+                    </Button>
+                  )}
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Quiz Question *</Label>
-                    <Textarea value={campaign.quizQuestion} onChange={e => setCampaign({ ...campaign, quizQuestion: e.target.value })} rows={2} placeholder="What is the main benefit shown in the video?" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {(['A', 'B', 'C', 'D'] as const).map(opt => (
-                      <div key={opt}>
-                        <Label className="flex items-center gap-2">
-                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${campaign.correctAnswer === opt ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>{opt}</span>
-                          Option {opt} {campaign.correctAnswer === opt && <span className="text-xs text-green-600 font-medium">(correct)</span>}
-                        </Label>
-                        <Input value={(campaign as any)[`quizOption${opt}`]} onChange={e => setCampaign({ ...campaign, [`quizOption${opt}`]: e.target.value } as any)} placeholder={`Answer option ${opt}`} />
+                
+                <div className="space-y-8">
+                  {campaign.quizQuestions.map((q, idx) => (
+                    <div key={idx} className="space-y-4 p-4 border rounded-xl bg-gray-50/50 relative">
+                      {campaign.quizQuestions.length > 1 && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => setCampaign(p => ({ ...p, quizQuestions: p.quizQuestions.filter((_, i) => i !== idx) }))}
+                        >
+                          <XIcon className="w-4 h-4" />
+                        </Button>
+                      )}
+                      
+                      <div>
+                        <Label>Question {idx + 1} *</Label>
+                        <Textarea 
+                          value={q.question} 
+                          onChange={(e) => {
+                            const newQ = [...campaign.quizQuestions];
+                            newQ[idx].question = e.target.value;
+                            setCampaign({ ...campaign, quizQuestions: newQ });
+                          }} 
+                          rows={2} 
+                          placeholder="What is the main benefit shown in the video?" 
+                        />
                       </div>
-                    ))}
-                  </div>
-                  <div>
-                    <Label>Correct Answer</Label>
-                    <div className="flex gap-2 mt-1">
-                      {(['A', 'B', 'C', 'D'] as const).map(opt => (
-                        <button key={opt} onClick={() => setCampaign({ ...campaign, correctAnswer: opt })}
-                          className={`w-10 h-10 rounded-full font-bold text-sm ${campaign.correctAnswer === opt ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{opt}</button>
-                      ))}
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        {(['A', 'B', 'C', 'D'] as const).map(opt => (
+                          <div key={opt}>
+                            <Label className="flex items-center gap-2">
+                              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${q.correctAnswer === opt ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}>{opt}</span>
+                              Option {opt} {q.correctAnswer === opt && <span className="text-xs text-green-600 font-medium">(correct)</span>}
+                            </Label>
+                            <Input 
+                              value={q.options[opt]} 
+                              onChange={(e) => {
+                                const newQ = [...campaign.quizQuestions];
+                                newQ[idx].options[opt] = e.target.value;
+                                setCampaign({ ...campaign, quizQuestions: newQ });
+                              }} 
+                              placeholder={`Answer option ${opt}`} 
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div>
+                        <Label>Correct Answer</Label>
+                        <div className="flex gap-2 mt-1">
+                          {(['A', 'B', 'C', 'D'] as const).map(opt => (
+                            <button 
+                              key={opt}
+                              type="button" 
+                              onClick={() => {
+                                const newQ = [...campaign.quizQuestions];
+                                newQ[idx].correctAnswer = opt;
+                                setCampaign({ ...campaign, quizQuestions: newQ });
+                              }}
+                              className={`w-10 h-10 rounded-full font-bold text-sm ${q.correctAnswer === opt ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </Card>
             </div>

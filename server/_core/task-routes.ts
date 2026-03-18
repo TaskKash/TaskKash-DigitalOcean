@@ -675,15 +675,35 @@ router.get('/tasks/:id', async (req, res) => {
 
     // Parse JSON fields
     const parsedConfig = task.config ? (typeof task.config === 'string' ? JSON.parse(task.config) : task.config) : {};
+    const parsedTaskData = task.taskData ? (typeof task.taskData === 'string' ? JSON.parse(task.taskData) : task.taskData) : {};
+
+    let allQuestions = surveyQuestions.length > 0 ? surveyQuestions : questions;
+    
+    // Support embedded quizQuestions from 'CampaignBuilder'
+    if (parsedTaskData && parsedTaskData.quizQuestions && Array.isArray(parsedTaskData.quizQuestions)) {
+      const embeddedQuestions = parsedTaskData.quizQuestions.map((q: any, i: number) => ({
+        id: i + 1000,
+        questionOrder: i + 1,
+        questionType: 'multiple_choice',
+        questionText: q.question,
+        questionTextAr: q.question, // Fallback
+        optionA: q.options?.A || '',
+        optionB: q.options?.B || '',
+        optionC: q.options?.C || '',
+        optionD: q.options?.D || '',
+        correctAnswer: q.correctAnswer
+      }));
+      allQuestions = allQuestions.concat(embeddedQuestions);
+    }
 
     const taskWithData = {
       ...task,
       targetLocations: task.targetLocations ? (typeof task.targetLocations === 'string' ? JSON.parse(task.targetLocations) : task.targetLocations) : null,
       targetTiers: task.targetTiers ? (typeof task.targetTiers === 'string' ? JSON.parse(task.targetTiers) : task.targetTiers) : null,
-      taskData: parsedConfig,
-      passingScore: parsedConfig.passingScore || 80,
-      minWatchPercentage: parsedConfig.minWatchPercentage || 80,
-      questions,
+      taskData: { ...parsedConfig, ...parsedTaskData },
+      passingScore: parsedConfig.passingScore || parsedTaskData.passingScore || 80,
+      minWatchPercentage: parsedConfig.minWatchPercentage || parsedTaskData.minWatchPercent || parsedTaskData.minWatchPercentage || 80,
+      questions: allQuestions,
       surveyQuestions
     };
 
@@ -773,6 +793,26 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
       }
     }
 
+    const parsedConfig = task.config ? (typeof task.config === 'string' ? JSON.parse(task.config) : task.config) : {};
+    const parsedTaskData = task.taskData ? (typeof task.taskData === 'string' ? JSON.parse(task.taskData) : task.taskData) : {};
+
+    // Support embedded quizQuestions from 'CampaignBuilder'
+    if (parsedTaskData && parsedTaskData.quizQuestions && Array.isArray(parsedTaskData.quizQuestions)) {
+      const embeddedQuestions = parsedTaskData.quizQuestions.map((q: any, i: number) => ({
+        id: i + 1000,
+        questionOrder: i + 1,
+        questionType: 'multiple_choice',
+        questionText: q.question,
+        questionTextAr: q.question,
+        optionA: q.options?.A || '',
+        optionB: q.options?.B || '',
+        optionC: q.options?.C || '',
+        optionD: q.options?.D || '',
+        correctAnswer: q.correctAnswer
+      }));
+      questions = questions.concat(embeddedQuestions);
+    }
+
     // Verify answers
     let correctCount = 0;
     const answerResults = questions.map((q: any, index: number) => {
@@ -789,8 +829,7 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
       };
     });
 
-    const parsedConfig = task.config ? (typeof task.config === 'string' ? JSON.parse(task.config) : task.config) : {};
-    const effectivePassingScore = parsedConfig.passingScore || 80;
+    const effectivePassingScore = parsedConfig.passingScore || parsedTaskData.passingScore || 80;
     const score = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 100;
     const passed = score >= effectivePassingScore;
 

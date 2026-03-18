@@ -11,6 +11,68 @@ const router = Router();
 // ============================================
 
 /**
+ * POST /api/campaigns - Create a new campaign from the builder
+ */
+router.post('/campaigns', async (req: Request, res: Response) => {
+  try {
+    const db = await getDb();
+    if (!db) return res.status(500).json({ error: 'Database not available' });
+
+    // Use req.user set by auth middleware
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    // Find the advertiser account for this user
+    const advertiserResult = await db.execute(sql`SELECT id FROM advertisers WHERE contactEmail = (SELECT email FROM users WHERE id = ${userId}) OR id = 1 LIMIT 1`);
+    const advertiserId = (advertiserResult[0] as any)[0]?.id || 1; // Fallback to advertiser 1 for testing
+
+    const {
+      titleEn, titleAr, descriptionEn, descriptionAr,
+      reward, budget, completionsNeeded, videoUrl,
+      minWatchPercent, quizQuestions, targeting, status
+    } = req.body;
+
+    // Insert into campaigns
+    const campaignResult = await db.execute(sql`
+      INSERT INTO campaigns (
+        advertiserId, nameEn, nameAr, descriptionEn, descriptionAr,
+        budget, reward, videoCompletionThreshold,
+        countryId, status, targetAgeMin, targetGender, targetLocations
+      ) VALUES (
+        ${advertiserId}, ${titleEn || ''}, ${titleAr || null}, ${descriptionEn || ''}, ${descriptionAr || null},
+        ${budget || 0}, ${reward || 0}, ${minWatchPercent || 70},
+        1, ${status || 'pending_review'}, ${targeting?.minAge || null}, ${targeting?.gender || 'all'}, ${JSON.stringify(targeting?.regions || [])}
+      )
+    `);
+    const campaignId = (campaignResult[0] as any).insertId;
+
+    // Insert a task and link it to the campaign
+    const taskResult = await db.execute(sql`
+      INSERT INTO tasks (
+        advertiserId, type, titleEn, titleAr, descriptionEn, descriptionAr,
+        reward, totalBudget, maxCompletions, duration, status, taskData
+      ) VALUES (
+        ${advertiserId}, 'video', ${titleEn || ''}, ${titleAr || null}, ${descriptionEn || ''}, ${descriptionAr || null},
+        ${reward || 0}, ${budget || 0}, ${completionsNeeded || 100}, 5, 'active',
+        ${JSON.stringify({ videoUrl, minWatchPercent, quizQuestions })}
+      )
+    `);
+    const taskId = (taskResult[0] as any).insertId;
+
+    await db.execute(sql`
+      INSERT INTO campaignTasks (campaignId, taskId, sequence, isRequired)
+      VALUES (${campaignId}, ${taskId}, 1, 1)
+    `);
+
+    res.json({ success: true, campaignId, taskId });
+  } catch (error) {
+    console.error('Error creating campaign:', error);
+    res.status(500).json({ error: 'Failed to create campaign' });
+  }
+});
+
+
+/**
  * GET /api/campaigns - Get all active campaigns
  */
 router.get('/campaigns', async (req: Request, res: Response) => {
