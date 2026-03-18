@@ -40,10 +40,42 @@ const CITIES_BY_COUNTRY: Record<string, string[]> = {
   'Kuwait': ['Kuwait City', 'Al Ahmadi', 'Hawalli', 'Salmiya', 'Jahra'],
   'Qatar': ['Doha', 'Al Rayyan', 'Al Wakrah', 'Al Khor']
 };
+// 3rd geo level: Neighborhood / District by City
+const DISTRICTS_BY_CITY: Record<string, string[]> = {
+  'Cairo': ['Maadi', 'Heliopolis', 'Zamalek', 'New Cairo', 'Nasr City', 'Dokki', 'Mohandiseen', 'Shubra', '6th of October', 'Ain Shams', 'Mattar', 'Haram', 'Rehab', 'Sheikh Zayed'],
+  'Alexandria': ['Smouha', 'Gleem', 'Stanley', 'Montazah', 'Agami', 'Sidi Bishr', 'Mandara', 'Sporting', 'Miami'],
+  'Giza': ['Dokki', 'Mohandiseen', 'Agouza', 'Imbaba', 'Haram', 'Faisal', 'October City'],
+  'Riyadh': ['Al Olaya', 'Al Malaz', 'Al Naseem', 'Al Rawdah', 'Diplomatic Quarter', 'Al Wurud'],
+  'Jeddah': ['Al Hamra', 'Al Andalus', 'Al Rawdah', 'Al Safa', 'Al Zahra', 'Obhur'],
+  'Dubai': ['Downtown', 'Marina', 'JBR', 'DIFC', 'Deira', 'Bur Dubai', 'Jumeirah', 'JLT', 'Business Bay', 'Palm Jumeirah'],
+  'Abu Dhabi': ['Corniche', 'Al Reem Island', 'Khalidiyah', 'Yas Island', 'Saadiyat Island'],
+  'Kuwait City': ['Salmiya', 'Rumaithiya', 'Bayan', 'Mishref', 'Abu Halifa'],
+  'Doha': ['The Pearl', 'West Bay', 'Al Sadd', 'Msheireb', 'Bin Mahmoud']
+};
+// Device models by brand for hyper-precise device targeting
+const DEVICE_MODELS_BY_BRAND: Record<string, string[]> = {
+  'Samsung': ['Galaxy S24 Ultra', 'Galaxy S24+', 'Galaxy S24', 'Galaxy S23', 'Galaxy A54', 'Galaxy A34', 'Galaxy A14', 'Galaxy M54', 'Galaxy Note 20', 'Galaxy Fold 5'],
+  'Apple': ['iPhone 15 Pro Max', 'iPhone 15 Pro', 'iPhone 15', 'iPhone 14 Pro', 'iPhone 14', 'iPhone 13', 'iPhone 12', 'iPhone SE'],
+  'Xiaomi': ['Xiaomi 14', 'Xiaomi 13T', 'Redmi Note 13', 'Redmi Note 12', 'Redmi 12', 'POCO X6', 'POCO F5'],
+  'Huawei': ['Huawei P60', 'Huawei Mate 60', 'Nova 11', 'Nova 10', 'Y90', 'Y70'],
+  'Google': ['Pixel 8 Pro', 'Pixel 8', 'Pixel 7a', 'Pixel 7', 'Pixel 6a'],
+  'Oppo': ['Oppo Find X7', 'Oppo Reno 10', 'Oppo A78', 'Oppo A58', 'Oppo A17'],
+  'Vivo': ['Vivo V30', 'Vivo V29', 'Vivo Y100', 'Vivo Y36', 'Vivo Y17s'],
+  'Realme': ['Realme 12 Pro', 'Realme 11 Pro', 'Realme C67', 'Realme C55'],
+  'Nokia': ['Nokia G42', 'Nokia G22', 'Nokia C32', 'Nokia XR20'],
+  'OnePlus': ['OnePlus 12', 'OnePlus 11', 'OnePlus Nord 3', 'OnePlus Nord CE 3']
+};
 const INCOME_LEVELS = ['low', 'lower_mid', 'mid', 'upper_mid', 'high'];
 const CONNECTION_TYPES = ['4G', '5G', 'WiFi', '3G'];
 const DEVICE_TIERS = ['A', 'B', 'C'];
 const SHOPPING_FREQS = ['daily', 'weekly', 'monthly', 'rarely'];
+const BRAND_AFFINITY = ['Apple', 'Samsung', 'Nike', 'Adidas', 'Zara', 'H&M', 'Amazon', 'Noon', 'Jumia', 'Carrefour', 'IKEA', 'Starbucks', "McDonald's", 'KFC', 'Pepsi', 'Coca-Cola', "L'Oréal", 'Unilever', 'Procter & Gamble', 'Vodafone'];
+const VALUES_LIST = ['Family First', 'Sustainability', 'Innovation', 'Health & Wellness', 'Education', 'Faith & Spirituality', 'Career Growth', 'Social Justice', 'Luxury & Prestige', 'Adventure', 'Minimalism', 'Community'];
+const PREFERRED_STORES = ['Jumia', 'Amazon', 'Noon', 'Carrefour', 'IKEA', 'H&M', 'Zara', 'Lulu Hypermarket', 'Spinneys', 'Talabat', 'Uber Eats', 'Shein', 'AliExpress'];
+const ACTIVITY_PATTERNS = ['night_owl', 'commuter', 'daytime'];
+const INDUSTRIES = ['Technology', 'Healthcare', 'Education', 'Finance & Banking', 'Retail & E-commerce', 'Manufacturing', 'Construction & Real Estate', 'Government', 'Media & Entertainment', 'Hospitality & Tourism', 'Transportation & Logistics', 'Agriculture', 'Telecommunications'];
+const JOB_TITLES = ['Engineer', 'Doctor', 'Teacher', 'Manager', 'Director', 'Accountant', 'Designer', 'Developer', 'Sales Representative', 'Marketing Specialist', 'Lawyer', 'Analyst', 'Consultant', 'Business Owner'];
+const HOME_OWNERSHIP = ['owner', 'renter'];
 
 // Commission rates by advertiser tier
 const TIER_COMMISSION: Record<string, number> = {
@@ -132,6 +164,8 @@ export default function CampaignBuilder() {
       hasVehicle: undefined as boolean | undefined,
       vehicleBrands: [] as string[],
       workTypes: [] as string[],
+      industries: [] as string[],
+      jobTitles: [] as string[],
       householdSizeMin: '' as any, householdSizeMax: '' as any,
       tierMin: '' as '' | 'bronze' | 'silver' | 'gold' | 'platinum',
       tiers: [] as string[],
@@ -167,6 +201,8 @@ export default function CampaignBuilder() {
         payload._knownLifeStages = LIFE_STAGES;
         payload._knownWorkTypes = WORK_TYPES;
         payload._knownPurchaseIntents = PURCHASE_INTENTS;
+        payload._knownIndustries = INDUSTRIES;
+        payload._knownJobTitles = JOB_TITLES;
         const res = await fetch('/api/advertiser/segments', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           credentials: 'include', body: JSON.stringify(payload)
@@ -566,6 +602,29 @@ export default function CampaignBuilder() {
                       </>
                     )}
                   </div>
+                  {/* Level 3 Geo: Districts shown when cities are selected */}
+                  {campaign.targeting.cities.length > 0 && (() => {
+                    const availableDistricts = campaign.targeting.cities.flatMap(city => DISTRICTS_BY_CITY[city] || []);
+                    return availableDistricts.length > 0 ? (
+                      <div className="border-t pt-4">
+                        <Label className="mb-1 block">Neighborhoods / Districts <span className="text-xs text-teal-600 font-medium ml-1 bg-teal-50 px-2 py-0.5 rounded-full">Hyper-Local</span></Label>
+                        <p className="text-xs text-gray-500 mb-3">Target specific neighborhoods within the selected cities.</p>
+                        <SelectAllControls options={availableDistricts} current={campaign.targeting.districts} onChange={v => setTargetingArray('districts', v)} />
+                        <div className="flex flex-wrap gap-2">
+                          {availableDistricts.map(district => (
+                            <label key={district} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer text-sm ${campaign.targeting.districts.includes(district) ? 'bg-teal-50 border-teal-500' : 'bg-white hover:bg-gray-50'}`}>
+                              <Checkbox checked={campaign.targeting.districts.includes(district)} onCheckedChange={() => toggleArrayItem('districts', district)} />
+                              <span>{district}</span>
+                            </label>
+                          ))}
+                          <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed text-sm ${campaign.targeting.districts.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                            <Checkbox checked={campaign.targeting.districts.includes('__others__')} onCheckedChange={() => toggleArrayItem('districts', '__others__')} />
+                            <span className="text-slate-600 font-medium">Others / Not Specified</span>
+                          </label>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -660,6 +719,32 @@ export default function CampaignBuilder() {
                       </label>
                     </div>
                   </div>
+                  <div className="border-t pt-4">
+                    <Label className="mb-2 block">Brand Affinity <span className="text-xs text-pink-600 font-medium ml-1 bg-pink-50 px-2 py-0.5 rounded-full">Competitive Targeting</span></Label>
+                    <p className="text-xs text-gray-500 mb-3">Target users who are loyal to or show affinity for specific brands.</p>
+                    <SelectAllControls options={BRAND_AFFINITY} current={campaign.targeting.brandAffinity} onChange={v => setTargetingArray('brandAffinity', v)} />
+                    <div className="flex flex-wrap gap-2">
+                      {BRAND_AFFINITY.map(brand => (
+                        <label key={brand} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.brandAffinity.includes(brand) ? 'bg-pink-50 border-pink-400' : 'bg-white hover:bg-gray-50'}`}>
+                          <Checkbox checked={campaign.targeting.brandAffinity.includes(brand)} onCheckedChange={() => toggleArrayItem('brandAffinity', brand)} />
+                          <span className="text-sm">{brand}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t pt-4">
+                    <Label className="mb-2 block">Personal Values <span className="text-xs text-indigo-600 font-medium ml-1 bg-indigo-50 px-2 py-0.5 rounded-full">Deep Psychographic</span></Label>
+                    <p className="text-xs text-gray-500 mb-3">Target based on what matters most to users in their lives.</p>
+                    <SelectAllControls options={VALUES_LIST} current={campaign.targeting.values} onChange={v => setTargetingArray('values', v)} />
+                    <div className="flex flex-wrap gap-2">
+                      {VALUES_LIST.map(val => (
+                        <label key={val} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.values.includes(val) ? 'bg-indigo-50 border-indigo-400' : 'bg-white hover:bg-gray-50'}`}>
+                          <Checkbox checked={campaign.targeting.values.includes(val)} onCheckedChange={() => toggleArrayItem('values', val)} />
+                          <span className="text-sm">{val}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -686,6 +771,30 @@ export default function CampaignBuilder() {
                       ))}
                     </div>
                   </div>
+                  {/* Device Models — only shown when brands are selected */}
+                  {campaign.targeting.deviceBrands.length > 0 && (() => {
+                    const availableModels = campaign.targeting.deviceBrands.flatMap(b => DEVICE_MODELS_BY_BRAND[b] || []);
+                    return availableModels.length > 0 ? (
+                      <div className="border-t pt-4">
+                        <Label className="mb-1 block">Device Models <span className="text-xs text-purple-600 font-medium ml-1 bg-purple-50 px-2 py-0.5 rounded-full">Precision Targeting</span></Label>
+                        <p className="text-xs text-gray-500 mb-3">Choose specific models within the selected brands.</p>
+                        <SelectAllControls options={availableModels} current={campaign.targeting.deviceModels} onChange={v => setTargetingArray('deviceModels', v)} />
+                        <div className="flex flex-wrap gap-2">
+                          {availableModels.map(model => (
+                            <label key={model} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer text-sm ${campaign.targeting.deviceModels.includes(model) ? 'bg-purple-50 border-purple-500' : 'bg-white hover:bg-gray-50'}`}>
+                              <Checkbox checked={campaign.targeting.deviceModels.includes(model)} onCheckedChange={() => toggleArrayItem('deviceModels', model)} />
+                              <span>{model}</span>
+                            </label>
+                          ))}
+                          <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed text-sm ${campaign.targeting.deviceModels.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                            <Checkbox checked={campaign.targeting.deviceModels.includes('__others__')} onCheckedChange={() => toggleArrayItem('deviceModels', '__others__')} />
+                            <span className="text-slate-600 font-medium">Others / Not Specified</span>
+                          </label>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()
+                  }
                   <div className="border-t pt-4 grid grid-cols-2 gap-4">
                     <div>
                       <Label className="mb-2 block">Network Carriers (Based on Target Countries)</Label>
@@ -778,6 +887,95 @@ export default function CampaignBuilder() {
                       <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed ${campaign.targeting.workTypes?.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
                         <Checkbox checked={campaign.targeting.workTypes?.includes('__others__')} onCheckedChange={() => toggleArrayItem('workTypes', '__others__')} />
                         <span className="text-slate-600 font-medium">Others / Not Specified</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="border-t pt-4">
+                    <Label className="mb-2 block">Shopping Frequency</Label>
+                    <SelectAllControls options={SHOPPING_FREQS} current={campaign.targeting.shoppingFrequencies || []} onChange={v => setTargetingArray('shoppingFrequencies', v)} />
+                    <div className="flex gap-2 flex-wrap">
+                      {SHOPPING_FREQS.map(freq => (
+                        <label key={freq} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.shoppingFrequencies?.includes(freq) ? 'bg-rose-50 border-rose-400' : 'bg-white'}`}>
+                          <Checkbox checked={campaign.targeting.shoppingFrequencies?.includes(freq)} onCheckedChange={() => toggleArrayItem('shoppingFrequencies', freq)} />
+                          <span>{freq}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t pt-4">
+                    <Label className="mb-2 block">Preferred Stores / Platforms <span className="text-xs text-rose-600 font-medium ml-1 bg-rose-50 px-2 py-0.5 rounded-full">Retail Targeting</span></Label>
+                    <p className="text-xs text-gray-500 mb-3">Target users who regularly shop at specific online or offline retailers.</p>
+                    <SelectAllControls options={PREFERRED_STORES} current={campaign.targeting.preferredStores || []} onChange={v => setTargetingArray('preferredStores', v)} />
+                    <div className="flex flex-wrap gap-2">
+                      {PREFERRED_STORES.map(store => (
+                        <label key={store} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.preferredStores?.includes(store) ? 'bg-rose-50 border-rose-400' : 'bg-white hover:bg-gray-50'}`}>
+                          <Checkbox checked={campaign.targeting.preferredStores?.includes(store)} onCheckedChange={() => toggleArrayItem('preferredStores', store)} />
+                          <span className="text-sm">{store}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t pt-4">
+                    <Label className="mb-2 block">Activity Patterns <span className="text-xs text-orange-600 font-medium ml-1 bg-orange-50 px-2 py-0.5 rounded-full">Behavioral</span></Label>
+                    <p className="text-xs text-gray-500 mb-3">Target based on when users are most active on their devices.</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {ACTIVITY_PATTERNS.map(ap => (
+                        <label key={ap} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.activityPatterns?.includes(ap) ? 'bg-orange-50 border-orange-400' : 'bg-white hover:bg-gray-50'}`}>
+                          <Checkbox checked={campaign.targeting.activityPatterns?.includes(ap)} onCheckedChange={() => toggleArrayItem('activityPatterns', ap)} />
+                          <span className="capitalize text-sm">{ap.replace(/_/g, ' ')}</span>
+                        </label>
+                      ))}
+                      <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed ${campaign.targeting.activityPatterns?.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                        <Checkbox checked={campaign.targeting.activityPatterns?.includes('__others__')} onCheckedChange={() => toggleArrayItem('activityPatterns', '__others__')} />
+                        <span className="text-slate-600 font-medium text-sm">Others / Not Specified</span>
+                      </label>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            {/* Professional Targeting */}
+            <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border">
+              <AccordionItem value="cat-professional" className="border-b-0 px-6">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-cyan-100 rounded text-cyan-600"><Briefcase className="w-4 h-4" /></div>
+                    <span className="font-semibold text-lg">7. Professional Profile</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-6 space-y-4">
+                  <div className="border-t pt-4">
+                    <Label className="mb-2 block">Industry <span className="text-xs text-cyan-600 font-medium ml-1 bg-cyan-50 px-2 py-0.5 rounded-full">B2B Targeting</span></Label>
+                    <p className="text-xs text-gray-500 mb-3">Target users by the industry they work in.</p>
+                    <SelectAllControls options={INDUSTRIES} current={campaign.targeting.industries || []} onChange={v => setTargetingArray('industries', v)} />
+                    <div className="flex flex-wrap gap-2">
+                      {INDUSTRIES.map(ind => (
+                        <label key={ind} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.industries?.includes(ind) ? 'bg-cyan-50 border-cyan-400' : 'bg-white hover:bg-gray-50'}`}>
+                          <Checkbox checked={campaign.targeting.industries?.includes(ind)} onCheckedChange={() => toggleArrayItem('industries', ind)} />
+                          <span className="text-sm">{ind}</span>
+                        </label>
+                      ))}
+                      <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed ${campaign.targeting.industries?.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                        <Checkbox checked={campaign.targeting.industries?.includes('__others__')} onCheckedChange={() => toggleArrayItem('industries', '__others__')} />
+                        <span className="text-slate-600 font-medium text-sm">Others / Not Specified</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="border-t pt-4">
+                    <Label className="mb-2 block">Job Title / Role</Label>
+                    <p className="text-xs text-gray-500 mb-3">Target users by their specific professional role.</p>
+                    <SelectAllControls options={JOB_TITLES} current={campaign.targeting.jobTitles || []} onChange={v => setTargetingArray('jobTitles', v)} />
+                    <div className="flex flex-wrap gap-2">
+                      {JOB_TITLES.map(job => (
+                        <label key={job} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.jobTitles?.includes(job) ? 'bg-cyan-50 border-cyan-400' : 'bg-white hover:bg-gray-50'}`}>
+                          <Checkbox checked={campaign.targeting.jobTitles?.includes(job)} onCheckedChange={() => toggleArrayItem('jobTitles', job)} />
+                          <span className="text-sm">{job}</span>
+                        </label>
+                      ))}
+                      <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed ${campaign.targeting.jobTitles?.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                        <Checkbox checked={campaign.targeting.jobTitles?.includes('__others__')} onCheckedChange={() => toggleArrayItem('jobTitles', '__others__')} />
+                        <span className="text-slate-600 font-medium text-sm">Others / Not Specified</span>
                       </label>
                     </div>
                   </div>

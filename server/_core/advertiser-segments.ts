@@ -218,8 +218,48 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     }
     if (filters.householdSizeMin) { conditions.push('up.householdSize >= ?'); params.push(filters.householdSizeMin); }
     if (filters.householdSizeMax) { conditions.push('up.householdSize <= ?'); params.push(filters.householdSizeMax); }
+    // Professional: Industry
+    if (filters.industries && filters.industries.length > 0) {
+      const includeOthers = filters.industries.includes('__others__');
+      const realIndustries = filters.industries.filter((i: string) => i !== '__others__');
+      const knownAll = filters._knownIndustries || [];
+      const clauses: string[] = [];
+      if (realIndustries.length > 0) {
+        const phs = realIndustries.map(() => '?').join(', ');
+        clauses.push(`(up.industry IN (${phs}) OR up.industry IS NULL OR up.industry = '')`);
+        params.push(...realIndustries);
+      }
+      if (includeOthers && knownAll.length > 0) {
+        const phs = knownAll.map(() => '?').join(', ');
+        clauses.push(`(up.industry IS NULL OR up.industry = '' OR up.industry NOT IN (${phs}))`);
+        params.push(...knownAll);
+      } else if (includeOthers) {
+        clauses.push(`(up.industry IS NULL OR up.industry = '')`);
+      }
+      if (clauses.length > 0) conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
+    }
+    // Professional: Job Title
+    if (filters.jobTitles && filters.jobTitles.length > 0) {
+      const includeOthers = filters.jobTitles.includes('__others__');
+      const realTitles = filters.jobTitles.filter((j: string) => j !== '__others__');
+      const knownAll = filters._knownJobTitles || [];
+      const clauses: string[] = [];
+      if (realTitles.length > 0) {
+        const phs = realTitles.map(() => '?').join(', ');
+        clauses.push(`(up.jobTitle IN (${phs}) OR up.jobTitle IS NULL OR up.jobTitle = '')`);
+        params.push(...realTitles);
+      }
+      if (includeOthers && knownAll.length > 0) {
+        const phs = knownAll.map(() => '?').join(', ');
+        clauses.push(`(up.jobTitle IS NULL OR up.jobTitle = '' OR up.jobTitle NOT IN (${phs}))`);
+        params.push(...knownAll);
+      } else if (includeOthers) {
+        clauses.push(`(up.jobTitle IS NULL OR up.jobTitle = '')`);
+      }
+      if (clauses.length > 0) conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
+    }
 
-    // CATEGORY 7: Engagement Quality
+    // CATEGORY 8: Engagement Quality
     if (filters.tierMin) {
       let rank = 1;
       if (filters.tierMin === 'silver') rank = 2;
