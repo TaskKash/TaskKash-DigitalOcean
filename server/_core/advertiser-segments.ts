@@ -13,27 +13,65 @@ function roundReach(raw: number): number {
 
 /**
  * Helper to build JSON_CONTAINS conditions dynamically
+ * Includes a fallback for users with NULL/empty JSON fields so they aren't excluded
+ * when advertisers select filters from those categories.
+ * Special sentinel: if values includes '__others__', adds a clause for users whose
+ * field is NULL, empty, or doesn't contain any of the known values.
  */
-function buildJsonContains(column: string, values: string[], matchAll: boolean, conditions: string[], params: any[]) {
+function buildJsonContains(
+  column: string,
+  values: string[],
+  matchAll: boolean,
+  conditions: string[],
+  params: any[],
+  knownValues?: string[]
+) {
   if (!values || values.length === 0) return;
-  
-  if (matchAll) {
-    // AND logic
-    const clauses: string[] = [];
-    values.forEach(val => {
-      clauses.push(`JSON_CONTAINS(${column}, ?)`);
-      // JSON_CONTAINS expects a JSON string representation, so we wrap the string in double quotes
-      params.push(`"${val}"`);
+
+  // Separate the special __others__ sentinel from real values
+  const includeOthers = values.includes('__others__');
+  const realValues = values.filter(v => v !== '__others__');
+
+  const clauses: string[] = [];
+
+  if (realValues.length > 0) {
+    if (matchAll) {
+      // AND logic — every value must be present
+      const andClauses: string[] = [];
+      realValues.forEach(val => {
+        andClauses.push(`JSON_CONTAINS(${column}, ?)`);
+        params.push(`"${val}"`);
+      });
+      clauses.push(`(${andClauses.join(' AND ')})`);
+    } else {
+      // OR logic — any one of the values must be present
+      const orClauses: string[] = [];
+      realValues.forEach(val => {
+        orClauses.push(`JSON_CONTAINS(${column}, ?)`);
+        params.push(`"${val}"`);
+      });
+      // Also include users with NULL/empty arrays — they have no data, not wrong data.
+      // This prevents reach from dropping when selecting all options in a category.
+      orClauses.push(`${column} IS NULL`);
+      orClauses.push(`${column} = '[]'`);
+      orClauses.push(`JSON_LENGTH(${column}) = 0`);
+      clauses.push(`(${orClauses.join(' OR ')})`);
+    }
+  }
+
+  // Others clause: users whose field is null/empty OR doesn't contain any known value
+  if (includeOthers && knownValues && knownValues.length > 0) {
+    const notContainsClauses = knownValues.map(v => {
+      params.push(`"${v}"`);
+      return `NOT JSON_CONTAINS(${column}, ?)`;
     });
-    conditions.push(`(${clauses.join(' AND ')})`);
-  } else {
-    // OR logic
-    const clauses: string[] = [];
-    values.forEach(val => {
-      clauses.push(`JSON_CONTAINS(${column}, ?)`);
-      params.push(`"${val}"`);
-    });
-    conditions.push(`(${clauses.join(' OR ')})`);
+    clauses.push(`(${column} IS NULL OR ${column} = '[]' OR JSON_LENGTH(${column}) = 0 OR (${notContainsClauses.join(' AND ')}))`);
+  } else if (includeOthers) {
+    clauses.push(`(${column} IS NULL OR ${column} = '[]' OR JSON_LENGTH(${column}) = 0)`);
+  }
+
+  if (clauses.length > 0) {
+    conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
   }
 }
 
@@ -116,13 +154,25 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     }
 
     // CATEGORY 4: Psychographic
-    buildJsonContains('up.interests', filters.interests, filters.interestsMatchAll, conditions, params);
+    buildJsonContains('up.interests', filters.interests, filters.interestsMatchAll, conditions, params, filters._knownInterests);
     buildJsonContains('up.brandAffinity', filters.brandAffinity, filters.brandAffinityMatchAll, conditions, params);
     buildJsonContains('up.values', filters.values, filters.valuesMatchAll, conditions, params);
     if (filters.lifeStages && filters.lifeStages.length > 0) {
-      const placeholders = filters.lifeStages.map(() => '?').join(', ');
-      conditions.push(`(up.lifeStage IN (${placeholders}) OR up.lifeStage IS NULL OR up.lifeStage = '')`);
-      params.push(...filters.lifeStages);
+      const includeOthers = filters.lifeStages.includes('__others__');
+      const realStages = filters.lifeStages.filter((s: string) => s !== '__others__');
+      const knownAll = filters._knownLifeStages || [];
+      const clauses: string[] = [];
+      if (realStages.length > 0) {
+        const phs = realStages.map(() => '?').join(', ');
+        clauses.push(`(up.lifeStage IN (${phs}) OR up.lifeStage IS NULL OR up.lifeStage = '')`);
+        params.push(...realStages);
+      }
+      if (includeOthers && knownAll.length > 0) {
+        const phs = knownAll.map(() => '?').join(', ');
+        clauses.push(`(up.lifeStage IS NULL OR up.lifeStage = '' OR up.lifeStage NOT IN (${phs}))`);
+        params.push(...knownAll);
+      }
+      if (clauses.length > 0) conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
     }
 
     // CATEGORY 5: Behavioral
@@ -132,7 +182,7 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
       params.push(...filters.shoppingFrequencies);
     }
     buildJsonContains('up.preferredStores', filters.preferredStores, filters.preferredStoresMatchAll, conditions, params);
-    buildJsonContains('up.nextPurchaseIntent', filters.nextPurchaseIntent, filters.nextPurchaseIntentMatchAll, conditions, params);
+    buildJsonContains('up.nextPurchaseIntent', filters.nextPurchaseIntent, filters.nextPurchaseIntentMatchAll, conditions, params, filters._knownPurchaseIntents);
     if (filters.activityPatterns && filters.activityPatterns.length > 0) {
       const placeholders = filters.activityPatterns.map(() => '?').join(', ');
       conditions.push(`(up.activityPattern IN (${placeholders}) OR up.activityPattern IS NULL OR up.activityPattern = '')`);
@@ -150,9 +200,21 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
       params.push(...filters.vehicleBrands);
     }
     if (filters.workTypes && filters.workTypes.length > 0) {
-      const placeholders = filters.workTypes.map(() => '?').join(', ');
-      conditions.push(`(up.workType IN (${placeholders}) OR up.workType IS NULL OR up.workType = '')`);
-      params.push(...filters.workTypes);
+      const includeOthers = filters.workTypes.includes('__others__');
+      const realWorkTypes = filters.workTypes.filter((w: string) => w !== '__others__');
+      const knownAll = filters._knownWorkTypes || [];
+      const clauses: string[] = [];
+      if (realWorkTypes.length > 0) {
+        const phs = realWorkTypes.map(() => '?').join(', ');
+        clauses.push(`(up.workType IN (${phs}) OR up.workType IS NULL OR up.workType = '')`);
+        params.push(...realWorkTypes);
+      }
+      if (includeOthers && knownAll.length > 0) {
+        const phs = knownAll.map(() => '?').join(', ');
+        clauses.push(`(up.workType IS NULL OR up.workType = '' OR up.workType NOT IN (${phs}))`);
+        params.push(...knownAll);
+      }
+      if (clauses.length > 0) conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
     }
     if (filters.householdSizeMin) { conditions.push('up.householdSize >= ?'); params.push(filters.householdSizeMin); }
     if (filters.householdSizeMax) { conditions.push('up.householdSize <= ?'); params.push(filters.householdSizeMax); }
@@ -168,9 +230,21 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     }
     // Specific exact tiers selected via array
     if (filters.tiers && filters.tiers.length > 0) {
-      const placeholders = filters.tiers.map(() => '?').join(', ');
-      conditions.push(`(u.tier IN (${placeholders}) OR u.tier IS NULL OR u.tier = '')`);
-      params.push(...filters.tiers);
+      const includeOthers = filters.tiers.includes('__others__');
+      const realTiers = filters.tiers.filter((t: string) => t !== '__others__');
+      const knownAll = ['bronze', 'silver', 'gold', 'platinum'];
+      const clauses: string[] = [];
+      if (realTiers.length > 0) {
+        const phs = realTiers.map(() => '?').join(', ');
+        clauses.push(`(u.tier IN (${phs}) OR u.tier IS NULL OR u.tier = '')`);
+        params.push(...realTiers);
+      }
+      if (includeOthers) {
+        const phs = knownAll.map(() => '?').join(', ');
+        clauses.push(`(u.tier IS NULL OR u.tier = '' OR u.tier NOT IN (${phs}))`);
+        params.push(...knownAll);
+      }
+      if (clauses.length > 0) conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
     }
     if (filters.profileStrengthMin) {
       // Must be greater than the baseline 60 and user provided value

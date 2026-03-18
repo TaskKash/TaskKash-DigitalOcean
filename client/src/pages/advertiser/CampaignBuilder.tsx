@@ -162,6 +162,11 @@ export default function CampaignBuilder() {
           if (Array.isArray(payload[key]) && payload[key].length === 0) delete payload[key];
           if (payload[key] === '' || payload[key] === undefined) delete payload[key];
         });
+        // Pass known values so backend can correctly compute 'Others' complement
+        payload._knownInterests = INTERESTS;
+        payload._knownLifeStages = LIFE_STAGES;
+        payload._knownWorkTypes = WORK_TYPES;
+        payload._knownPurchaseIntents = PURCHASE_INTENTS;
         const res = await fetch('/api/advertiser/segments', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           credentials: 'include', body: JSON.stringify(payload)
@@ -649,6 +654,10 @@ export default function CampaignBuilder() {
                           <span>{int}</span>
                         </label>
                       ))}
+                      <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed ${campaign.targeting.interests.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                        <Checkbox checked={campaign.targeting.interests.includes('__others__')} onCheckedChange={() => toggleArrayItem('interests', '__others__')} />
+                        <span className="text-slate-600 font-medium">Others / Not Specified</span>
+                      </label>
                     </div>
                   </div>
                 </AccordionContent>
@@ -734,6 +743,10 @@ export default function CampaignBuilder() {
                           <span>{intent}</span>
                         </label>
                       ))}
+                      <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed ${campaign.targeting.nextPurchaseIntent?.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                        <Checkbox checked={campaign.targeting.nextPurchaseIntent?.includes('__others__')} onCheckedChange={() => toggleArrayItem('nextPurchaseIntent', '__others__')} />
+                        <span className="text-slate-600 font-medium">Others / Not Specified</span>
+                      </label>
                     </div>
                   </div>
                   <div className="border-t pt-4">
@@ -746,6 +759,10 @@ export default function CampaignBuilder() {
                           <span>{stage.replace(/_/g, ' ')}</span>
                         </label>
                       ))}
+                      <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed ${campaign.targeting.lifeStages?.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                        <Checkbox checked={campaign.targeting.lifeStages?.includes('__others__')} onCheckedChange={() => toggleArrayItem('lifeStages', '__others__')} />
+                        <span className="text-slate-600 font-medium">Others / Not Specified</span>
+                      </label>
                     </div>
                   </div>
                   <div className="border-t pt-4">
@@ -758,6 +775,10 @@ export default function CampaignBuilder() {
                           <span>{work.replace(/_/g, ' ')}</span>
                         </label>
                       ))}
+                      <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed ${campaign.targeting.workTypes?.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                        <Checkbox checked={campaign.targeting.workTypes?.includes('__others__')} onCheckedChange={() => toggleArrayItem('workTypes', '__others__')} />
+                        <span className="text-slate-600 font-medium">Others / Not Specified</span>
+                      </label>
                     </div>
                   </div>
                 </AccordionContent>
@@ -785,6 +806,10 @@ export default function CampaignBuilder() {
                             <span>{t}</span>
                           </label>
                         ))}
+                        <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed ${campaign.targeting.tiers.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                          <Checkbox checked={campaign.targeting.tiers.includes('__others__')} onCheckedChange={() => toggleArrayItem('tiers', '__others__')} />
+                          <span className="text-slate-600 font-medium">Others / Not Classified</span>
+                        </label>
                       </div>
                     </div>
                     <div>
