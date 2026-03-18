@@ -21,6 +21,7 @@ import Notifications from "./pages/Notifications";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 
 import VideoTask from "./pages/VideoTask";
 import AppTask from "./pages/AppTask";
@@ -164,6 +165,7 @@ function Router() {
       {/* Auth Routes */}
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/login" component={Login} />
+      <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/phone-login" component={PhoneLogin} />
       <Route path="/register" component={Register} />
       <Route path="/profile/complete" component={ProfileComplete} />

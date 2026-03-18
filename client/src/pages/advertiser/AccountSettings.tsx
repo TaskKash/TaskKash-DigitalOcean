@@ -17,6 +17,26 @@ export default function AccountSettings() {
   const [, setLocation] = useLocation();
   const { currentAdvertiser, logoutAdvertiser } = useApp();
   const [activeTab, setActiveTab] = useState('profile');
+  const [countries, setCountries] = useState<any[]>([]);
+  const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('/api/countries')
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.countries) {
+          setCountries(data.countries);
+          if (currentAdvertiser?.countryId) {
+            setSelectedCountryId(currentAdvertiser.countryId);
+          } else {
+            const egypt = data.countries.find((c: any) => c.code === 'EG');
+            if (egypt) setSelectedCountryId(egypt.id);
+            else if (data.countries.length > 0) setSelectedCountryId(data.countries[0].id);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [currentAdvertiser]);
 
   // إذا لم يكن هناك معلن مسجل، إعادة توجيه لصفحة تسجيل الدخول
   useEffect(() => {
@@ -142,6 +162,40 @@ export default function AccountSettings() {
                     <Input id="website" type="url" defaultValue="https://example.com" />
                   </div>
                   <div>
+                    <Label htmlFor="country">الدولة (Country)</Label>
+                    <select
+                      id="country"
+                      value={selectedCountryId || ''}
+                      onChange={(e) => setSelectedCountryId(Number(e.target.value))}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                      required
+                    >
+                      <option value="">اختر الدولة</option>
+                      {countries.map((c: any) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nameAr || c.nameEn} ({c.currency})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="country">الدولة (Country)</Label>
+                    <select
+                      id="country"
+                      value={selectedCountryId || ''}
+                      onChange={(e) => setSelectedCountryId(Number(e.target.value))}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                      required
+                    >
+                      <option value="">اختر الدولة</option>
+                      {countries.map((c: any) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nameAr || c.nameEn} ({c.currency})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
                     <Label htmlFor="address">العنوان</Label>
                     <Input id="address" defaultValue="القاهرة، مصر" />
                   </div>
@@ -253,13 +307,13 @@ export default function AccountSettings() {
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">إجمالي الميزانية</p>
                       <p className="text-2xl font-bold text-emerald-700">
-                        {currentAdvertiser.totalBudget.toLocaleString('ar-EG')} {symbol}
+                        {((currentAdvertiser?.totalBudget) || 0).toLocaleString('ar-EG')} {symbol}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">المنفق</p>
                       <p className="text-2xl font-bold text-orange-600">
-                        {currentAdvertiser.spentBudget.toLocaleString('ar-EG')} {symbol}
+                        {((currentAdvertiser?.spentBudget) || 0).toLocaleString('ar-EG')} {symbol}
                       </p>
                     </div>
                   </div>

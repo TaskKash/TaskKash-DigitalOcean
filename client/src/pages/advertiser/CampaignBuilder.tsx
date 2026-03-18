@@ -203,6 +203,11 @@ export default function CampaignBuilder() {
         payload._knownPurchaseIntents = PURCHASE_INTENTS;
         payload._knownIndustries = INDUSTRIES;
         payload._knownJobTitles = JOB_TITLES;
+        payload._knownPreferredStores = PREFERRED_STORES;
+        payload._knownHomeOwnership = ['owner', 'renter'];
+        if (payload.countries && payload.countries.length > 0) {
+          payload._knownCities = payload.countries.flatMap((c: string) => CITIES_BY_COUNTRY[c] || []);
+        }
         const res = await fetch('/api/advertiser/segments', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           credentials: 'include', body: JSON.stringify(payload)
@@ -232,13 +237,12 @@ export default function CampaignBuilder() {
   // The advertiser inputs the Total Campaign Budget and Target Completions
   const totalCampaignCost = campaign.totalBudget || 0;
   
-  // totalCampaignCost = RewardBudget * (1 + commissionRate)
-  const rewardBudget = totalCampaignCost / (1 + commissionRate);
-  const totalCommission = totalCampaignCost - rewardBudget;
+  const totalCommission = totalCampaignCost * commissionRate;
+  const rewardBudget = totalCampaignCost - totalCommission;
   
   const rewardPerTask = rewardBudget / (campaign.completionsNeeded || 1);
   const commissionPerTask = totalCommission / (campaign.completionsNeeded || 1);
-  const totalCostPerTask = rewardPerTask + commissionPerTask;
+  const totalCostPerTask = totalCampaignCost / (campaign.completionsNeeded || 1);
 
   const handleNext = () => setStep(p => Math.min(p + 1, 4));
   const handleBack = () => setStep(p => Math.max(p - 1, 1));
@@ -598,6 +602,10 @@ export default function CampaignBuilder() {
                               <span>{city}</span>
                             </label>
                           ))}
+                          <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed ${campaign.targeting.cities.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                            <Checkbox checked={campaign.targeting.cities.includes('__others__')} onCheckedChange={() => toggleArrayItem('cities', '__others__')} />
+                            <span className="text-slate-600 font-medium text-sm">Others / Not Specified</span>
+                          </label>
                         </div>
                       </>
                     )}
@@ -682,10 +690,10 @@ export default function CampaignBuilder() {
                   </div>
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Home Ownership</Label>
-                    <div className="flex gap-2">
-                      {[['', 'Any'], ['owner', 'Owner'], ['renter', 'Renter']].map(([val, label]) => (
+                    <div className="flex gap-2 flex-wrap">
+                      {[['', 'Any'], ['owner', 'Owner'], ['renter', 'Renter'], ['__others__', 'Others / Not Specified']].map(([val, label]) => (
                         <button key={val} onClick={() => setCampaign(p => ({ ...p, targeting: { ...p.targeting, homeOwnership: val as any } }))}
-                          className={`px-4 py-2 border rounded-md ${campaign.targeting.homeOwnership === val ? 'bg-primary text-white' : 'bg-gray-50'}`}>{label}</button>
+                          className={`px-4 py-2 border rounded-md ${campaign.targeting.homeOwnership === val ? 'bg-primary text-white' : 'bg-gray-50'} ${val === '__others__' ? 'border-dashed' : ''}`}>{label}</button>
                       ))}
                     </div>
                   </div>
@@ -913,6 +921,10 @@ export default function CampaignBuilder() {
                           <span className="text-sm">{store}</span>
                         </label>
                       ))}
+                      <label className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer border-dashed ${campaign.targeting.preferredStores?.includes('__others__') ? 'bg-slate-100 border-slate-500' : 'bg-white hover:bg-slate-50 border-slate-300'}`}>
+                        <Checkbox checked={campaign.targeting.preferredStores?.includes('__others__')} onCheckedChange={() => toggleArrayItem('preferredStores', '__others__')} />
+                        <span className="text-slate-600 font-medium text-sm">Others / Not Specified</span>
+                      </label>
                     </div>
                   </div>
                   <div className="border-t pt-4">
@@ -1197,8 +1209,8 @@ export default function CampaignBuilder() {
                 <h3 className="font-semibold mb-4 flex items-center gap-2"><Calendar className="w-4 h-4 text-primary" /> Budget Controls</h3>
                 <div className="space-y-4">
                   <div>
-                    <Label>Reward per Completion (USD) *</Label>
-                    <Input type="number" min={1} value={campaign.reward} onChange={e => setCampaign({ ...campaign, reward: +e.target.value })} />
+                    <Label>Calculated Reward per Tasker ({symbol})</Label>
+                    <Input type="text" readOnly value={rewardPerTask.toFixed(2)} className="bg-gray-50 text-gray-500 font-medium" />
                   </div>
                   <div>
                     <Label>Target Completions</Label>

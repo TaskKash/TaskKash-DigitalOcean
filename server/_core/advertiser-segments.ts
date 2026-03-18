@@ -32,6 +32,12 @@ function buildJsonContains(
   const includeOthers = values.includes('__others__');
   const realValues = values.filter(v => v !== '__others__');
 
+  // BYPASS logic: If user selected "Others" AND selected all known options, do not apply any filter.
+  // This ensures "Select All" + "Others" effectively targets 100% of the audience.
+  if (includeOthers && knownValues && knownValues.length > 0 && realValues.length >= knownValues.length) {
+    return;
+  }
+
   const clauses: string[] = [];
 
   if (realValues.length > 0) {
@@ -76,6 +82,48 @@ function buildJsonContains(
 }
 
 /**
+ * Generalized helper for simple Set (IN) matching.
+ * Handles the Select All + Others bypass logic for simple varchar and enum columns.
+ */
+function buildSetCondition(
+  column: string,
+  values: string | string[],
+  conditions: string[],
+  params: any[],
+  knownValues?: string[]
+) {
+  if (!values || (Array.isArray(values) && values.length === 0) || values === '') return;
+  
+  const valArray = Array.isArray(values) ? values : [values];
+  const includeOthers = valArray.includes('__others__');
+  const realValues = valArray.filter(v => v !== '__others__');
+  const knownAll = knownValues || [];
+
+  if (includeOthers && knownAll.length > 0 && realValues.length >= knownAll.length) {
+    return; // Bypass filter
+  }
+
+  const clauses: string[] = [];
+  if (realValues.length > 0) {
+    const placeholders = realValues.map(() => '?').join(', ');
+    clauses.push(`(${column} IN (${placeholders}) OR ${column} IS NULL OR ${column} = '')`);
+    params.push(...realValues);
+  }
+  
+  if (includeOthers && knownAll.length > 0) {
+    const phs = knownAll.map(() => '?').join(', ');
+    clauses.push(`(${column} IS NULL OR ${column} = '' OR ${column} NOT IN (${phs}))`);
+    params.push(...knownAll);
+  } else if (includeOthers) {
+    clauses.push(`(${column} IS NULL OR ${column} = '')`);
+  }
+
+  if (clauses.length > 0) {
+    conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
+  }
+}
+
+/**
  * POST /api/advertiser/segments
  * Advanced 7-Category Segment Builder
  */
@@ -105,159 +153,46 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
       conditions.push(`u.countryId IN (SELECT id FROM countries WHERE nameEn IN (${placeholders}))`);
       params.push(...filters.countries);
     }
-    if (filters.cities && filters.cities.length > 0) {
-      const placeholders = filters.cities.map(() => '?').join(', ');
-      conditions.push(`(u.city IN (${placeholders}) OR u.city IS NULL OR u.city = '')`);
-      params.push(...filters.cities);
-    }
-    if (filters.districts && filters.districts.length > 0) {
-      const placeholders = filters.districts.map(() => '?').join(', ');
-      conditions.push(`(u.district IN (${placeholders}) OR u.district IS NULL OR u.district = '')`);
-      params.push(...filters.districts);
-    }
+    buildSetCondition('u.city', filters.cities, conditions, params, filters._knownCities);
+    buildSetCondition('u.district', filters.districts, conditions, params);
 
     // CATEGORY 2: Financial & Income
-    if (filters.incomeLevels && filters.incomeLevels.length > 0) {
-      const placeholders = filters.incomeLevels.map(() => '?').join(', ');
-      conditions.push(`(u.incomeLevel IN (${placeholders}) OR u.incomeLevel IS NULL OR u.incomeLevel = '')`);
-      params.push(...filters.incomeLevels);
-    }
-    if (filters.homeOwnership) {
-      conditions.push('up.homeOwnership = ?');
-      params.push(filters.homeOwnership);
-    }
+    buildSetCondition('u.incomeLevel', filters.incomeLevels, conditions, params);
+    buildSetCondition('up.homeOwnership', filters.homeOwnership, conditions, params, filters._knownHomeOwnership);
 
     // CATEGORY 3: Device & Connectivity
-    if (filters.deviceTiers && filters.deviceTiers.length > 0) {
-      const placeholders = filters.deviceTiers.map(() => '?').join(', ');
-      conditions.push(`(up.deviceTier IN (${placeholders}) OR up.deviceTier IS NULL OR up.deviceTier = '')`);
-      params.push(...filters.deviceTiers);
-    }
-    if (filters.deviceOs) {
-      conditions.push('(up.deviceOs = ? OR up.deviceOs IS NULL OR up.deviceOs = \'\')');
-      params.push(filters.deviceOs);
-    }
-    if (filters.networkCarriers && filters.networkCarriers.length > 0) {
-      const placeholders = filters.networkCarriers.map(() => '?').join(', ');
-      conditions.push(`(up.networkCarrier IN (${placeholders}) OR up.networkCarrier IS NULL OR up.networkCarrier = '')`);
-      params.push(...filters.networkCarriers);
-    }
-    if (filters.deviceModels && filters.deviceModels.length > 0) {
-      const placeholders = filters.deviceModels.map(() => '?').join(', ');
-      conditions.push(`(up.deviceModel IN (${placeholders}) OR up.deviceModel IS NULL OR up.deviceModel = '')`);
-      params.push(...filters.deviceModels);
-    }
-    if (filters.connectionTypes && filters.connectionTypes.length > 0) {
-      const placeholders = filters.connectionTypes.map(() => '?').join(', ');
-      conditions.push(`(up.connectionType IN (${placeholders}) OR up.connectionType IS NULL OR up.connectionType = '')`);
-      params.push(...filters.connectionTypes);
-    }
+    buildSetCondition('up.deviceTier', filters.deviceTiers, conditions, params);
+    buildSetCondition('up.deviceOs', filters.deviceOs, conditions, params);
+    buildSetCondition('up.networkCarrier', filters.networkCarriers, conditions, params);
+    buildSetCondition('up.deviceModel', filters.deviceModels, conditions, params);
+    buildSetCondition('up.connectionType', filters.connectionTypes, conditions, params);
 
     // CATEGORY 4: Psychographic
     buildJsonContains('up.interests', filters.interests, filters.interestsMatchAll, conditions, params, filters._knownInterests);
     buildJsonContains('up.brandAffinity', filters.brandAffinity, filters.brandAffinityMatchAll, conditions, params);
     buildJsonContains('up.values', filters.values, filters.valuesMatchAll, conditions, params);
-    if (filters.lifeStages && filters.lifeStages.length > 0) {
-      const includeOthers = filters.lifeStages.includes('__others__');
-      const realStages = filters.lifeStages.filter((s: string) => s !== '__others__');
-      const knownAll = filters._knownLifeStages || [];
-      const clauses: string[] = [];
-      if (realStages.length > 0) {
-        const phs = realStages.map(() => '?').join(', ');
-        clauses.push(`(up.lifeStage IN (${phs}) OR up.lifeStage IS NULL OR up.lifeStage = '')`);
-        params.push(...realStages);
-      }
-      if (includeOthers && knownAll.length > 0) {
-        const phs = knownAll.map(() => '?').join(', ');
-        clauses.push(`(up.lifeStage IS NULL OR up.lifeStage = '' OR up.lifeStage NOT IN (${phs}))`);
-        params.push(...knownAll);
-      }
-      if (clauses.length > 0) conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
-    }
+    buildSetCondition('up.lifeStage', filters.lifeStages, conditions, params, filters._knownLifeStages);
 
     // CATEGORY 5: Behavioral
-    if (filters.shoppingFrequencies && filters.shoppingFrequencies.length > 0) {
-      const placeholders = filters.shoppingFrequencies.map(() => '?').join(', ');
-      conditions.push(`(up.shoppingFrequency IN (${placeholders}) OR up.shoppingFrequency IS NULL OR up.shoppingFrequency = '')`);
-      params.push(...filters.shoppingFrequencies);
-    }
-    buildJsonContains('up.preferredStores', filters.preferredStores, filters.preferredStoresMatchAll, conditions, params);
+    buildSetCondition('up.shoppingFrequency', filters.shoppingFrequencies, conditions, params);
+    buildJsonContains('up.preferredStores', filters.preferredStores, filters.preferredStoresMatchAll, conditions, params, filters._knownPreferredStores);
     buildJsonContains('up.nextPurchaseIntent', filters.nextPurchaseIntent, filters.nextPurchaseIntentMatchAll, conditions, params, filters._knownPurchaseIntents);
-    if (filters.activityPatterns && filters.activityPatterns.length > 0) {
-      const placeholders = filters.activityPatterns.map(() => '?').join(', ');
-      conditions.push(`(up.activityPattern IN (${placeholders}) OR up.activityPattern IS NULL OR up.activityPattern = '')`);
-      params.push(...filters.activityPatterns);
-    }
+    buildSetCondition('up.activityPattern', filters.activityPatterns, conditions, params);
 
     // CATEGORY 6: Mobility & Household
     if (filters.hasVehicle !== undefined) {
       conditions.push('up.hasVehicle = ?');
       params.push(filters.hasVehicle ? 1 : 0);
     }
-    if (filters.vehicleBrands && filters.vehicleBrands.length > 0) {
-      const placeholders = filters.vehicleBrands.map(() => '?').join(', ');
-      conditions.push(`(up.vehicleBrand IN (${placeholders}) OR up.vehicleBrand IS NULL OR up.vehicleBrand = '')`);
-      params.push(...filters.vehicleBrands);
-    }
-    if (filters.workTypes && filters.workTypes.length > 0) {
-      const includeOthers = filters.workTypes.includes('__others__');
-      const realWorkTypes = filters.workTypes.filter((w: string) => w !== '__others__');
-      const knownAll = filters._knownWorkTypes || [];
-      const clauses: string[] = [];
-      if (realWorkTypes.length > 0) {
-        const phs = realWorkTypes.map(() => '?').join(', ');
-        clauses.push(`(up.workType IN (${phs}) OR up.workType IS NULL OR up.workType = '')`);
-        params.push(...realWorkTypes);
-      }
-      if (includeOthers && knownAll.length > 0) {
-        const phs = knownAll.map(() => '?').join(', ');
-        clauses.push(`(up.workType IS NULL OR up.workType = '' OR up.workType NOT IN (${phs}))`);
-        params.push(...knownAll);
-      }
-      if (clauses.length > 0) conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
-    }
+    buildSetCondition('up.vehicleBrand', filters.vehicleBrands, conditions, params);
+    buildSetCondition('up.workType', filters.workTypes, conditions, params, filters._knownWorkTypes);
+    
     if (filters.householdSizeMin) { conditions.push('up.householdSize >= ?'); params.push(filters.householdSizeMin); }
     if (filters.householdSizeMax) { conditions.push('up.householdSize <= ?'); params.push(filters.householdSizeMax); }
-    // Professional: Industry
-    if (filters.industries && filters.industries.length > 0) {
-      const includeOthers = filters.industries.includes('__others__');
-      const realIndustries = filters.industries.filter((i: string) => i !== '__others__');
-      const knownAll = filters._knownIndustries || [];
-      const clauses: string[] = [];
-      if (realIndustries.length > 0) {
-        const phs = realIndustries.map(() => '?').join(', ');
-        clauses.push(`(up.industry IN (${phs}) OR up.industry IS NULL OR up.industry = '')`);
-        params.push(...realIndustries);
-      }
-      if (includeOthers && knownAll.length > 0) {
-        const phs = knownAll.map(() => '?').join(', ');
-        clauses.push(`(up.industry IS NULL OR up.industry = '' OR up.industry NOT IN (${phs}))`);
-        params.push(...knownAll);
-      } else if (includeOthers) {
-        clauses.push(`(up.industry IS NULL OR up.industry = '')`);
-      }
-      if (clauses.length > 0) conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
-    }
-    // Professional: Job Title
-    if (filters.jobTitles && filters.jobTitles.length > 0) {
-      const includeOthers = filters.jobTitles.includes('__others__');
-      const realTitles = filters.jobTitles.filter((j: string) => j !== '__others__');
-      const knownAll = filters._knownJobTitles || [];
-      const clauses: string[] = [];
-      if (realTitles.length > 0) {
-        const phs = realTitles.map(() => '?').join(', ');
-        clauses.push(`(up.jobTitle IN (${phs}) OR up.jobTitle IS NULL OR up.jobTitle = '')`);
-        params.push(...realTitles);
-      }
-      if (includeOthers && knownAll.length > 0) {
-        const phs = knownAll.map(() => '?').join(', ');
-        clauses.push(`(up.jobTitle IS NULL OR up.jobTitle = '' OR up.jobTitle NOT IN (${phs}))`);
-        params.push(...knownAll);
-      } else if (includeOthers) {
-        clauses.push(`(up.jobTitle IS NULL OR up.jobTitle = '')`);
-      }
-      if (clauses.length > 0) conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
-    }
+    
+    // Professional
+    buildSetCondition('up.industry', filters.industries, conditions, params, filters._knownIndustries);
+    buildSetCondition('up.jobTitle', filters.jobTitles, conditions, params, filters._knownJobTitles);
 
     // CATEGORY 8: Engagement Quality
     if (filters.tierMin) {
@@ -269,23 +204,7 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
       params.push(rank);
     }
     // Specific exact tiers selected via array
-    if (filters.tiers && filters.tiers.length > 0) {
-      const includeOthers = filters.tiers.includes('__others__');
-      const realTiers = filters.tiers.filter((t: string) => t !== '__others__');
-      const knownAll = ['bronze', 'silver', 'gold', 'platinum'];
-      const clauses: string[] = [];
-      if (realTiers.length > 0) {
-        const phs = realTiers.map(() => '?').join(', ');
-        clauses.push(`(u.tier IN (${phs}) OR u.tier IS NULL OR u.tier = '')`);
-        params.push(...realTiers);
-      }
-      if (includeOthers) {
-        const phs = knownAll.map(() => '?').join(', ');
-        clauses.push(`(u.tier IS NULL OR u.tier = '' OR u.tier NOT IN (${phs}))`);
-        params.push(...knownAll);
-      }
-      if (clauses.length > 0) conditions.push(clauses.length === 1 ? clauses[0] : `(${clauses.join(' OR ')})`);
-    }
+    buildSetCondition('u.tier', filters.tiers, conditions, params, ['bronze', 'silver', 'gold', 'platinum']);
     if (filters.profileStrengthMin) {
       // Must be greater than the baseline 60 and user provided value
       conditions.push('u.profileStrength >= ?');

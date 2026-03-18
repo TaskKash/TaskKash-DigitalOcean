@@ -22,6 +22,7 @@ export default function Analytics() {
   
   const [performance, setPerformance] = useState<any[]>([]);
   const [timeRange, setTimeRange] = useState('30');
+  const [demographicsRaw, setDemographicsRaw] = useState<any>(null);
   
   useEffect(() => {
     fetch(`/api/advertiser/analytics/performance?days=${timeRange}`)
@@ -29,6 +30,13 @@ export default function Analytics() {
       .then(setPerformance)
       .catch(console.error);
   }, [timeRange]);
+
+  useEffect(() => {
+    fetch('/api/advertiser/analytics/demographics')
+      .then(r => r.json())
+      .then(setDemographicsRaw)
+      .catch(console.error);
+  }, []);
 
   // حساب الإحصائيات من البيانات الحقيقية
   const totalViews = advertiserCampaigns.reduce((sum, c) => sum + c.performance.impressions, 0);
@@ -289,20 +297,20 @@ export default function Analytics() {
               <div className="grid grid-cols-2 gap-6">
                 <div className="text-center">
                   <div className="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-                    <div className="text-4xl font-bold text-blue-600">52%</div>
+                    <div className="text-4xl font-bold text-blue-600">{malePercent}%</div>
                   </div>
                   <p className="font-semibold">ذكور</p>
                   <p className="text-sm text-muted-foreground">
-                    {Math.round(totalCompletions * 0.52).toLocaleString('ar-EG')} مستخدم
+                    {maleCount.toLocaleString('ar-EG')} مستخدم
                   </p>
                 </div>
                 <div className="text-center">
                   <div className="w-32 h-32 rounded-full bg-pink-100 flex items-center justify-center mx-auto mb-4">
-                    <div className="text-4xl font-bold text-pink-600">48%</div>
+                    <div className="text-4xl font-bold text-pink-600">{femalePercent}%</div>
                   </div>
                   <p className="font-semibold">إناث</p>
                   <p className="text-sm text-muted-foreground">
-                    {Math.round(totalCompletions * 0.48).toLocaleString('ar-EG')} مستخدم
+                    {femaleCount.toLocaleString('ar-EG')} مستخدم
                   </p>
                 </div>
               </div>

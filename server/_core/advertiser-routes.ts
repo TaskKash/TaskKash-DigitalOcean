@@ -229,6 +229,63 @@ router.get('/advertiser/analytics/performance', requireAdvertiser, async (req: R
 });
 
 /**
+ * GET /api/advertiser/analytics/demographics - Get demographic breakdown
+ */
+router.get('/advertiser/analytics/demographics', requireAdvertiser, async (req: Request, res: Response) => {
+  try {
+    const advertiserId = (req as any).user.advertiserId;
+    
+    // Overall Completions
+    const totalCompletionsQuery = await query(`
+      SELECT COUNT(*) as total 
+      FROM userTasks ut
+      JOIN tasks t ON ut.taskId = t.id 
+      WHERE t.advertiserId = ? AND ut.status = 'completed'
+    `, [advertiserId]);
+    const totalCompletions = totalCompletionsQuery[0]?.total || 0;
+
+    // Age & Gender
+    const demoQuery = await query(`
+      SELECT 
+        CASE 
+          WHEN TIMESTAMPDIFF(YEAR, u.dateOfBirth, CURDATE()) < 25 THEN '18-24'
+          WHEN TIMESTAMPDIFF(YEAR, u.dateOfBirth, CURDATE()) < 35 THEN '25-34'
+          WHEN TIMESTAMPDIFF(YEAR, u.dateOfBirth, CURDATE()) < 45 THEN '35-44'
+          ELSE '45+'
+        END as ageGroup,
+        u.gender,
+        COUNT(*) as count
+      FROM userTasks ut
+      JOIN tasks t ON ut.taskId = t.id
+      JOIN users u ON ut.userId = u.id
+      WHERE t.advertiserId = ? AND ut.status = 'completed'
+      GROUP BY ageGroup, u.gender
+    `, [advertiserId]);
+
+    // Locations
+    const locQuery = await query(`
+      SELECT u.city, COUNT(*) as count
+      FROM userTasks ut
+      JOIN tasks t ON ut.taskId = t.id
+      JOIN users u ON ut.userId = u.id
+      WHERE t.advertiserId = ? AND ut.status = 'completed'
+      GROUP BY u.city
+      ORDER BY count DESC
+      LIMIT 10
+    `, [advertiserId]);
+
+    res.json({
+      totalCompletions,
+      demographics: demoQuery,
+      locations: locQuery
+    });
+  } catch (error) {
+    console.error('Error fetching analytics demographics:', error);
+    res.status(500).json({ error: 'Failed to fetch demographics data' });
+  }
+});
+
+/**
  * GET /api/advertiser/campaigns/:id/report - Get demographic & ROI report
  */
 router.get('/advertiser/campaigns/:id/report', requireAdvertiser, async (req: Request, res: Response) => {
