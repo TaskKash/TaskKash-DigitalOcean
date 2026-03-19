@@ -106,7 +106,6 @@ import LandingPage from "./pages/LandingPage";
 import Blog from "./pages/Blog";
 
 import AdminLogin from "./pages/admin/AdminLogin";
-import AdminDashboard from "./pages/admin/AdminDashboard";
 import UsersManagement from "./pages/admin/UsersManagement";
 import AdvertisersManagement from "./pages/admin/AdvertisersManagement";
 import ReportedTasks from "./pages/admin/ReportedTasks";
@@ -241,7 +240,7 @@ function Router() {
         <AdminProtectedRoute><NewAdminDashboard /></AdminProtectedRoute>
       </Route>
       <Route path="/admin/dashboard">
-        <AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>
+        <AdminProtectedRoute><NewAdminDashboard /></AdminProtectedRoute>
       </Route>
       <Route path="/admin/users">
         <AdminProtectedRoute><UsersManagementNew /></AdminProtectedRoute>
