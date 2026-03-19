@@ -114,7 +114,7 @@ export default function CampaignBuilder() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [launched, setLaunched] = useState(false);
 
-  const symbol = advertiserCountry === 'Egypt' ? 'EGP' : (user?.currency || 'USD');
+  const symbol = advertiserCountry === 'Egypt' ? 'EGP' : ((user as any)?.currency || 'USD');
 
   const [reachData, setReachData] = useState({
     totalReach: 0, rawCount: 0, meetsMinimum: true,
@@ -1251,10 +1251,10 @@ export default function CampaignBuilder() {
                     <h4 className="font-bold mb-1">Launch Blocked</h4>
                     <p className="text-sm">Audience is below 500. Go back to Step 2 and broaden your filters.</p>
                   </div>
-                ) : !campaign.titleEn || !campaign.videoUrl || !campaign.quizQuestion ? (
+                ) : !campaign.titleEn || !campaign.videoUrl || campaign.quizQuestions.some(q => !q.question) ? (
                   <div className="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-lg">
                     <h4 className="font-bold mb-1">Incomplete Fields</h4>
-                    <p className="text-sm">Please complete: {[!campaign.titleEn && 'Campaign Title', !campaign.videoUrl && 'Video URL', !campaign.quizQuestion && 'Quiz Question'].filter(Boolean).join(', ')}</p>
+                    <p className="text-sm">Please complete: {[!campaign.titleEn && 'Campaign Title', !campaign.videoUrl && 'Video URL', campaign.quizQuestions.some(q => !q.question) && 'Quiz Question'].filter(Boolean).join(', ')}</p>
                   </div>
                 ) : (
                   <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg">

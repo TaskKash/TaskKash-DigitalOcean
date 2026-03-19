@@ -126,7 +126,7 @@ export default function WalletDashboard() {
           { label: 'Platform Balance', value: `$${totalWalletBalance.toLocaleString()}`, icon: Wallet, color: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Pending Withdrawals', value: `$${totalPendingUSD.toFixed(2)}`, sub: `${pending.length} requests`, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Approved (This Month)', value: `$${totalApprovedUSD.toFixed(2)}`, sub: `${approved.length} payouts`, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: '${symbol} Rate (1 USD)', value: `EGP ${egpRate}`, sub: 'Manual override', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: `${symbol} Rate (1 USD)`, value: `EGP ${egpRate}`, sub: 'Manual override', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
         ].map(({ label, value, sub, icon: Icon, color, bg }) => (
           <Card key={label} className="border shadow-sm">
             <CardContent className="p-4">
@@ -221,7 +221,7 @@ export default function WalletDashboard() {
                 {/* Amount */}
                 <div className="text-right shrink-0">
                   <p className="font-bold text-gray-900">${w.amount.toFixed(2)}</p>
-                  <p className="text-xs text-gray-500">${symbol} {w.amountEGP.toFixed(0)}</p>
+                  <p className="text-xs text-gray-500">{symbol} {w.amountEGP.toFixed(0)}</p>
                 </div>
 
                 {/* Status / Actions */}

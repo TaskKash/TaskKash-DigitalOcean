@@ -44,34 +44,62 @@ adminRouter.get("/analytics", verifyAdmin, async (req, res) => {
   try {
     const connection = getPool();
     
-    // Overview metrics
-    const [usersResult]: any = await connection.execute("SELECT COUNT(*) as count FROM users WHERE role = 'user'");
-    const [advertisersResult]: any = await connection.execute("SELECT COUNT(*) as count FROM advertisers");
-    const [campaignsResult]: any = await connection.execute("SELECT COUNT(*) as count FROM campaigns WHERE status = 'active'");
-    
-    // Financials
-    const [paidOutResult]: any = await connection.execute("SELECT SUM(amount) as total FROM withdrawalRequests WHERE status = 'completed'");
-    const [escrowResult]: any = await connection.execute("SELECT SUM(amount) as total FROM escrow_ledger WHERE action = 'hold'");
-    const [escrowReleasedResult]: any = await connection.execute("SELECT SUM(amount) as total FROM escrow_ledger WHERE action IN ('release', 'refund')");
-    
-    const totalUsers = usersResult[0]?.count || 0;
-    const totalAdvertisers = advertisersResult[0]?.count || 0;
-    const activeCampaigns = campaignsResult[0]?.count || 0;
-    const totalPaidOut = paidOutResult[0]?.total || 0;
-    const currentEscrow = Math.max(0, (escrowResult[0]?.total || 0) - (escrowReleasedResult[0]?.total || 0));
+    // Overview metrics — each wrapped individually so a missing table won't crash the whole endpoint
+    let totalUsers = 0, totalAdvertisers = 0, activeCampaigns = 0;
+    let totalPaidOut = 0, currentEscrow = 0, netRevenue = 0;
+    let dailyCompletions: any[] = [];
 
-    // Platform Net Revenue (from commissions in ledger or calculated via tasks)
-    const [revenueResult]: any = await connection.execute("SELECT SUM(commissionAmount) as total FROM escrow_ledger WHERE action = 'release'");
-    const netRevenue = revenueResult[0]?.total || 0;
-    
+    try {
+      const [r]: any = await connection.execute("SELECT COUNT(*) as count FROM users WHERE role = 'user'");
+      totalUsers = r[0]?.count || 0;
+    } catch (e) { /* table may not exist */ }
+
+    try {
+      const [r]: any = await connection.execute("SELECT COUNT(*) as count FROM advertisers");
+      totalAdvertisers = r[0]?.count || 0;
+    } catch (e) { /* table may not exist */ }
+
+    try {
+      const [r]: any = await connection.execute("SELECT COUNT(*) as count FROM campaigns WHERE status = 'active'");
+      activeCampaigns = r[0]?.count || 0;
+    } catch (e) { /* table may not exist */ }
+
+    // Financials — these tables may not exist yet
+    try {
+      const [r]: any = await connection.execute("SELECT SUM(amount) as total FROM withdrawal_requests WHERE status = 'completed'");
+      totalPaidOut = r[0]?.total || 0;
+    } catch (e) {
+      try {
+        const [r]: any = await connection.execute("SELECT SUM(amount) as total FROM withdrawalRequests WHERE status = 'completed'");
+        totalPaidOut = r[0]?.total || 0;
+      } catch (e2) { /* neither table exists */ }
+    }
+
+    try {
+      const [held]: any = await connection.execute("SELECT SUM(amount) as total FROM escrow_ledger WHERE action = 'hold'");
+      const [released]: any = await connection.execute("SELECT SUM(amount) as total FROM escrow_ledger WHERE action IN ('release', 'refund')");
+      currentEscrow = Math.max(0, (held[0]?.total || 0) - (released[0]?.total || 0));
+    } catch (e) { /* escrow_ledger may not exist */ }
+
+    try {
+      const [r]: any = await connection.execute("SELECT SUM(commissionAmount) as total FROM escrow_ledger WHERE action = 'release'");
+      netRevenue = r[0]?.total || 0;
+    } catch (e) { /* escrow_ledger may not exist */ }
+
     // Daily completions (last 7 days)
-    const [dailyCompletions]: any = await connection.execute(`
-      SELECT DATE(completedAt) as date, COUNT(*) as completions
-      FROM userCampaignProgress 
-      WHERE status = 'completed' AND completedAt >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-      GROUP BY DATE(completedAt)
-      ORDER BY date ASC
-    `);
+    try {
+      const [rows]: any = await connection.execute(`
+        SELECT DATE(completedAt) as date, COUNT(*) as completions
+        FROM userCampaignProgress 
+        WHERE status = 'completed' AND completedAt >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        GROUP BY DATE(completedAt)
+        ORDER BY date ASC
+      `);
+      dailyCompletions = rows.map((d: any) => ({
+        date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        completions: d.completions
+      }));
+    } catch (e) { /* userCampaignProgress may not exist */ }
 
     return res.json({
       success: true,
@@ -82,10 +110,7 @@ adminRouter.get("/analytics", verifyAdmin, async (req, res) => {
         totalPaidOut,
         currentEscrow,
         netRevenue,
-        dailyCompletions: dailyCompletions.map((d: any) => ({
-          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          completions: d.completions
-        }))
+        dailyCompletions
       }
     });
   } catch (error) {
@@ -176,19 +201,35 @@ adminRouter.post("/users", verifyAdmin, async (req, res) => {
   }
 });
 
-// Get all users
+// Get all users (Paginated)
 adminRouter.get("/users", verifyAdmin, async (req, res) => {
   try {
     const connection = getPool();
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = (page - 1) * limit;
     
+    // Get total count
+    const [countResult]: any = await connection.execute("SELECT COUNT(*) as total FROM users");
+    const total = countResult[0].total;
+    
+    // 100K users causes browser freeze without LIMIT
     const [users]: any = await connection.execute(
-      "SELECT id, openId, name, email, phone, role, balance, completedTasks, totalEarnings, tier, profileStrength, countryId, isVerified, createdAt, updatedAt, lastSignedIn FROM users ORDER BY createdAt DESC"
+      `SELECT id, openId, name, email, phone, role, balance, completedTasks, totalEarnings, tier, profileStrength, countryId, isVerified, createdAt, updatedAt, lastSignedIn 
+       FROM users 
+       ORDER BY createdAt DESC 
+       LIMIT ${limit} OFFSET ${offset}`
     );
-
 
     return res.json({
       success: true,
       users,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
     });
   } catch (error) {
     console.error("[Admin] Get users error:", error);
@@ -667,7 +708,7 @@ adminRouter.get("/campaigns/pending", verifyAdmin, async (req, res) => {
       SELECT c.*, a.nameEn as advertiserName, a.nameAr as advertiserNameAr, a.logoUrl as advertiserLogo
       FROM campaigns c
       LEFT JOIN advertisers a ON c.advertiserId = a.id
-      WHERE c.approvalStatus = 'pending'
+      WHERE c.approvalStatus IN ('pending', 'pending_review')
       ORDER BY c.createdAt DESC
     `);
     return res.json({ success: true, campaigns });
@@ -855,8 +896,8 @@ adminRouter.get("/fraud", verifyAdmin, async (req, res) => {
     const [flags]: any = await connection.execute(query, params);
     return res.json({ success: true, flags });
   } catch (error) {
-    console.error("[Admin] Get fraud flags error:", error);
-    return res.status(500).json({ success: false, error: "Failed to fetch fraud flags" });
+    console.error("[Admin] Get fraud flags error (fallback to empty array):", error);
+    return res.json({ success: true, flags: [] });
   }
 });
 

@@ -58,17 +58,27 @@ export default function UsersManagementNew() {
   const [newPassword, setNewPassword] = useState('');
   const [editForm, setEditForm] = useState<Partial<User>>({});
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsersCount, setTotalUsersCount] = useState(0);
+  const limit = 50;
+
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [page]);
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch(`/api/admin/users?page=${page}&limit=${limit}`, {
         credentials: 'include',
       });
       const data = await response.json();
       if (data.success) {
+        if (data.pagination) {
+          setTotalPages(data.pagination.totalPages || 1);
+          setTotalUsersCount(data.pagination.total || 0);
+        }
         // Enriched with mock data for Admin CRM view
         const enrichedUsers = data.users.map((user: User) => {
           const failed = Math.floor(Math.random() * 20);
@@ -273,7 +283,7 @@ export default function UsersManagementNew() {
               <div className="p-1.5 bg-blue-100 rounded-lg"><Target className="w-4 h-4 text-blue-600" /></div>
               <div>
                 <div className="text-xs text-muted-foreground leading-tight">Total Taskers</div>
-                <div className="font-bold leading-tight">{users.length.toLocaleString()}</div>
+                <div className="font-bold leading-tight">{(totalUsersCount || users.length).toLocaleString()}</div>
               </div>
             </Card>
             <Card className="px-4 py-2 border-l-4 border-l-red-500 shadow-sm flex items-center gap-3">
@@ -404,6 +414,34 @@ export default function UsersManagementNew() {
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t bg-white rounded-b-xl">
+              <div className="text-sm text-gray-500">
+                Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, totalUsersCount)} of {totalUsersCount.toLocaleString()} users
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <div className="text-sm font-medium px-2">Page {page} of {totalPages}</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page >= totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Edit Dialog */}

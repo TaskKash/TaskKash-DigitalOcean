@@ -146,7 +146,8 @@ export default function AdminAnalyticsDashboard() {
                       return (
                         <div key={i} className="flex flex-col items-center flex-1 min-w-[60px]">
                           <div className="w-full flex-grow flex items-end mb-2 group relative">
-                            <div className="w-full bg-blue-500 rounded-t-sm transition-all duration-300 hover:bg-blue-600" style={{ height: pct > 0 ? `${pct}%` : '2px' }}>
+                            {/* eslint-disable-next-line react/forbid-dom-props */}
+                            <div className="w-full bg-blue-500 rounded-t-sm transition-all duration-300 hover:bg-blue-600 h-[var(--bar-h)]" style={{ '--bar-h': pct > 0 ? `${pct}%` : '2px' } as React.CSSProperties}>
                               <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded pointer-events-none transition-opacity">
                                 {day.completions}
                               </div>

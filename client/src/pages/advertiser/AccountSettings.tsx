@@ -165,6 +165,7 @@ export default function AccountSettings() {
                     <Label htmlFor="country">الدولة (Country)</Label>
                     <select
                       id="country"
+                      title="اختر الدولة"
                       value={selectedCountryId || ''}
                       onChange={(e) => setSelectedCountryId(Number(e.target.value))}
                       className="w-full h-10 px-3 rounded-md border border-input bg-background"
@@ -178,23 +179,7 @@ export default function AccountSettings() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <Label htmlFor="country">الدولة (Country)</Label>
-                    <select
-                      id="country"
-                      value={selectedCountryId || ''}
-                      onChange={(e) => setSelectedCountryId(Number(e.target.value))}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                      required
-                    >
-                      <option value="">اختر الدولة</option>
-                      {countries.map((c: any) => (
-                        <option key={c.id} value={c.id}>
-                          {c.nameAr || c.nameEn} ({c.currency})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+
                   <div>
                     <Label htmlFor="address">العنوان</Label>
                     <Input id="address" defaultValue="القاهرة، مصر" />
@@ -268,28 +253,28 @@ export default function AccountSettings() {
                       <p className="font-semibold">إشعارات الحملات</p>
                       <p className="text-sm text-muted-foreground">تلقي إشعارات عند تحديثات الحملات</p>
                     </div>
-                    <input type="checkbox" defaultChecked className="w-5 h-5" />
+                    <input type="checkbox" title="تفعيل" defaultChecked className="w-5 h-5" />
                   </div>
                   <div className="flex items-center justify-between p-4 border border-border rounded-lg">
                     <div>
                       <p className="font-semibold">إشعارات المهام</p>
                       <p className="text-sm text-muted-foreground">تلقي إشعارات عند إكمال المهام</p>
                     </div>
-                    <input type="checkbox" defaultChecked className="w-5 h-5" />
+                    <input type="checkbox" title="تفعيل" defaultChecked className="w-5 h-5" />
                   </div>
                   <div className="flex items-center justify-between p-4 border border-border rounded-lg">
                     <div>
                       <p className="font-semibold">إشعارات الفواتير</p>
                       <p className="text-sm text-muted-foreground">تلقي إشعارات عند الفواتير الجديدة</p>
                     </div>
-                    <input type="checkbox" defaultChecked className="w-5 h-5" />
+                    <input type="checkbox" title="تفعيل" defaultChecked className="w-5 h-5" />
                   </div>
                   <div className="flex items-center justify-between p-4 border border-border rounded-lg">
                     <div>
                       <p className="font-semibold">النشرة الإخبارية</p>
                       <p className="text-sm text-muted-foreground">تلقي آخر الأخبار والتحديثات</p>
                     </div>
-                    <input type="checkbox" className="w-5 h-5" />
+                    <input type="checkbox" title="النشرة الإخبارية" className="w-5 h-5" />
                   </div>
                   <Button onClick={handleSave} className="bg-gradient-to-r from-emerald-600 to-emerald-700">
                     <Save className="w-4 h-4 ml-2" />
