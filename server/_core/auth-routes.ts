@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { getUserByEmail, getUserByOpenId } from "../db";
+import { getUserByEmailOrPhone, getUserByOpenId } from "../db";
 import { sdk } from "./sdk";
 import { COOKIE_NAME } from "../../shared/const";
 import { getPool, query } from "./mysql-pool";
@@ -35,8 +35,8 @@ authRouter.post("/login", async (req, res) => {
       });
     }
 
-    // Get user from database
-    const user = await getUserByEmail(email);
+    // Get user from database by email or phone
+    const user = await getUserByEmailOrPhone(email);
     if (process.env.NODE_ENV === 'development') {
       console.log('[Auth] User found:', user ? 'YES' : 'NO');
     }

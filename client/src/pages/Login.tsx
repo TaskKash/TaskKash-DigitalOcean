@@ -110,10 +110,10 @@ export default function Login() {
                 <Mail className="absolute right-3 top-3 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="email"
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="example@email.com"
+                  placeholder="Email or Phone Number"
                   className="pr-10"
                   required
                 />

@@ -384,7 +384,7 @@ export default function Tasks() {
           <TabsContent value="available" className="space-y-4">
             {/* Filter Checkboxes */}
             <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4 mb-4">
-              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Filter className="w-4 h-4 text-primary" /> تصفية حسب نوع المهمة</h3>
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Filter className="w-4 h-4 text-primary" /> {t('tasks.filterByType')}</h3>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <label className="flex items-center space-x-2 space-x-reverse cursor-pointer">
                   <Checkbox 
@@ -432,8 +432,8 @@ export default function Tasks() {
               {filteredAvailableTasks.length === 0 && (
                 <Card className="p-10 text-center border-dashed border-2 bg-muted/30">
                   <ListTodo className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-40" />
-                  <p className="font-medium text-foreground mb-1">{t('tasks.empty.available') || 'لا توجد مهام حالياً'}</p>
-                  <p className="text-sm text-muted-foreground">جرب تغيير عوامل التصفية لعرض المهام</p>
+                  <p className="font-medium text-foreground mb-1">{t('tasks.empty.available')}</p>
+                  <p className="text-sm text-muted-foreground">{t('tasks.empty.availableHint')}</p>
                 </Card>
               )}
             </div>
@@ -446,8 +446,8 @@ export default function Tasks() {
             {inProgressTasks.length === 0 && (
               <Card className="p-10 text-center border-dashed border-2 bg-muted/30">
                 <Clock className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-40" />
-                <p className="font-medium text-foreground mb-1">{t('tasks.empty.inProgress') || 'لا يوجد مهام قيد التنفيذ'}</p>
-                <p className="text-sm text-muted-foreground">قم ببدء مهمة لتظهر هنا</p>
+                <p className="font-medium text-foreground mb-1">{t('tasks.empty.inProgress')}</p>
+                <p className="text-sm text-muted-foreground">{t('tasks.empty.inProgressHint')}</p>
               </Card>
             )}
           </TabsContent>
@@ -465,8 +465,8 @@ export default function Tasks() {
             ) : (
               <Card className="p-10 text-center border-dashed border-2 bg-muted/30">
                 <CheckCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-40" />
-                <p className="font-medium text-foreground mb-1">{t('tasks.empty.completed') || 'لم تكمل أي مهام بعد'}</p>
-                <p className="text-sm text-muted-foreground">أكمل المزيد من المهام لزيادة أرباحك!</p>
+                <p className="font-medium text-foreground mb-1">{t('tasks.empty.completed')}</p>
+                <p className="text-sm text-muted-foreground">{t('tasks.empty.completedHint')}</p>
               </Card>
             )}
           </TabsContent>

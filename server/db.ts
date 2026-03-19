@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import { InsertUser, users } from "../drizzle/schema";
@@ -147,6 +147,18 @@ export async function getUserByEmail(email: string) {
     return undefined;
   }
   const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserByEmailOrPhone(identifier: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user: database not available");
+    return undefined;
+  }
+  const result = await db.select().from(users).where(
+    or(eq(users.email, identifier), eq(users.phone, identifier))
+  ).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 

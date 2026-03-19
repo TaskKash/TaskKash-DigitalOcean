@@ -148,6 +148,7 @@ export default function AdvertiserRegister() {
       const response = await fetch('/api/auth/advertiser/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           ...formData,
           tier: selectedTier,

@@ -928,23 +928,24 @@ router.get('/advertiser/billing/balance', requireAdvertiser, async (req: Request
   try {
     const advertiserId = (req as any).user.advertiserId;
     
-    // Calculate total spent from tasks completed
+    // Get real balance from advertiser record
+    const advResult = await query(`SELECT balance, totalSpent FROM advertisers WHERE id = ?`, [advertiserId]);
+    const advBalance = Number(advResult[0]?.balance) || 0;
+    const advTotalSpent = Number(advResult[0]?.totalSpent) || 0;
+
+    // Also get task-based spending for accuracy
     const statsResult = await query(`
-      SELECT SUM(reward * currentCompletions) as totalSpent
+      SELECT SUM(reward * currentCompletions) as taskSpent
       FROM tasks
       WHERE advertiserId = ?
     `, [advertiserId]);
-    
-    const totalSpent = Number(statsResult[0]?.totalSpent) || 0;
-    
-    // Simulate a total budget metric (e.g., they deposited 50k, or spent + 10k buffer)
-    const simulatedTotalBudget = Math.max(50000, totalSpent + 15000);
-    const available = Math.max(0, simulatedTotalBudget - totalSpent);
+    const taskSpent = Number(statsResult[0]?.taskSpent) || 0;
+    const totalSpent = Math.max(advTotalSpent, taskSpent);
 
     res.json({
-      balance: available,
+      balance: advBalance,
       totalSpent: totalSpent,
-      totalBudget: simulatedTotalBudget,
+      totalBudget: advBalance + totalSpent,
       currency: 'EGP'
     });
   } catch (error) {

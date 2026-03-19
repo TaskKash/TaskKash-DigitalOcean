@@ -63,11 +63,13 @@ export default function Profile() {
   };
 
   const getTierInfo = (tier: string) => {
+    // Tier thresholds: Bronze→Silver=25, Silver→Gold=100, Gold→Platinum=250
+    const completed = user?.completedTasks ?? 0;
     const tierMap: Record<string, any> = {
-      bronze: { name: t('tier.bronze'), color: 'bg-amber-700', nextTier: t('tier.silver'), tasksNeeded: 23 },
-      silver: { name: t('tier.silver'), color: 'bg-gray-400', nextTier: t('tier.gold'), tasksNeeded: 73 },
-      gold: { name: t('tier.gold'), color: 'bg-secondary', nextTier: t('tier.platinum'), tasksNeeded: 173 },
-      platinum: { name: t('tier.platinum'), color: 'bg-purple-500', nextTier: null, tasksNeeded: 0 }
+      bronze: { name: t('tier.bronze'), color: 'bg-amber-700', nextTier: t('tier.silver'), tasksNeeded: Math.max(0, 25 - completed), threshold: 25 },
+      silver: { name: t('tier.silver'), color: 'bg-gray-400', nextTier: t('tier.gold'), tasksNeeded: Math.max(0, 100 - completed), threshold: 100 },
+      gold: { name: t('tier.gold'), color: 'bg-secondary', nextTier: t('tier.platinum'), tasksNeeded: Math.max(0, 250 - completed), threshold: 250 },
+      platinum: { name: t('tier.platinum'), color: 'bg-purple-500', nextTier: null, tasksNeeded: 0, threshold: 250 }
     };
     return tierMap[tier] || tierMap.bronze;
   };

@@ -32,12 +32,21 @@ interface CurrencyProviderProps {
   advertiserId?: number;
 }
 
+import { useTranslation } from 'react-i18next';
+
 export function CurrencyProvider({ children, userId, advertiserId }: CurrencyProviderProps) {
+  const { i18n } = useTranslation();
   const [currency, setCurrency] = useState('EGP');
-  const [symbol, setSymbol] = useState('ج.م');
-  const [symbolEn, setSymbolEn] = useState('EGP');
+  const [fetchedSymbol, setFetchedSymbol] = useState('');
+  const [fetchedSymbolEn, setFetchedSymbolEn] = useState('');
   const [rateFromUsd, setRateFromUsd] = useState(31);
   const [loading, setLoading] = useState(false);
+
+  // Determine which symbol to show based on language
+  const isArabic = i18n.language === 'ar';
+  const defaultSymbol = isArabic ? 'ج.م' : 'EGP';
+  const symbol = fetchedSymbol || defaultSymbol;
+  const symbolEn = fetchedSymbolEn || 'EGP';
 
   useEffect(() => {
     async function fetchCurrency() {
@@ -59,8 +68,8 @@ export function CurrencyProvider({ children, userId, advertiserId }: CurrencyPro
           const data = await res.json();
           if (data.success && data.currency) {
             setCurrency(data.currency.code);
-            setSymbol(data.currency.symbol || data.currency.code);
-            setSymbolEn(data.currency.code);
+            setFetchedSymbol(data.currency.symbol || data.currency.code);
+            setFetchedSymbolEn(data.currency.code);
             setRateFromUsd(data.currency.rateFromUsd || 1);
           }
         }
