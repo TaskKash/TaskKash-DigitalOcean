@@ -15,28 +15,30 @@ export default function Analytics() {
   const [, setLocation] = useLocation();
   const { currentAdvertiser, advertiserCampaigns } = useApp();
 
-  // إخفاء مؤقت إذا لم يكن هناك معلن
-  if (!currentAdvertiser) {
-    return null;
-  }
-  
   const [performance, setPerformance] = useState<any[]>([]);
   const [timeRange, setTimeRange] = useState('30');
   const [demographicsRaw, setDemographicsRaw] = useState<any>(null);
-  
+
   useEffect(() => {
+    if (!currentAdvertiser) return;
     fetch(`/api/advertiser/analytics/performance?days=${timeRange}`)
       .then(r => r.json())
       .then(setPerformance)
       .catch(console.error);
-  }, [timeRange]);
+  }, [timeRange, currentAdvertiser]);
 
   useEffect(() => {
+    if (!currentAdvertiser) return;
     fetch('/api/advertiser/analytics/demographics')
       .then(r => r.json())
       .then(setDemographicsRaw)
       .catch(console.error);
-  }, []);
+  }, [currentAdvertiser]);
+
+  // Guard clause AFTER all hooks
+  if (!currentAdvertiser) {
+    return null;
+  }
 
   // حساب الإحصائيات من البيانات الحقيقية
   const totalViews = advertiserCampaigns.reduce((sum, c) => sum + c.performance.impressions, 0);

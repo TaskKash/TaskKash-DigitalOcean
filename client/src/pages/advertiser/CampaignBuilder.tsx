@@ -77,12 +77,12 @@ const INDUSTRIES = ['Technology', 'Healthcare', 'Education', 'Finance & Banking'
 const JOB_TITLES = ['Engineer', 'Doctor', 'Teacher', 'Manager', 'Director', 'Accountant', 'Designer', 'Developer', 'Sales Representative', 'Marketing Specialist', 'Lawyer', 'Analyst', 'Consultant', 'Business Owner'];
 const HOME_OWNERSHIP = ['owner', 'renter'];
 
-// Commission rates by advertiser tier
+// Commission rates by advertiser tier (Constitution Part 1)
 const TIER_COMMISSION: Record<string, number> = {
-  basic: 0.10,
-  pro: 0.15,
-  business: 0.20,
-  enterprise: 0.25,
+  starter: 0.10,    // Tier 1: 10%
+  growth: 0.15,     // Tier 2: 15%
+  precision: 0.20,  // Tier 3: 20%
+  enterprise: 0.25, // Tier 4: 25%
 };
 
 const STEPS = [
@@ -109,7 +109,7 @@ export default function CampaignBuilder() {
   const { user } = useApp();
 
   const [step, setStep] = useState(1);
-  const [advertiserTier, setAdvertiserTier] = useState('basic');
+  const [advertiserTier, setAdvertiserTier] = useState('starter');
   const [advertiserCountry, setAdvertiserCountry] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [launched, setLaunched] = useState(false);
@@ -182,7 +182,7 @@ export default function CampaignBuilder() {
     const info = localStorage.getItem('advertiser-info');
     if (info) {
       const parsed = JSON.parse(info);
-      setAdvertiserTier(parsed.tier || 'basic');
+      setAdvertiserTier(parsed.tier || 'starter');
       if (parsed.country) setAdvertiserCountry(parsed.country);
     }
   }, []);

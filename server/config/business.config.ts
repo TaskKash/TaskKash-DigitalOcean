@@ -104,11 +104,12 @@ export const ADVERTISER_TIERS: Record<string, AdvertiserTierConfig> = {
    * Tier 1: Starter / Self-Serve
    * Commission: 10%
    * Minimum Campaign Spend: 50,000 EGP (~$1,000)
+   * Constitution Part 1, Tier 1
    */
   starter: {
     tier: 'starter',
     commissionRate: 10,
-    minMonthlySpend: 50000, // EGP
+    minMonthlySpend: 50000, // 50,000 EGP
     benefits: [
       'Basic Email Support (24-48h SLA)',
       'Standard aggregated metrics',
@@ -119,12 +120,13 @@ export const ADVERTISER_TIERS: Record<string, AdvertiserTierConfig> = {
   /**
    * Tier 2: Growth / Advanced
    * Commission: 15%
-   * Minimum Campaign Spend: 250,000 EGP
+   * Minimum Campaign Spend: 130,000 EGP
+   * Constitution Part 1, Tier 2
    */
   growth: {
     tier: 'growth',
     commissionRate: 15,
-    minMonthlySpend: 250000, // EGP
+    minMonthlySpend: 250000, // 250,000 EGP
     benefits: [
       'Priority Email & Live Chat Support',
       'Graphical dashboard with demographic segmentation',
@@ -135,12 +137,13 @@ export const ADVERTISER_TIERS: Record<string, AdvertiserTierConfig> = {
   /**
    * Tier 3: Precision / Pro
    * Commission: 20%
-   * Minimum Campaign Spend: 500,000 EGP
+   * Minimum Campaign Spend: 260,000 EGP
+   * Constitution Part 1, Tier 3
    */
   precision: {
     tier: 'precision',
     commissionRate: 20,
-    minMonthlySpend: 500000, // EGP
+    minMonthlySpend: 500000, // 500,000 EGP
     benefits: [
       'Dedicated Account Manager (Business Hours)',
       'Real-time telemetry, Heatmaps & AI insights',
@@ -151,12 +154,13 @@ export const ADVERTISER_TIERS: Record<string, AdvertiserTierConfig> = {
   /**
    * Tier 4: Enterprise / Managed
    * Commission: 25%+
-   * Minimum Campaign Spend: 1,000,000 EGP
+   * Minimum Campaign Spend: 520,000 EGP
+   * Constitution Part 1, Tier 4
    */
   enterprise: {
     tier: 'enterprise',
     commissionRate: 25,
-    minMonthlySpend: 1000000, // EGP
+    minMonthlySpend: 1000000, // 1,000,000 EGP
     benefits: [
       '24/7 Priority Support + Custom Integration Engineering',
       'Raw Data API stream to advertiser BI tool',
@@ -180,7 +184,7 @@ export const LAUNCH_PHASE: LaunchPhaseConfig = {
 // GENERAL BUSINESS CONSTANTS (EGP-based)
 // ─────────────────────────────────────────────
 export const BUSINESS_CONSTANTS = {
-  // Minimum withdrawal amount in EGP (Constitution Gap 5: was $100 USD, now 50 EGP)
+  // Minimum withdrawal amount in EGP — strictly 500 EGP
   MIN_WITHDRAWAL_AMOUNT_EGP: 500,
 
   // EGP Exchange Rate reference (for UI display / future re-indexing)

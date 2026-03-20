@@ -3,7 +3,7 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, UserPlus, Edit, Trash2, Shield } from 'lucide-react';
+import { Search, UserPlus, Edit, Trash2, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import EditUserDialog from '@/components/admin/EditUserDialog';
 import { toast } from 'sonner';
@@ -22,11 +22,14 @@ interface User {
   createdAt: any;
 }
 
+const ROWS_PER_PAGE = 50;
+
 export default function AdminUsers() {
   const { currency, symbol, formatAmount } = useCurrency();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [editingUser, setEditingUser] = React.useState<User | null>(null);
   const [editDialogOpen, setEditDialogOpen] = React.useState(false);
+  const [currentPage, setCurrentPage] = React.useState(1);
 
   const { data: users = [], isLoading, refetch } = trpc.user.listAll.useQuery();
 
@@ -38,6 +41,17 @@ export default function AdminUsers() {
       user.phone?.includes(search)
     );
   });
+
+  // Pagination logic
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / ROWS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * ROWS_PER_PAGE;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + ROWS_PER_PAGE);
+
+  // Reset to page 1 when search changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
@@ -78,6 +92,9 @@ export default function AdminUsers() {
                 className="pl-10"
               />
             </div>
+            <div className="text-sm text-muted-foreground whitespace-nowrap">
+              {filteredUsers.length.toLocaleString()} users
+            </div>
           </div>
 
           {isLoading ? (
@@ -105,7 +122,7 @@ export default function AdminUsers() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((user: User) => (
+                    {paginatedUsers.map((user: User) => (
                       <tr key={user.id} className="border-b hover:bg-muted/50">
                         <td className="p-4">{user.id}</td>
                         <td className="p-4 font-medium">{user.name || '-'}</td>
@@ -167,6 +184,38 @@ export default function AdminUsers() {
               {filteredUsers.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   {searchTerm ? 'No users found matching your search' : 'No users found'}
+                </div>
+              )}
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t pt-4 mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {startIndex + 1}–{Math.min(startIndex + ROWS_PER_PAGE, filteredUsers.length)} of {filteredUsers.length.toLocaleString()}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={safeCurrentPage <= 1}
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <span className="text-sm font-medium px-3">
+                      Page {safeCurrentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={safeCurrentPage >= totalPages}
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </>

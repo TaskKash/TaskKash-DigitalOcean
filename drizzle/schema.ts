@@ -182,7 +182,7 @@ export const advertisers = mysqlTable("advertisers", {
   reviewCount: int("reviewCount", { unsigned: true }).default(0).notNull(),
   countryId: int("countryId").notNull(),
   isActive: int("isActive", { unsigned: true }).default(1).notNull(),
-  tier: mysqlEnum("tier", ["basic", "pro", "premium", "enterprise"]).default("basic").notNull(),
+  tier: mysqlEnum("tier", ["starter", "growth", "precision", "enterprise"]).default("starter").notNull(),
   totalSpend: int("totalSpend", { unsigned: true }).default(0).notNull(), // in smallest currency unit
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -201,7 +201,7 @@ export const tasks = mysqlTable("tasks", {
   titleEn: varchar("titleEn", { length: 300 }).notNull(),
   descriptionAr: text("descriptionAr"),
   descriptionEn: text("descriptionEn"),
-  type: mysqlEnum("type", ["survey", "app", "visit", "review", "social", "video", "quiz", "other"]).notNull(),
+  type: mysqlEnum("type", ["survey", "app", "visit", "review", "social", "video", "quiz", "photo", "mystery_shopping", "ugc_video", "lead_gen", "other"]).notNull(),
   reward: int("reward", { unsigned: true }).notNull(), // in smallest currency unit (e.g., cents/piasters)
   duration: int("duration", { unsigned: true }).notNull(), // in minutes
   difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard"]).default("easy").notNull(),
