@@ -140,8 +140,8 @@ export async function requestWithdrawal(
   if (!db) throw new Error('Database not available');
 
   // Check minimum withdrawal amount
-  if (amount < BUSINESS_CONSTANTS.MIN_WITHDRAWAL_AMOUNT) {
-    throw new Error(`Minimum withdrawal amount is $${BUSINESS_CONSTANTS.MIN_WITHDRAWAL_AMOUNT}`);
+  if (amount < BUSINESS_CONSTANTS.MIN_WITHDRAWAL_AMOUNT_EGP) {
+    throw new Error(`Minimum withdrawal amount is ${BUSINESS_CONSTANTS.MIN_WITHDRAWAL_AMOUNT_EGP} EGP`);
   }
 
   // Get current balance

@@ -26,7 +26,7 @@ interface User {
   email: string | null;
   phone: string | null;
   role: 'user' | 'admin';
-  tier: 'bronze' | 'silver' | 'gold' | 'platinum';
+  tier: 'vip' | 'prestige' | 'elite';
   isVerified: number;
 }
 
@@ -48,7 +48,7 @@ export default function EditUserDialog({
     email: '',
     phone: '',
     role: 'user' as 'user' | 'admin',
-    tier: 'bronze' as 'bronze' | 'silver' | 'gold' | 'platinum',
+    tier: 'vip' as 'vip' | 'prestige' | 'elite',
     isVerified: 0,
   });
 
@@ -165,7 +165,7 @@ export default function EditUserDialog({
               <Label htmlFor="tier">Tier</Label>
               <Select
                 value={formData.tier}
-                onValueChange={(value: 'bronze' | 'silver' | 'gold' | 'platinum') =>
+                onValueChange={(value: 'vip' | 'prestige' | 'elite') =>
                   setFormData({ ...formData, tier: value })
                 }
               >
@@ -173,7 +173,9 @@ export default function EditUserDialog({
                   <SelectValue placeholder="Select tier" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bronze">Bronze</SelectItem>
+                  <SelectItem value="vip">VIP</SelectItem>
+                  <SelectItem value="prestige">Prestige</SelectItem>
+                  <SelectItem value="elite">Elite Field Agent</SelectItem>
                   <SelectItem value="silver">Silver</SelectItem>
                   <SelectItem value="gold">Gold</SelectItem>
                   <SelectItem value="platinum">Platinum</SelectItem>

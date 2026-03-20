@@ -15,7 +15,7 @@ interface User {
   email: string | null;
   phone: string | null;
   role: 'user' | 'admin';
-  tier: 'bronze' | 'silver' | 'gold' | 'platinum';
+  tier: 'vip' | 'prestige' | 'elite';
   balance: number;
   completedTasks: number;
   isVerified: number;

@@ -53,18 +53,16 @@ export default function Home() {
   ];
 
   const tierColors = {
-    bronze: 'bg-amber-700',
-    silver: 'bg-gray-400',
-    gold: 'bg-secondary',
-    platinum: 'bg-purple-500'
+    vip: 'bg-amber-700',
+    prestige: 'bg-gray-400',
+    elite: 'bg-secondary'
   };
 
   const getTierName = (tier: string) => {
     const tierMap: Record<string, string> = {
-      bronze: t('tier.bronze'),
-      silver: t('tier.silver'),
-      gold: t('tier.gold'),
-      platinum: t('tier.platinum')
+      vip: t('tier.vip', 'VIP'),
+      prestige: t('tier.prestige', 'Prestige'),
+      elite: t('tier.elite', 'Elite')
     };
     return tierMap[tier] || tier;
   };
@@ -88,8 +86,8 @@ export default function Home() {
               <p className="text-sm opacity-90">{t('home.greeting')}</p>
               <h2 className="text-2xl font-bold">{user?.name}</h2>
             </div>
-            <Badge className={`${tierColors[(user?.tier || 'bronze') as keyof typeof tierColors]} text-white border-0`}>
-              {getTierName(user?.tier || 'bronze')}
+            <Badge className={`${tierColors[(user?.tier || 'vip') as keyof typeof tierColors]} text-white border-0`}>
+              {getTierName(user?.tier || 'vip')}
             </Badge>
           </div>
 

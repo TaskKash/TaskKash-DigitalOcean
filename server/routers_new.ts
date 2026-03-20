@@ -100,7 +100,7 @@ export const appRouter = router({
     upgradeUser: publicProcedure
       .input(z.object({
         userId: z.number(),
-        newTier: z.enum(['tier1', 'tier2', 'tier3']),
+        newTier: z.enum(['vip', 'prestige', 'elite']),
       }))
       .mutation(async ({ input }) => {
         return await upgradeUserTier(input.userId, input.newTier as any);
@@ -108,7 +108,7 @@ export const appRouter = router({
     getUserTierInfo: publicProcedure
       .input(z.object({ tier: z.string() }))
       .query(({ input }) => {
-        return getTierInfo(input.tier, 'user');
+        return getTierInfo(input.tier);
       }),
     
     // Advertiser tier operations
@@ -120,7 +120,7 @@ export const appRouter = router({
     upgradeAdvertiser: publicProcedure
       .input(z.object({
         advertiserId: z.number(),
-        newTier: z.enum(['tier1', 'tier2', 'tier3', 'tier4']),
+        newTier: z.enum(['starter', 'growth', 'precision', 'enterprise']),
       }))
       .mutation(async ({ input }) => {
         return await upgradeAdvertiserTier(input.advertiserId, input.newTier as any);
@@ -128,7 +128,7 @@ export const appRouter = router({
     getAdvertiserTierInfo: publicProcedure
       .input(z.object({ tier: z.string() }))
       .query(({ input }) => {
-        return getTierInfo(input.tier, 'advertiser');
+        return getTierInfo(input.tier);
       }),
   }),
 
@@ -408,7 +408,7 @@ export const appRouter = router({
         email: z.string().email().optional(),
         phone: z.string().optional(),
         role: z.enum(['user', 'admin']).optional(),
-        tier: z.enum(['bronze', 'silver', 'gold', 'platinum']).optional(),
+        tier: z.enum(['vip', 'prestige', 'elite']).optional(),
         isVerified: z.number().min(0).max(1).optional(),
       }))
       .mutation(async ({ ctx, input }) => {

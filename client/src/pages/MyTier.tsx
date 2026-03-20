@@ -68,8 +68,8 @@ export default function MyTier() {
   const getTierInfo = (tier: string) => {
     const tierMap: Record<string, any> = {
       tier1: { 
-        name: 'Bronze', 
-        nameAr: 'برونزي',
+        name: 'Basic', 
+        nameAr: 'أساسي',
         color: 'from-amber-700 to-amber-900', 
         bgColor: 'bg-amber-700',
         textColor: 'text-amber-700',
@@ -86,8 +86,8 @@ export default function MyTier() {
         ]
       },
       tier2: { 
-        name: 'Silver', 
-        nameAr: 'فضي',
+        name: 'Verified', 
+        nameAr: 'موثق',
         color: 'from-gray-400 to-gray-600', 
         bgColor: 'bg-gray-400',
         textColor: 'text-gray-600',
@@ -104,8 +104,8 @@ export default function MyTier() {
         ]
       },
       tier3: { 
-        name: 'Gold', 
-        nameAr: 'ذهبي',
+        name: 'Advanced', 
+        nameAr: 'متقدم',
         color: 'from-yellow-400 to-yellow-600', 
         bgColor: 'bg-yellow-500',
         textColor: 'text-yellow-600',
@@ -122,8 +122,8 @@ export default function MyTier() {
         ]
       },
       tier4: { 
-        name: 'Platinum', 
-        nameAr: 'بلاتيني',
+        name: 'Pro', 
+        nameAr: 'محترف',
         color: 'from-purple-400 to-purple-600', 
         bgColor: 'bg-purple-500',
         textColor: 'text-purple-600',
@@ -140,8 +140,8 @@ export default function MyTier() {
         ]
       },
       tier5: { 
-        name: 'Diamond', 
-        nameAr: 'ماسي',
+        name: 'Expert', 
+        nameAr: 'خبير',
         color: 'from-blue-400 to-blue-600', 
         bgColor: 'bg-blue-500',
         textColor: 'text-blue-600',
@@ -158,8 +158,8 @@ export default function MyTier() {
         ]
       },
       tier6: { 
-        name: 'Elite', 
-        nameAr: 'نخبة',
+        name: 'Master', 
+        nameAr: 'متقن',
         color: 'from-red-400 to-red-600', 
         bgColor: 'bg-red-500',
         textColor: 'text-red-600',

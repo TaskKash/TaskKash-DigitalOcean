@@ -11,35 +11,35 @@ interface ProfileStrengthBarProps {
 const getBadgeInfo = (strength: number, t: any) => {
   if (strength >= 100) {
     return {
-      name: t('profileStrength.badges.platinum'),
-      icon: Crown,
-      color: 'text-gray-400',
-      bgColor: 'bg-gradient-to-r from-gray-300 to-gray-400',
-      emoji: '💎'
+      name: t('profileStrength.badges.complete', 'Complete'),
+      icon: Shield,
+      color: 'text-green-500',
+      bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
+      emoji: '🛡️'
     };
   } else if (strength >= 75) {
     return {
-      name: t('profileStrength.badges.gold'),
-      icon: Award,
-      color: 'text-yellow-500',
-      bgColor: 'bg-gradient-to-r from-yellow-400 to-yellow-600',
-      emoji: '🥇'
+      name: t('profileStrength.badges.strong', 'Strong'),
+      icon: Shield,
+      color: 'text-blue-500',
+      bgColor: 'bg-gradient-to-r from-blue-400 to-blue-600',
+      emoji: '🔵'
     };
   } else if (strength >= 50) {
     return {
-      name: t('profileStrength.badges.silver'),
-      icon: Star,
-      color: 'text-gray-400',
-      bgColor: 'bg-gradient-to-r from-gray-300 to-gray-500',
-      emoji: '🥈'
+      name: t('profileStrength.badges.good', 'Good'),
+      icon: Shield,
+      color: 'text-indigo-400',
+      bgColor: 'bg-gradient-to-r from-indigo-400 to-indigo-500',
+      emoji: '🟣'
     };
   } else {
     return {
-      name: t('profileStrength.badges.bronze'),
+      name: t('profileStrength.badges.basic', 'Basic'),
       icon: Shield,
-      color: 'text-secondary',
-      bgColor: 'bg-gradient-to-r from-orange-400 to-orange-600',
-      emoji: '🥉'
+      color: 'text-gray-400',
+      bgColor: 'bg-gradient-to-r from-gray-400 to-gray-500',
+      emoji: '⚪'
     };
   }
 };

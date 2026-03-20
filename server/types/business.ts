@@ -3,11 +3,11 @@
  * Defines the commission structure and tier system
  */
 
-// User Tiers
-export type UserTier = 'bronze' | 'silver' | 'gold' | 'platinum';
+// User Tiers (3-tier Constitution model)
+export type UserTier = 'vip' | 'prestige' | 'elite';
 
-// Advertiser Tiers
-export type AdvertiserTier = 'basic' | 'pro' | 'premium' | 'enterprise';
+// Advertiser Tiers (Constitution: starter, growth, precision, enterprise)
+export type AdvertiserTier = 'starter' | 'growth' | 'precision' | 'enterprise';
 
 // Payment Schedule based on User Tier
 export type PaymentSchedule = 'monthly' | 'weekly' | 'instant';
@@ -20,11 +20,12 @@ export type PaymentSchedule = 'monthly' | 'weekly' | 'instant';
  */
 export interface UserTierConfig {
   tier: UserTier;
-  commissionRate: number; // Percentage (5, 10, 20)
+  commissionRate: number; // Placeholder — actual payout commission is per payout speed, not tier
   paymentSchedule: PaymentSchedule;
-  paymentDelay: number; // Hours (720 for monthly, 168 for weekly, 3 for instant)
-  minTasksRequired: number; // Minimum tasks to maintain tier
-  minRatingRequired: number; // Minimum rating to maintain tier
+  paymentDelay: number; // Hours
+  minTasksRequired: number; // Tasks required from previous tier to unlock this tier
+  minRatingRequired: number; // Minimum approval rate (e.g. 0.9 = 90%)
+  maxTaskRewardEGP?: number | null; // Constitution Gap 4: reward ceiling in EGP (null = unlimited)
 }
 
 /**
@@ -37,8 +38,8 @@ export interface UserTierConfig {
 export interface AdvertiserTierConfig {
   tier: AdvertiserTier;
   commissionRate: number; // Percentage (10, 15, 20, 25)
-  minMonthlySpend: number; // Minimum monthly spend to qualify for tier (USD)
-  benefits: string[]; // Additional benefits for this tier
+  minMonthlySpend: number; // Minimum monthly spend to qualify for tier (EGP)
+  benefits: string[];
 }
 
 /**

@@ -219,7 +219,7 @@ export const appRouter = router({
         email: z.string().email().optional(),
         phone: z.string().optional(),
         role: z.enum(['user', 'admin']).optional(),
-        tier: z.enum(['bronze', 'silver', 'gold', 'platinum']).optional(),
+        tier: z.enum(['vip', 'prestige', 'elite']).optional(),
         isVerified: z.number().min(0).max(1).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -450,7 +450,7 @@ export const appRouter = router({
     getInfo: publicProcedure
       .input(z.object({ tier: z.string() }))
       .query(({ input }) => {
-        return getTierInfo(input.tier, 'user');
+        return getTierInfo(input.tier);
       }),
   }),
 
@@ -692,7 +692,7 @@ export const appRouter = router({
         const advertiser = (advRows as any)[0];
         if (!advertiser) throw new Error('Advertiser not found');
 
-        const tier = advertiser.tier || 'basic';
+        const tier = advertiser.tier || 'starter';
 
         // Validate targeting based on tier
         if (tier === 'basic') {

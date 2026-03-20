@@ -84,10 +84,9 @@ const resources = {
       "home.days.friday": "الجمعة",
 
       // Tier names
-      "tier.bronze": "برونزي",
-      "tier.silver": "فضي",
-      "tier.gold": "ذهبي",
-      "tier.platinum": "بلاتيني",
+      "tier.vip": "في آي بي",
+      "tier.prestige": "برستيج",
+      "tier.elite": "نخبة",
 
       // Time
       "time.minutes": "دقيقة",
@@ -287,10 +286,10 @@ const resources = {
 
       // Profile Strength
       "profileStrength.title": "قوة الملف الشخصي",
-      "profileStrength.badges.bronze": "برونزي",
-      "profileStrength.badges.silver": "فضي",
-      "profileStrength.badges.gold": "ذهبي",
-      "profileStrength.badges.platinum": "بلاتيني",
+      "profileStrength.badges.basic": "أساسي",
+      "profileStrength.badges.good": "جيد",
+      "profileStrength.badges.strong": "قوي",
+      "profileStrength.badges.complete": "مكتمل",
       "profileStrength.remaining": "متبقي",
       "profileStrength.complete": "مكتمل 100%",
       "profileStrength.boostProfile": "عزز ملفك الشخصي",
@@ -760,10 +759,9 @@ const resources = {
       "home.days.friday": "Fri",
 
       // Tier names
-      "tier.bronze": "Bronze",
-      "tier.silver": "Silver",
-      "tier.gold": "Gold",
-      "tier.platinum": "Platinum",
+      "tier.vip": "VIP",
+      "tier.prestige": "Prestige",
+      "tier.elite": "Elite",
 
       // Time
       "time.minutes": "minutes",
@@ -963,10 +961,10 @@ const resources = {
 
       // Profile Strength
       "profileStrength.title": "Profile Strength",
-      "profileStrength.badges.bronze": "Bronze",
-      "profileStrength.badges.silver": "Silver",
-      "profileStrength.badges.gold": "Gold",
-      "profileStrength.badges.platinum": "Platinum",
+      "profileStrength.badges.basic": "Basic",
+      "profileStrength.badges.good": "Good",
+      "profileStrength.badges.strong": "Strong",
+      "profileStrength.badges.complete": "Complete",
       "profileStrength.remaining": "remaining",
       "profileStrength.complete": "100% Complete",
       "profileStrength.boostProfile": "Boost Your Profile",

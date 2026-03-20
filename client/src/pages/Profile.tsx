@@ -63,15 +63,14 @@ export default function Profile() {
   };
 
   const getTierInfo = (tier: string) => {
-    // Tier thresholds: Bronze→Silver=25, Silver→Gold=100, Gold→Platinum=250
+    // Tier thresholds: VIP→Prestige=5, Prestige→Elite=20 total tasks (15 more)
     const completed = user?.completedTasks ?? 0;
     const tierMap: Record<string, any> = {
-      bronze: { name: t('tier.bronze'), color: 'bg-amber-700', nextTier: t('tier.silver'), tasksNeeded: Math.max(0, 25 - completed), threshold: 25 },
-      silver: { name: t('tier.silver'), color: 'bg-gray-400', nextTier: t('tier.gold'), tasksNeeded: Math.max(0, 100 - completed), threshold: 100 },
-      gold: { name: t('tier.gold'), color: 'bg-secondary', nextTier: t('tier.platinum'), tasksNeeded: Math.max(0, 250 - completed), threshold: 250 },
-      platinum: { name: t('tier.platinum'), color: 'bg-purple-500', nextTier: null, tasksNeeded: 0, threshold: 250 }
+      vip: { name: t('tier.vip'), color: 'bg-amber-700', nextTier: t('tier.prestige'), tasksNeeded: Math.max(0, 5 - completed), threshold: 5 },
+      prestige: { name: t('tier.prestige'), color: 'bg-gray-400', nextTier: t('tier.elite'), tasksNeeded: Math.max(0, 20 - completed), threshold: 20 },
+      elite: { name: t('tier.elite'), color: 'bg-secondary', nextTier: null, tasksNeeded: 0, threshold: 20 }
     };
-    return tierMap[tier] || tierMap.bronze;
+    return tierMap[tier] || tierMap.vip;
   };
 
   const currentTierInfo = getTierInfo((user?.tier ?? ""));

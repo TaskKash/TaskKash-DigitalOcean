@@ -303,12 +303,20 @@ export default function EditProfile() {
             <span className="text-sm text-green-600 font-medium">{t('verified')}</span>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+          <div className={`flex items-center justify-between p-3 rounded-lg ${
+            (user as any)?.isPhoneVerified ? 'bg-green-50' : 'bg-yellow-50'
+          }`}>
             <div className="flex items-center gap-2">
-              <Phone className="w-5 h-5 text-green-600" />
+              <Phone className={`w-5 h-5 ${
+                (user as any)?.isPhoneVerified ? 'text-green-600' : 'text-yellow-600'
+              }`} />
               <span className="text-sm">{t('phoneNumber')}</span>
             </div>
-            <span className="text-sm text-green-600 font-medium">{t('verified')}</span>
+            {(user as any)?.isPhoneVerified ? (
+              <span className="text-sm text-green-600 font-medium">{t('verified')}</span>
+            ) : (
+              <Button variant="outline" size="sm">{t('verify')}</Button>
+            )}
           </div>
 
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">

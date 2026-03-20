@@ -17,6 +17,7 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   password: varchar("password", { length: 255 }), // bcrypt hashed password for email/password auth
   phone: varchar("phone", { length: 20 }),
+  isPhoneVerified: int("isPhoneVerified", { unsigned: true }).default(0).notNull(), // 0 = not verified, 1 = verified
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
 
@@ -24,7 +25,7 @@ export const users = mysqlTable("users", {
   balance: int("balance", { unsigned: true }).default(0).notNull(), // in smallest currency unit
   completedTasks: int("completedTasks", { unsigned: true }).default(0).notNull(),
   totalEarnings: int("totalEarnings", { unsigned: true }).default(0).notNull(), // in smallest currency unit
-  tier: mysqlEnum("tier", ["bronze", "silver", "gold", "platinum"]).default("bronze").notNull(),
+  tier: mysqlEnum("tier", ["vip", "prestige", "elite"]).default("vip").notNull(),
   // Virtual generated column for easy >= tier filtering
   tierRank: int("tierRank"),
   profileStrength: int("profileStrength", { unsigned: true }).default(30).notNull(), // percentage 0-100
