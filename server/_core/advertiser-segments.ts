@@ -161,23 +161,43 @@ router.post('/segments', requireAdvertiser, async (req, res) => {
     buildSetCondition('up.homeOwnership', filters.homeOwnership, conditions, params, filters._knownHomeOwnership);
 
     // CATEGORY 3: Device & Connectivity
-    buildSetCondition('up.deviceTier', filters.deviceTiers, conditions, params);
+    // Device Brands (virtual column derived from model matching)
+    if (filters.deviceBrands && filters.deviceBrands.length > 0) {
+      if (!filters.deviceBrands.includes('__others__') || filters.deviceBrands.length < 5) {
+        // Only filter if they didn't Select All, otherwise bypass
+        const brandClauses: string[] = [];
+        filters.deviceBrands.forEach((b: string) => {
+          if (b === 'Samsung') brandClauses.push(`up.deviceModel LIKE 'Samsung%' OR up.deviceModel LIKE 'Galaxy%'`);
+          else if (b === 'Apple') brandClauses.push(`up.deviceModel LIKE 'iPhone%' OR up.deviceModel LIKE 'iPad%'`);
+          else if (b === 'Xiaomi') brandClauses.push(`up.deviceModel LIKE 'Xiaomi%' OR up.deviceModel LIKE 'Redmi%' OR up.deviceModel LIKE 'POCO%'`);
+          else if (b === 'Huawei') brandClauses.push(`up.deviceModel LIKE 'Huawei%' OR up.deviceModel LIKE 'Nova%' OR up.deviceModel LIKE 'Mate%' OR up.deviceModel LIKE 'Honor%'`);
+          else if (b === 'Google') brandClauses.push(`up.deviceModel LIKE 'Pixel%'`);
+          else if (b !== '__others__') brandClauses.push(`up.deviceModel LIKE '${b}%'`);
+        });
+        if (filters.deviceBrands.includes('__others__')) {
+            brandClauses.push(`up.deviceModel IS NULL OR up.deviceModel = ''`);
+        }
+        if (brandClauses.length > 0) conditions.push(`(${brandClauses.join(' OR ')})`);
+      }
+    }
+
+    buildSetCondition('up.deviceTier', filters.deviceTiers, conditions, params, filters._knownDeviceTiers);
     buildSetCondition('up.deviceOs', filters.deviceOs, conditions, params);
     buildSetCondition('up.networkCarrier', filters.networkCarriers, conditions, params);
-    buildSetCondition('up.deviceModel', filters.deviceModels, conditions, params);
-    buildSetCondition('up.connectionType', filters.connectionTypes, conditions, params);
+    buildSetCondition('up.deviceModel', filters.deviceModels, conditions, params, filters._knownDeviceModels);
+    buildSetCondition('up.connectionType', filters.connectionTypes, conditions, params, filters._knownConnectionTypes);
 
     // CATEGORY 4: Psychographic
     buildJsonContains('up.interests', filters.interests, filters.interestsMatchAll, conditions, params, filters._knownInterests);
-    buildJsonContains('up.brandAffinity', filters.brandAffinity, filters.brandAffinityMatchAll, conditions, params);
-    buildJsonContains('up.values', filters.values, filters.valuesMatchAll, conditions, params);
+    buildJsonContains('up.brandAffinity', filters.brandAffinity, filters.brandAffinityMatchAll, conditions, params, filters._knownBrandAffinity);
+    buildJsonContains('up.values', filters.values, filters.valuesMatchAll, conditions, params, filters._knownValues);
     buildSetCondition('up.lifeStage', filters.lifeStages, conditions, params, filters._knownLifeStages);
 
     // CATEGORY 5: Behavioral
-    buildSetCondition('up.shoppingFrequency', filters.shoppingFrequencies, conditions, params);
+    buildSetCondition('up.shoppingFrequency', filters.shoppingFrequencies, conditions, params, filters._knownShoppingFrequencies);
     buildJsonContains('up.preferredStores', filters.preferredStores, filters.preferredStoresMatchAll, conditions, params, filters._knownPreferredStores);
     buildJsonContains('up.nextPurchaseIntent', filters.nextPurchaseIntent, filters.nextPurchaseIntentMatchAll, conditions, params, filters._knownPurchaseIntents);
-    buildSetCondition('up.activityPattern', filters.activityPatterns, conditions, params);
+    buildSetCondition('up.activityPattern', filters.activityPatterns, conditions, params, filters._knownActivityPatterns);
 
     // CATEGORY 6: Mobility & Household
     if (filters.hasVehicle !== undefined) {

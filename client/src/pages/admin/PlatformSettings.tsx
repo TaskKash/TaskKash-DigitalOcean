@@ -11,7 +11,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 export default function PlatformSettings() {
   const { currency, symbol, formatAmount } = useCurrency();
   const [settings, setSettings] = useState({
-    minWithdrawal: 50,
+    minWithdrawal: 500,
     platformFee: 15,
     taskApprovalRequired: true,
     autoApproveAfterHours: 24,

@@ -202,6 +202,7 @@ function Router() {
       <Route path="/notifications" component={Notifications} />
       <Route path="/profile/notifications" component={Notifications} />
       <Route path="/settings" component={Settings} />
+      <Route path="/profile/security" component={Settings} />
       <Route path="/help" component={Help} />
       <Route path="/referral" component={Referral} />
       <Route path="/referrals" component={Referrals} />

@@ -374,7 +374,7 @@ export default function PaymentMethodsPage() {
           <ul className="text-sm text-blue-600 dark:text-blue-400 space-y-1">
             <li>• {isArabic ? 'تأكد من صحة بيانات الحساب قبل الحفظ' : 'Verify account details before saving'}</li>
             <li>• {isArabic ? 'يمكنك تعيين طريقة دفع افتراضية للسحب السريع' : 'Set a default method for quick withdrawals'}</li>
-            <li>• {isArabic ? 'الحد الأدنى للسحب: 50 {symbol}' : 'Minimum withdrawal: 50 {symbol}'}</li>
+            <li>• {isArabic ? `الحد الأدنى للسحب: 500 ${symbol}` : `Minimum withdrawal: 500 ${symbol}`}</li>
           </ul>
         </Card>
       </div>

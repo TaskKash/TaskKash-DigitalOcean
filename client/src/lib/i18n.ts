@@ -956,7 +956,7 @@ const resources = {
       "wallet.status.failed": "Failed",
       "wallet.errors.invalidAmount": "Please enter a valid amount",
       "wallet.errors.insufficientBalance": "Insufficient balance",
-      "wallet.errors.minimumAmount": "Minimum withdrawal amount is 50 EGP",
+      "wallet.errors.minimumAmount": "Minimum withdrawal amount is 500 EGP",
       "wallet.success.withdrawRequest": "Withdrawal request sent successfully!",
       "wallet.empty.all": "No transactions yet",
       "wallet.empty.startEarning": "Start completing tasks to earn money",

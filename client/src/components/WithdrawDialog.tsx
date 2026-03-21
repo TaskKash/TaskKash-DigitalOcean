@@ -45,6 +45,7 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
   
   const [methods, setMethods] = useState<WithdrawMethod[]>([]);
   const [config, setConfig] = useState<any>(null);
+  const [savedMethods, setSavedMethods] = useState<any[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [accountDetails, setAccountDetails] = useState<Record<string, string>>({});
@@ -62,9 +63,10 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
     setIsFetchingMethods(true);
     try {
       setIsFetchingMethods(true);
-      const [methodsRes, configRes] = await Promise.all([
+      const [methodsRes, configRes, savedMethodsRes] = await Promise.all([
         fetch('/api/withdrawals/methods'),
-        fetch('/api/config/commissions').catch(() => null)
+        fetch('/api/config/commissions').catch(() => null),
+        fetch('/api/payment-methods').catch(() => null)
       ]);
       const methodsData = await methodsRes.json();
       setMethods(methodsData.methods || []);
@@ -72,6 +74,11 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
       if (configRes && configRes.ok) {
         const configData = await configRes.json();
         setConfig(configData);
+      }
+      
+      if (savedMethodsRes && savedMethodsRes.ok) {
+        const savedData = await savedMethodsRes.json();
+        setSavedMethods(savedData.methods || []);
       }
     } catch (error) {
       console.error('Error fetching withdrawal data:', error);
@@ -256,6 +263,35 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
               {formatAmount(userBalance)} {symbol}
             </p>
           </div>
+
+          {/* Saved Methods Quick Select */}
+          {savedMethods.length > 0 && (
+            <div className="space-y-2 mb-4">
+              <Label>{isRTL ? 'طرق الدفع المحفوظة (سريع)' : 'Saved Payment Methods (Quick Select)'}</Label>
+              <div className="grid grid-cols-1 gap-2">
+                {savedMethods.map((sm, idx) => (
+                  <Button
+                    key={sm.id || idx}
+                    variant="outline"
+                    className="justify-start text-left h-auto py-3 bg-primary/5 hover:bg-primary/10 border-primary/20"
+                    onClick={() => {
+                      const mappedType = sm.type.replace('-', '_');
+                      setSelectedMethod(mappedType);
+                      setAccountDetails({
+                        phoneNumber: sm.accountNumber,
+                        accountNumber: sm.accountNumber,
+                      });
+                    }}
+                  >
+                    <div className="flex flex-col items-start w-full">
+                      <span className="font-semibold">{sm.name}</span>
+                      <span className="text-xs text-muted-foreground">{sm.accountNumber}</span>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Withdrawal Method */}
           <div className="space-y-2">

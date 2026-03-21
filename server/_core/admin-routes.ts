@@ -673,11 +673,26 @@ adminRouter.get("/stats", verifyAdmin, async (req, res) => {
   try {
     const connection = getPool();
     
-    const [userCount]: any = await connection.execute("SELECT COUNT(*) as count FROM users");
-    const [advertiserCount]: any = await connection.execute("SELECT COUNT(*) as count FROM advertisers WHERE isActive = 1");
-    const [verifiedUsers]: any = await connection.execute("SELECT COUNT(*) as count FROM users WHERE isVerified = 1");
-    const [pendingCampaigns]: any = await connection.execute("SELECT COUNT(*) as count FROM campaigns WHERE approvalStatus = 'pending'");
-    
+    let userCount: any = [{ count: 0 }];
+    let advertiserCount: any = [{ count: 0 }];
+    let verifiedUsers: any = [{ count: 0 }];
+    let pendingCampaigns: any = [{ count: 0 }];
+
+    try {
+      [userCount] = await connection.execute("SELECT COUNT(*) as count FROM users");
+    } catch (e) { console.error("users table error", e); }
+
+    try {
+      [advertiserCount] = await connection.execute("SELECT COUNT(*) as count FROM advertisers WHERE isActive = 1");
+    } catch (e) { console.error("advertisers table error", e); }
+
+    try {
+      [verifiedUsers] = await connection.execute("SELECT COUNT(*) as count FROM users WHERE isVerified = 1");
+    } catch (e) { console.error("users isVerified error", e); }
+
+    try {
+      [pendingCampaigns] = await connection.execute("SELECT COUNT(*) as count FROM campaigns WHERE approvalStatus = 'pending'");
+    } catch (e) { console.error("campaigns table error", e); }
 
 
     return res.json({

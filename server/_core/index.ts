@@ -15,6 +15,7 @@ if (!process.env.NODE_ENV) {
 // ---------------------------------------------------------------
 import express from "express";
 import cookieParser from "cookie-parser";
+import path from "path";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -37,6 +38,7 @@ import privacyRouter from "./privacy-routes";
 import currencyRouter from "./currency-routes";
 import configRouter from "./config-routes";
 import disputeRouter from "./dispute-routes";
+import paymentMethodsRouter from "./payment-methods-routes";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -139,6 +141,7 @@ async function startServer() {
   app.use("/api", currencyRouter);
   // Business configurations
   app.use("/api", configRouter);
+  app.use("/api/payment-methods", paymentMethodsRouter);
   // tRPC API (tRPC handles its own body parsing)
   app.use(
     "/api/trpc",
@@ -147,6 +150,10 @@ async function startServer() {
       createContext,
     })
   );
+
+  // Serve static uploads
+  app.use('/uploads', express.static(path.join(process.cwd(), 'server', 'uploads')));
+
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV !== "production") {
     await setupVite(app, server);

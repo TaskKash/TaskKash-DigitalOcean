@@ -205,6 +205,17 @@ export default function CampaignBuilder() {
         payload._knownJobTitles = JOB_TITLES;
         payload._knownPreferredStores = PREFERRED_STORES;
         payload._knownHomeOwnership = ['owner', 'renter'];
+        
+        // --- INJECTED MISSING KNOWN VALUES FOR 100K ESTIMATOR ACCURACY ---
+        payload._knownValues = VALUES_LIST;
+        payload._knownBrandAffinity = BRAND_AFFINITY;
+        // Device models array is derived from the grouped device brands object
+        payload._knownDeviceModels = Object.values(DEVICE_MODELS_BY_BRAND).flat(); 
+        payload._knownDeviceTiers = DEVICE_TIERS;
+        payload._knownConnectionTypes = CONNECTION_TYPES;
+        payload._knownShoppingFrequencies = SHOPPING_FREQS;
+        payload._knownActivityPatterns = ACTIVITY_PATTERNS;
+
         if (payload.countries && payload.countries.length > 0) {
           payload._knownCities = payload.countries.flatMap((c: string) => CITIES_BY_COUNTRY[c] || []);
         }
@@ -594,7 +605,7 @@ export default function CampaignBuilder() {
                       </div>
                     ) : (
                       <>
-                        <SelectAllControls options={campaign.targeting.countries.flatMap(country => CITIES_BY_COUNTRY[country] || [])} current={campaign.targeting.cities} onChange={v => setTargetingArray('cities', v)} />
+                        <SelectAllControls options={[...campaign.targeting.countries.flatMap((country: string) => CITIES_BY_COUNTRY[country] || []), "__others__"]} current={campaign.targeting.cities} onChange={v => setTargetingArray('cities', v)} />
                         <div className="flex flex-wrap gap-2">
                           {campaign.targeting.countries.flatMap(country => CITIES_BY_COUNTRY[country] || []).map(city => (
                             <label key={city} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.cities.includes(city) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
@@ -617,7 +628,7 @@ export default function CampaignBuilder() {
                       <div className="border-t pt-4">
                         <Label className="mb-1 block">Neighborhoods / Districts <span className="text-xs text-teal-600 font-medium ml-1 bg-teal-50 px-2 py-0.5 rounded-full">Hyper-Local</span></Label>
                         <p className="text-xs text-gray-500 mb-3">Target specific neighborhoods within the selected cities.</p>
-                        <SelectAllControls options={availableDistricts} current={campaign.targeting.districts} onChange={v => setTargetingArray('districts', v)} />
+                        <SelectAllControls options={[...availableDistricts, "__others__"]} current={campaign.targeting.districts} onChange={v => setTargetingArray('districts', v)} />
                         <div className="flex flex-wrap gap-2">
                           {availableDistricts.map(district => (
                             <label key={district} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer text-sm ${campaign.targeting.districts.includes(district) ? 'bg-teal-50 border-teal-500' : 'bg-white hover:bg-gray-50'}`}>
@@ -713,7 +724,7 @@ export default function CampaignBuilder() {
                 <AccordionContent className="pt-2 pb-6">
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Primary Interests</Label>
-                    <SelectAllControls options={INTERESTS} current={campaign.targeting.interests} onChange={v => setTargetingArray('interests', v)} />
+                    <SelectAllControls options={[...INTERESTS, '__others__']} current={campaign.targeting.interests} onChange={v => setTargetingArray('interests', v)} />
                     <div className="flex flex-wrap gap-2">
                       {INTERESTS.map(int => (
                         <label key={int} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.interests.includes(int) ? 'bg-primary/10 border-primary' : 'bg-white hover:bg-gray-50'}`}>
@@ -786,7 +797,7 @@ export default function CampaignBuilder() {
                       <div className="border-t pt-4">
                         <Label className="mb-1 block">Device Models <span className="text-xs text-purple-600 font-medium ml-1 bg-purple-50 px-2 py-0.5 rounded-full">Precision Targeting</span></Label>
                         <p className="text-xs text-gray-500 mb-3">Choose specific models within the selected brands.</p>
-                        <SelectAllControls options={availableModels} current={campaign.targeting.deviceModels} onChange={v => setTargetingArray('deviceModels', v)} />
+                        <SelectAllControls options={[...availableModels, "__others__"]} current={campaign.targeting.deviceModels} onChange={v => setTargetingArray('deviceModels', v)} />
                         <div className="flex flex-wrap gap-2">
                           {availableModels.map(model => (
                             <label key={model} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer text-sm ${campaign.targeting.deviceModels.includes(model) ? 'bg-purple-50 border-purple-500' : 'bg-white hover:bg-gray-50'}`}>
@@ -852,7 +863,7 @@ export default function CampaignBuilder() {
                 <AccordionContent className="pt-2 pb-6 space-y-4">
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Purchase Intents</Label>
-                    <SelectAllControls options={PURCHASE_INTENTS} current={campaign.targeting.nextPurchaseIntent || []} onChange={v => setTargetingArray('nextPurchaseIntent', v)} />
+                    <SelectAllControls options={[...PURCHASE_INTENTS, "__others__"]} current={campaign.targeting.nextPurchaseIntent || []} onChange={v => setTargetingArray('nextPurchaseIntent', v)} />
                     <div className="flex flex-wrap gap-2">
                       {PURCHASE_INTENTS.map(intent => (
                         <label key={intent} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.nextPurchaseIntent?.includes(intent) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
@@ -868,7 +879,7 @@ export default function CampaignBuilder() {
                   </div>
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Life Stages</Label>
-                    <SelectAllControls options={LIFE_STAGES} current={campaign.targeting.lifeStages || []} onChange={v => setTargetingArray('lifeStages', v)} />
+                    <SelectAllControls options={[...LIFE_STAGES, "__others__"]} current={campaign.targeting.lifeStages || []} onChange={v => setTargetingArray('lifeStages', v)} />
                     <div className="flex flex-wrap gap-2">
                       {LIFE_STAGES.map(stage => (
                         <label key={stage} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.lifeStages?.includes(stage) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
@@ -884,7 +895,7 @@ export default function CampaignBuilder() {
                   </div>
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Work Types</Label>
-                    <SelectAllControls options={WORK_TYPES.filter(w => showOption(reachData.breakdown.byWorkType, w))} current={campaign.targeting.workTypes || []} onChange={v => setTargetingArray('workTypes', v)} />
+                    <SelectAllControls options={[...WORK_TYPES.filter(w => showOption(reachData.breakdown.byWorkType, w)), "__others__"]} current={campaign.targeting.workTypes || []} onChange={v => setTargetingArray('workTypes', v)} />
                     <div className="flex flex-wrap gap-2">
                       {WORK_TYPES.filter(w => showOption(reachData.breakdown.byWorkType, w)).map(work => (
                         <label key={work} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.workTypes?.includes(work) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
@@ -913,7 +924,7 @@ export default function CampaignBuilder() {
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Preferred Stores / Platforms <span className="text-xs text-rose-600 font-medium ml-1 bg-rose-50 px-2 py-0.5 rounded-full">Retail Targeting</span></Label>
                     <p className="text-xs text-gray-500 mb-3">Target users who regularly shop at specific online or offline retailers.</p>
-                    <SelectAllControls options={PREFERRED_STORES} current={campaign.targeting.preferredStores || []} onChange={v => setTargetingArray('preferredStores', v)} />
+                    <SelectAllControls options={[...PREFERRED_STORES, "__others__"]} current={campaign.targeting.preferredStores || []} onChange={v => setTargetingArray('preferredStores', v)} />
                     <div className="flex flex-wrap gap-2">
                       {PREFERRED_STORES.map(store => (
                         <label key={store} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.preferredStores?.includes(store) ? 'bg-rose-50 border-rose-400' : 'bg-white hover:bg-gray-50'}`}>
@@ -960,7 +971,7 @@ export default function CampaignBuilder() {
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Industry <span className="text-xs text-cyan-600 font-medium ml-1 bg-cyan-50 px-2 py-0.5 rounded-full">B2B Targeting</span></Label>
                     <p className="text-xs text-gray-500 mb-3">Target users by the industry they work in.</p>
-                    <SelectAllControls options={INDUSTRIES} current={campaign.targeting.industries || []} onChange={v => setTargetingArray('industries', v)} />
+                    <SelectAllControls options={[...INDUSTRIES, "__others__"]} current={campaign.targeting.industries || []} onChange={v => setTargetingArray('industries', v)} />
                     <div className="flex flex-wrap gap-2">
                       {INDUSTRIES.map(ind => (
                         <label key={ind} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.industries?.includes(ind) ? 'bg-cyan-50 border-cyan-400' : 'bg-white hover:bg-gray-50'}`}>
@@ -977,7 +988,7 @@ export default function CampaignBuilder() {
                   <div className="border-t pt-4">
                     <Label className="mb-2 block">Job Title / Role</Label>
                     <p className="text-xs text-gray-500 mb-3">Target users by their specific professional role.</p>
-                    <SelectAllControls options={JOB_TITLES} current={campaign.targeting.jobTitles || []} onChange={v => setTargetingArray('jobTitles', v)} />
+                    <SelectAllControls options={[...JOB_TITLES, "__others__"]} current={campaign.targeting.jobTitles || []} onChange={v => setTargetingArray('jobTitles', v)} />
                     <div className="flex flex-wrap gap-2">
                       {JOB_TITLES.map(job => (
                         <label key={job} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${campaign.targeting.jobTitles?.includes(job) ? 'bg-cyan-50 border-cyan-400' : 'bg-white hover:bg-gray-50'}`}>
@@ -1008,7 +1019,7 @@ export default function CampaignBuilder() {
                   <div className="grid md:grid-cols-2 gap-8 border-t pt-4">
                     <div>
                       <Label className="mb-2 block">Target User Tiers</Label>
-                      <SelectAllControls options={['bronze', 'silver', 'gold', 'platinum'].filter(t => showOption(reachData.breakdown.byTier, t))} current={campaign.targeting.tiers} onChange={v => setTargetingArray('tiers', v)} />
+                      <SelectAllControls options={[...['bronze', 'silver', 'gold', 'platinum'].filter(t => showOption(reachData.breakdown.byTier, t)), "__others__"]} current={campaign.targeting.tiers} onChange={v => setTargetingArray('tiers', v)} />
                       <div className="flex gap-2 flex-wrap">
                         {['bronze', 'silver', 'gold', 'platinum'].filter(t => showOption(reachData.breakdown.byTier, t)).map(t => (
                           <label key={t} className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer capitalize ${campaign.targeting.tiers.includes(t) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
