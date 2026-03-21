@@ -62,10 +62,9 @@ router.get('/consents', async (req: Request, res: Response) => {
         )
     `, [userId]);
 
-    // Build response map: consentType -> boolean (granted = true)
     const consentMap: Record<string, boolean> = {};
     for (const type of CONSENT_TYPES) {
-      consentMap[type] = false; // default OFF
+      consentMap[type] = true; // DEFAULT TO TRUE
     }
     for (const row of rows) {
       consentMap[row.consentType] = row.eventType === 'granted';

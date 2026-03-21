@@ -67,7 +67,8 @@ export default function Home() {
     return tierMap[tier] || tier;
   };
 
-  const getDifficultyLabel = (difficulty: string) => {
+  const getDifficultyLabel = (difficulty?: string) => {
+    if (!difficulty) return t('difficulty.easy');
     const diffMap: Record<string, string> = {
       easy: t('difficulty.easy'),
       medium: t('difficulty.medium'),

@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { User, Calendar, MapPin, Briefcase } from 'lucide-react';
+import { User, Calendar, MapPin, Briefcase, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useApp } from '@/contexts/AppContext';
 
 export default function CompleteProfile() {
   const [, setLocation] = useLocation();
@@ -20,9 +21,12 @@ export default function CompleteProfile() {
     occupation: ''
   });
 
+  const { refreshUser } = useApp();
+  const [isLoading, setIsLoading] = useState(false);
+
   const progress = Object.values(formData).filter(v => v).length / Object.keys(formData).length * 100;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const missingFields = Object.entries(formData).filter(([, value]) => !value);
@@ -31,10 +35,58 @@ export default function CompleteProfile() {
       return;
     }
 
-    toast.success('تم إكمال الملف الشخصي!');
-    setTimeout(() => {
-      setLocation('/');
-    }, 1000);
+    setIsLoading(true);
+
+    try {
+      // Calculate approximate age from birthdate
+      const birthYear = new Date(formData.birthDate).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const age = currentYear - birthYear;
+
+      // Update name if needed
+      if (formData.fullName) {
+        await fetch('/api/profile/update', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: formData.fullName })
+        });
+      }
+
+      // Map occupation to workType/employment
+      let employment = 'other';
+      if (formData.occupation === 'employee' || formData.occupation === 'business') employment = 'office';
+      if (formData.occupation === 'freelancer') employment = 'remote';
+
+      // Complete profile
+      const response = await fetch('/api/profile/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gender: formData.gender,
+          ageRange: `${age} years old`, 
+          education: formData.education,
+          employment: employment,
+          city: formData.city
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(`تم إكمال الملف بنجاح! +${data.reward || 8} ج.م`);
+        await refreshUser();
+        setTimeout(() => {
+          setLocation('/');
+        }, 1500);
+      } else {
+        toast.error(data.error || 'حدث خطأ أثناء حفظ البيانات');
+      }
+    } catch (error) {
+      console.error('Profile complete error:', error);
+      toast.error('حدث خطأ في الاتصال بالخادم');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -160,8 +212,8 @@ export default function CompleteProfile() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-12 mt-6">
-              إكمال التسجيل
+            <Button type="submit" className="w-full h-12 mt-6" disabled={isLoading}>
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'إكمال التسجيل'}
             </Button>
           </form>
         </Card>

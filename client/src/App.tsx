@@ -200,6 +200,7 @@ function Router() {
       <Route path="/my-tier" component={MyTier} />
       <Route path="/profile/questions/:sectionKey" component={ProfileQuestionsSection} />
       <Route path="/notifications" component={Notifications} />
+      <Route path="/profile/notifications" component={Notifications} />
       <Route path="/settings" component={Settings} />
       <Route path="/help" component={Help} />
       <Route path="/referral" component={Referral} />

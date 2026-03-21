@@ -1,4 +1,7 @@
 {
-  "java.import.excludes": ["**/node_modules/**"],
-  "java.project.importOnFirstTimeStartup": "disabled"
+  "java.import.excludes": [
+    "**/node_modules/**"
+  ],
+  "java.project.importOnFirstTimeStartup": "disabled",
+  "java.configuration.updateBuildConfiguration": "automatic"
 }

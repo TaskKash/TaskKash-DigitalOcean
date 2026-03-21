@@ -158,11 +158,39 @@ export default function Tasks() {
   const availableTasks = tasks.filter(t => t.status === 'available' || t.status === 'active');
   const inProgressTasks = tasks.filter(t => t.status === 'in-progress');
 
-  // We no longer have a single 'filterType', we will have a multi-select state instead.
-  // Wait, I will use advancedFilters.category instead of filterType. I will remove the old filterType logic.
-  let filteredAvailableTasks = filterType.includes('all')
-    ? availableTasks
-    : availableTasks.filter(t => filterType.includes(t.type));
+  const getTaskTypeName = (type: string) => {
+    const typeMap: Record<string, string> = {
+      survey: t('tasks.types.survey'),
+      video: t('tasks.types.video'),
+      app: t('tasks.types.app'),
+      social: t('tasks.types.social'),
+      quiz: t('tasks.types.quiz'),
+      photo: t('tasks.types.photo'),
+      visit: t('tasks.types.visit'),
+      vote: t('tasks.types.vote')
+    };
+    return typeMap[type] || type;
+  };
+
+  const getDifficultyLabel = (difficulty?: string) => {
+    if (!difficulty) return t('difficulty.easy'); // Default
+    const diffMap: Record<string, string> = {
+      easy: t('difficulty.easy'),
+      medium: t('difficulty.medium'),
+      hard: t('difficulty.hard'),
+      advanced: t('difficulty.advanced')
+    };
+    return diffMap[difficulty] || difficulty;
+  };
+
+  let filteredAvailableTasks = availableTasks.filter(t => {
+    if (filterType.includes('all')) return true;
+    const isOffline = t.type === 'visit';
+    const isOnline = !isOffline;
+    if (filterType.includes('online') && isOnline) return true;
+    if (filterType.includes('offline') && isOffline) return true;
+    return false;
+  });
 
   // Apply category filter from Advanced Filters
   if (advancedFilters.category && advancedFilters.category.length > 0) {
@@ -196,6 +224,7 @@ export default function Tasks() {
 
   // Apply sorting
   if (advancedFilters.sortBy && advancedFilters.sortBy !== 'default') {
+    const difficultyOrder = { easy: 1, medium: 2, hard: 3, advanced: 4 };
     filteredAvailableTasks = [...filteredAvailableTasks].sort((a, b) => {
       switch (advancedFilters.sortBy) {
         case 'value-high':
@@ -205,7 +234,6 @@ export default function Tasks() {
         case 'duration':
           return a.duration - b.duration; // Shortest duration first
         case 'difficulty':
-          const difficultyOrder = { easy: 1, medium: 2, hard: 3 };
           return (difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0) -
             (difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0);
         default:
@@ -213,30 +241,6 @@ export default function Tasks() {
       }
     });
   }
-
-  const getTaskTypeName = (type: string) => {
-    const typeMap: Record<string, string> = {
-      survey: t('tasks.types.survey'),
-      video: t('tasks.types.video'),
-      app: t('tasks.types.app'),
-      social: t('tasks.types.social'),
-      quiz: t('tasks.types.quiz'),
-      photo: t('tasks.types.photo'),
-      visit: t('tasks.types.visit'),
-      vote: t('tasks.types.vote')
-    };
-    return typeMap[type] || type;
-  };
-
-  const getDifficultyLabel = (difficulty: string) => {
-    const diffMap: Record<string, string> = {
-      easy: t('difficulty.easy'),
-      medium: t('difficulty.medium'),
-      hard: t('difficulty.hard'),
-      advanced: t('difficulty.advanced')
-    };
-    return diffMap[difficulty] || difficulty;
-  };
 
   const TaskCard = ({ task }: { task: typeof tasks[0] }) => (
     <Card
@@ -384,38 +388,52 @@ export default function Tasks() {
           <TabsContent value="available" className="space-y-4">
             {/* Filter Checkboxes */}
             <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4 mb-4">
-              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Filter className="w-4 h-4 text-primary" /> {t('tasks.filterByType')}</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <label className="flex items-center space-x-2 space-x-reverse cursor-pointer">
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <Filter className="w-4 h-4 text-primary" /> {t('tasks.filterByType')}
+              </h3>
+              
+              <div className="mb-5 grid grid-cols-2 gap-3">
+                <label className={`flex items-center justify-center space-x-2 space-x-reverse cursor-pointer p-3 rounded-xl border transition-all ${filterType.includes('online') || filterType.includes('all') ? 'bg-primary/10 border-primary text-primary font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-primary/50'}`}>
                   <Checkbox 
-                    checked={filterType.includes('all')} 
+                    className="hidden"
+                    checked={filterType.includes('online') || filterType.includes('all')} 
                     onCheckedChange={(checked) => {
-                      if (checked) setFilterType(['all']);
-                      else setFilterType([]);
+                      if (checked) {
+                        const newFilter = filterType.filter(f => f !== 'all');
+                        if (newFilter.includes('offline')) setFilterType(['all']);
+                        else setFilterType(['online']);
+                      } else {
+                        if (filterType.includes('all')) setFilterType(['offline']);
+                        else setFilterType([]);
+                      }
                     }}
                   />
-                  <span className="text-sm">{t('all')}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">🌐</span>
+                    <span>مهام الأونلاين</span>
+                  </span>
                 </label>
-                {taskTypesList.map((type) => (
-                  <label key={type} className="flex items-center space-x-2 space-x-reverse cursor-pointer">
-                    <Checkbox
-                      checked={filterType.includes(type) && !filterType.includes('all')}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          const newFilter = filterType.filter(f => f !== 'all');
-                          setFilterType([...newFilter, type]);
-                        } else {
-                          const newFilter = filterType.filter(f => f !== type && f !== 'all');
-                          setFilterType(newFilter.length === 0 ? ['all'] : newFilter);
-                        }
-                      }}
-                    />
-                    <span className="text-sm flex items-center gap-1.5">
-                      <span>{taskTypeIcons[type as keyof typeof taskTypeIcons]}</span>
-                      <span>{taskTypeNames[type as keyof typeof taskTypeNames]}</span>
-                    </span>
-                  </label>
-                ))}
+
+                <label className={`flex items-center justify-center space-x-2 space-x-reverse cursor-pointer p-3 rounded-xl border transition-all ${filterType.includes('offline') || filterType.includes('all') ? 'bg-primary/10 border-primary text-primary font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-primary/50'}`}>
+                  <Checkbox 
+                    className="hidden"
+                    checked={filterType.includes('offline') || filterType.includes('all')} 
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        const newFilter = filterType.filter(f => f !== 'all');
+                        if (newFilter.includes('online')) setFilterType(['all']);
+                        else setFilterType(['offline']);
+                      } else {
+                        if (filterType.includes('all')) setFilterType(['online']);
+                        else setFilterType([]);
+                      }
+                    }}
+                  />
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">📍</span>
+                    <span>مهام الزيارات (أوفلاين)</span>
+                  </span>
+                </label>
               </div>
             </div>
 

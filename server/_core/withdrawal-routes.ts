@@ -12,7 +12,7 @@
 import { Router } from 'express';
 import { query as mysqlQuery } from './mysql-db';
 import { sdk } from './sdk';
-import { getUserTierConfig, isLaunchPhaseActive, LAUNCH_PHASE } from '../config/business.config';
+import { getUserTierConfig, isLaunchPhaseActive, LAUNCH_PHASE, BUSINESS_CONSTANTS } from '../config/business.config';
 
 const router = Router();
 
@@ -38,7 +38,7 @@ const WITHDRAWAL_METHODS = [
     id: 'vodafone_cash',
     nameEn: 'Vodafone Cash',
     nameAr: 'فودافون كاش',
-    minAmount: 50,
+    minAmount: Math.max(500, BUSINESS_CONSTANTS.MIN_WITHDRAWAL_AMOUNT_EGP),
     maxAmount: 5000,
     fee: 0,
     feePercentage: 0,
@@ -52,7 +52,7 @@ const WITHDRAWAL_METHODS = [
     id: 'instapay',
     nameEn: 'InstaPay',
     nameAr: 'إنستاباي',
-    minAmount: 50,
+    minAmount: Math.max(500, BUSINESS_CONSTANTS.MIN_WITHDRAWAL_AMOUNT_EGP),
     maxAmount: 10000,
     fee: 0,
     feePercentage: 0,
@@ -67,7 +67,7 @@ const WITHDRAWAL_METHODS = [
     id: 'bank_transfer',
     nameEn: 'Bank Transfer',
     nameAr: 'تحويل بنكي',
-    minAmount: 100,
+    minAmount: Math.max(500, BUSINESS_CONSTANTS.MIN_WITHDRAWAL_AMOUNT_EGP),
     maxAmount: 50000,
     fee: 0,
     feePercentage: 0,
@@ -84,7 +84,7 @@ const WITHDRAWAL_METHODS = [
     id: 'etisalat_cash',
     nameEn: 'Etisalat Cash',
     nameAr: 'اتصالات كاش',
-    minAmount: 50,
+    minAmount: Math.max(500, BUSINESS_CONSTANTS.MIN_WITHDRAWAL_AMOUNT_EGP),
     maxAmount: 5000,
     fee: 0,
     feePercentage: 0,
@@ -98,7 +98,7 @@ const WITHDRAWAL_METHODS = [
     id: 'orange_cash',
     nameEn: 'Orange Cash',
     nameAr: 'أورنج كاش',
-    minAmount: 50,
+    minAmount: Math.max(500, BUSINESS_CONSTANTS.MIN_WITHDRAWAL_AMOUNT_EGP),
     maxAmount: 5000,
     fee: 0,
     feePercentage: 0,
@@ -163,6 +163,21 @@ router.post('/request', isUser, async (req, res) => {
     const users = await mysqlQuery('SELECT balance FROM users WHERE id = ?', [userId]) as any;
     if (!users || users.length === 0) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Limit large withdrawals for non-KYC verified users (Mandatory KYC Validation)
+    if (withdrawalAmount >= 2000) {
+      const kycCheck = await mysqlQuery(`
+        SELECT COUNT(*) as count FROM user_verifications 
+        WHERE userId = ? AND verificationType = 'national_id' AND status = 'verified'
+      `, [userId]) as any;
+      
+      if (!kycCheck || kycCheck[0].count === 0) {
+        return res.status(403).json({
+          error: 'KYC Verification Required',
+          details: 'Withdrawals of 2,000 EGP or more require a verified National ID. Please complete your KYC verification in your profile settings.'
+        });
+      }
     }
 
     const userBalance = parseFloat(users[0].balance);

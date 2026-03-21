@@ -92,7 +92,7 @@ export default function Profile() {
       items: [
         { icon: User, label: t('profile.menu.editProfile'), path: '/profile/edit' },
         { icon: Shield, label: t('profile.menu.privacySecurity'), path: '/profile/security' },
-        { icon: Bell, label: t('profile.menu.notifications'), path: '/profile/notifications' },
+        { icon: Bell, label: t('profile.menu.notifications'), path: '/notifications' },
         { icon: CreditCard, label: t('profile.menu.paymentMethods'), path: '/profile/payment-methods' },
       ]
     },
@@ -115,9 +115,9 @@ export default function Profile() {
         <Card className="p-6">
           <div className="flex items-start gap-4 mb-4">
             <img 
-              src={(user?.avatar ?? "")} 
+              src={(user?.avatar || "/default-avatar.png")} 
               alt={(user?.name ?? "")}
-              className="w-20 h-20 rounded-full border-4 border-primary"
+              className="w-20 h-20 rounded-full border-4 border-primary object-cover"
             />
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">

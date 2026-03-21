@@ -48,7 +48,7 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [accountDetails, setAccountDetails] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingMethods, setIsFetchingMethods] = useState(true);
 
   // Fetch withdrawal methods and commission config
@@ -59,7 +59,7 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
   }, [isOpen]);
 
   const fetchMethods = async () => {
-    setIsLoading(true);
+    setIsFetchingMethods(true);
     try {
       setIsFetchingMethods(true);
       const [methodsRes, configRes] = await Promise.all([
@@ -174,7 +174,6 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
 
   // Get CSRF token before making request
   const getCsrfToken = async () => {
-    setIsLoading(true);
     try {
       const response = await fetch("/api/csrf-token");
       const data = await response.json();
@@ -192,7 +191,7 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
       toast.error(isRTL ? "فشل في الحصول على رمز الأمان" : "Failed to get security token");
       return;
     }
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       const response = await fetch('/api/withdrawals/request', {
         method: 'POST',
@@ -224,7 +223,7 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
       console.error('Error submitting withdrawal:', error);
       toast.error(isRTL ? 'حدث خطأ أثناء إرسال الطلب' : 'Error submitting request');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -349,10 +348,10 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
           {/* Submit Button */}
           <Button
             onClick={handleSubmit}
-            disabled={isLoading || !selectedMethod}
+            disabled={isSubmitting || !selectedMethod}
             className="w-full"
           >
-            {isLoading ? (
+            {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 {isRTL ? 'جاري الإرسال...' : 'Submitting...'}
@@ -360,7 +359,7 @@ export default function WithdrawDialog({ isOpen, onClose, userBalance, onSuccess
             ) : (
               <>
                 <ArrowUpRight className="w-4 h-4 mr-2" />
-                {isRTL ? 'تأكيد السحب' : 'Confirm Withdrawal'}
+                {!selectedMethod ? (isRTL ? 'اختر طريقة السحب' : 'Select Method') : (isRTL ? 'تأكيد السحب' : 'Confirm Withdrawal')}
               </>
             )}
           </Button>

@@ -40,39 +40,40 @@ interface PrivacyProfile {
 const CONSENT_ITEMS = [
   {
     key: 'personalisation' as const,
-    label: 'Personalised offers & targeting',
-    desc: 'We use your profile to match you with tasks and offers that are relevant to your interests.',
+    labelKey: 'privacy.consent.personalization.label',
+    descKey: 'privacy.consent.personalization.desc',
     icon: Brain,
   },
   {
     key: 'analytics' as const,
-    label: 'App analytics & performance',
-    desc: 'Helps us to improve the app speed, stability, and user experience based on usage patterns.',
+    labelKey: 'privacy.consent.analytics.label',
+    descKey: 'privacy.consent.analytics.desc',
     icon: BarChart2,
   },
   {
     key: 'marketing' as const,
-    label: 'Marketing emails & push notifications',
-    desc: 'Receive emails and push notifications about new tasks, rewards, and promotions.',
+    labelKey: 'privacy.consent.marketing.label',
+    descKey: 'privacy.consent.marketing.desc',
     icon: ToggleLeft,
   },
   {
     key: 'income_spi' as const,
-    label: 'Income-based offer matching',
-    desc: 'We use your income level to match higher-paying tasks and financial offers to your profile.',
+    labelKey: 'privacy.consent.income.label',
+    descKey: 'privacy.consent.income.desc',
     icon: ShoppingBag,
   },
   {
     key: 'linked_cards' as const,
-    label: 'Linked card cashback & spending insights',
-    desc: 'Enables cashback tracking and spending analysis through linked payment cards.',
+    labelKey: 'privacy.consent.cards.label',
+    descKey: 'privacy.consent.cards.desc',
     icon: CheckCircle,
   },
 ] as const;
 
 // ─── Tag Chip Component ───────────────────────────────────────────────────────
 function TagChips({ tags }: { tags: string[] }) {
-  if (!tags || tags.length === 0) return <span className="text-muted-foreground text-xs">Not set</span>;
+  const { t } = useTranslation();
+  if (!tags || tags.length === 0) return <span className="text-muted-foreground text-xs">{t('notAvailable')}</span>;
   return (
     <div className="flex flex-wrap gap-1 mt-1">
       {tags.map(tag => (
@@ -96,23 +97,25 @@ function ProfileRow({ label, value }: { label: string; value: string | number | 
 
 // ─── Guest Privacy Policy Component ─────────────────────────────────────────────
 function GuestPrivacyPolicy() {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [, setLocation] = useLocation();
   return (
-    <MobileLayout title="Privacy Policy" showBack>
-      <div className="p-4 pb-28 space-y-6 max-w-2xl mx-auto">
+    <MobileLayout title={t('welcome.terms.privacy')} showBack>
+      <div className="p-4 pb-28 space-y-6 max-w-2xl mx-auto" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white">
           <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
             <Shield className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-tight">Privacy Policy</h1>
+            <h1 className="font-bold text-lg leading-tight">{t('welcome.terms.privacy')}</h1>
             <p className="text-white/80 text-xs mt-0.5">TaskKash Data Protection & Privacy</p>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Your Privacy Matters</CardTitle>
+            <CardTitle className="text-lg">{t('privacy.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
             <p>At TaskKash, we take your privacy seriously. This policy explains what information we collect, how we use it, and the rights you have concerning your data under GDPR, CCPA, and Egyptian Data Protection Law.</p>
@@ -125,7 +128,7 @@ function GuestPrivacyPolicy() {
 
             <h3 className="font-semibold text-foreground pt-2">3. Your Data Rights (Registered Users)</h3>
             <p>Once you register, you gain access to our Data & Privacy Center where you can:</p>
-            <ul className="list-disc pl-5 space-y-1">
+            <ul className={`list-disc ${isRTL ? 'pr-5' : 'pl-5'} space-y-1`}>
                <li>Manage your consent for personalization and marketing.</li>
                <li>View the exact profile and behavioral data we hold.</li>
                <li>Download a copy of your data in JSON or CSV format.</li>
@@ -133,11 +136,11 @@ function GuestPrivacyPolicy() {
             </ul>
 
             <div className="mt-6 p-4 bg-blue-50 border border-blue-100 dark:bg-blue-900/20 dark:border-blue-800 rounded-xl text-center">
-              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Want to manage your privacy settings?</h4>
-              <p className="text-xs text-blue-700 dark:text-blue-300 mb-4">Log in or create an account to access the Privacy Center and take full control of your data.</p>
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">{t('home.boostProfile')}</h4>
+              <p className="text-xs text-blue-700 dark:text-blue-300 mb-4">{t('profileComplete.completeToUnlock')}</p>
               <div className="flex gap-2 justify-center">
-                <Button onClick={() => setLocation('/login')} variant="default">Log In</Button>
-                <Button onClick={() => setLocation('/register')} variant="outline">Register</Button>
+                <Button onClick={() => setLocation('/login')} variant="default">{t('login.submit')}</Button>
+                <Button onClick={() => setLocation('/register')} variant="outline">{t('welcome.buttons.register')}</Button>
               </div>
             </div>
           </CardContent>
@@ -160,14 +163,14 @@ function GuestPrivacyPolicy() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function PrivacyCenter() {
   const { user } = useApp();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
   const [, setLocation] = useLocation();
 
-  // Consent state
+  // Consent state - DEFAULT ALL TO TRUE per user request
   const [consents, setConsents] = useState<ConsentMap>({
-    personalisation: false, analytics: false, marketing: false,
-    income_spi: false, linked_cards: false,
+    personalisation: true, analytics: true, marketing: true,
+    income_spi: true, linked_cards: true,
   });
   const [consentsLoading, setConsentsLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
@@ -313,8 +316,8 @@ export default function PrivacyCenter() {
             <Shield className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-tight">Your Privacy & Data Rights</h1>
-            <p className="text-white/80 text-xs mt-0.5">Full control over your data under GDPR Art. 7, 17, 20</p>
+            <h1 className="font-bold text-lg leading-tight">{t('privacy.title')}</h1>
+            <p className="text-white/80 text-xs mt-0.5">{t('privacy.subtitle')}</p>
           </div>
         </div>
 
@@ -322,29 +325,29 @@ export default function PrivacyCenter() {
           <TabsList className="grid w-full grid-cols-4 h-auto">
             <TabsTrigger value="consents" className="flex flex-col gap-1 py-2 text-xs">
               <ToggleLeft className="w-4 h-4" />
-              Consent
+              {t('privacy.tabs.consent')}
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex flex-col gap-1 py-2 text-xs" onClick={loadProfile}>
               <User className="w-4 h-4" />
-              My Data
+              {t('privacy.tabs.myData')}
             </TabsTrigger>
             <TabsTrigger value="export" className="flex flex-col gap-1 py-2 text-xs">
               <Download className="w-4 h-4" />
-              Export
+              {t('privacy.tabs.export')}
             </TabsTrigger>
             <TabsTrigger value="delete" className="flex flex-col gap-1 py-2 text-xs">
               <Trash2 className="w-4 h-4" />
-              Delete
+              {t('privacy.tabs.delete')}
             </TabsTrigger>
           </TabsList>
 
           {/* ── Section 1: Consent Preferences ──────────────────────────────── */}
           <TabsContent value="consents" className="mt-4 space-y-3">
             <p className="text-sm text-muted-foreground">
-              Toggle each permission on or off. Changes take effect immediately.
+              {isRTL ? 'قم بتفعيل أو إيقاف كل إذن. التغييرات تسري فوراً.' : 'Toggle each permission on or off. Changes take effect immediately.'}
             </p>
 
-            {CONSENT_ITEMS.map(({ key, label, desc, icon: Icon }) => (
+            {CONSENT_ITEMS.map(({ key, labelKey, descKey, icon: Icon }) => (
               <Card key={key} className="border">
                 <CardContent className="pt-4 pb-3">
                   <div className="flex items-center justify-between gap-3">
@@ -353,8 +356,8 @@ export default function PrivacyCenter() {
                         <Icon className="w-4 h-4 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-sm">{label}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{desc}</p>
+                        <p className="font-medium text-sm">{t(labelKey)}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{t(descKey)}</p>
                       </div>
                     </div>
                     <Switch
@@ -372,8 +375,9 @@ export default function PrivacyCenter() {
             <div className="flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <p className="text-xs text-amber-800 leading-snug">
-                Your identity verification and payment data are required by law (AML/PSD2) and cannot be removed.
-                All other data is under your full control.
+                {isRTL 
+                  ? 'بيانات التحقق من الهوية والدفع مطلوبة بموجب القانون (AML/PSD2) ولا يمكن حذفها. جميع البيانات الأخرى تحت سيطرتك الكاملة.'
+                  : 'Your identity verification and payment data are required by law (AML/PSD2) and cannot be removed. All other data is under your full control.'}
               </p>
             </div>
           </TabsContent>
@@ -387,13 +391,15 @@ export default function PrivacyCenter() {
                     <Info className="w-4 h-4 text-blue-600 shrink-0 cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs text-xs">
-                    This is the profile used to match you with relevant tasks and offers. The more complete your profile, the higher your earnings potential.
+                    {t('home.boostProfile')}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <p className="text-xs text-blue-800 leading-snug">
-                This is the profile used to match you with relevant tasks and offers.
-                <strong> More complete = higher earnings.</strong>
+                {isRTL 
+                  ? 'هذا هو الملف الشخصي المستخدم لمطابقتك مع المهام والعروض ذات الصلة.'
+                  : 'This is the profile used to match you with relevant tasks and offers.'}
+                <strong> {isRTL ? 'إكمال أكثر = أرباح أعلى.' : 'More complete = higher earnings.'}</strong>
               </p>
             </div>
 
@@ -411,15 +417,15 @@ export default function PrivacyCenter() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <User className="w-4 h-4 text-blue-500" /> Identity & Contact
+                      <User className="w-4 h-4 text-blue-500" /> {t('privacy.data.identity')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1">
-                    <ProfileRow label="Name" value={profile.identity.name} />
-                    <ProfileRow label="Email" value={profile.identity.email} />
-                    <ProfileRow label="Phone" value={profile.identity.phone} />
-                    <ProfileRow label="City" value={profile.identity.city} />
-                    <ProfileRow label="District" value={profile.identity.district} />
+                    <ProfileRow label={t('editProfile.fullName')} value={profile.identity.name} />
+                    <ProfileRow label={t('editProfile.email')} value={profile.identity.email} />
+                    <ProfileRow label={t('editProfile.phone')} value={profile.identity.phone} />
+                    <ProfileRow label={isRTL ? 'المدينة' : 'City'} value={profile.identity.city} />
+                    <ProfileRow label={isRTL ? 'المنطقة' : 'District'} value={profile.identity.district} />
                   </CardContent>
                 </Card>
 
@@ -427,21 +433,21 @@ export default function PrivacyCenter() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Brain className="w-4 h-4 text-purple-500" /> Demographic Profile
+                      <Brain className="w-4 h-4 text-purple-500" /> {t('privacy.data.demographic')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1">
-                    <ProfileRow label="Age" value={profile.demographic.age} />
-                    <ProfileRow label="Gender" value={profile.demographic.gender} />
-                    <ProfileRow label="Income Level" value={profile.demographic.incomeLevel} />
+                    <ProfileRow label={t('profileQuestions.age')} value={profile.demographic.age} />
+                    <ProfileRow label={t('profileQuestions.gender')} value={profile.demographic.gender} />
+                    <ProfileRow label={t('profileQuestions.income')} value={profile.demographic.incomeLevel} />
                     <div className="flex justify-between items-center py-1.5">
-                      <span className="text-muted-foreground text-sm">Tier</span>
+                      <span className="text-muted-foreground text-sm">{isRTL ? 'المستوى' : 'Tier'}</span>
                       <Badge variant="secondary" className="capitalize">{profile.demographic.tier}</Badge>
                     </div>
                     <div className="flex justify-between items-center py-1.5">
-                      <span className="text-muted-foreground text-sm">KYC Status</span>
+                      <span className="text-muted-foreground text-sm">{t('editProfile.verification')}</span>
                       <Badge variant={profile.demographic.kycStatus === 'verified' ? 'default' : 'secondary'} className="capitalize">
-                        {profile.demographic.kycStatus}
+                        {profile.demographic.kycStatus === 'verified' ? t('editProfile.verified') : (isRTL ? 'غير موثق' : 'Not verified')}
                       </Badge>
                     </div>
                   </CardContent>
@@ -451,15 +457,15 @@ export default function PrivacyCenter() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Monitor className="w-4 h-4 text-green-500" /> Device Profile
+                      <Monitor className="w-4 h-4 text-green-500" /> {t('privacy.data.device')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1">
-                    <ProfileRow label="Device Model" value={profile.device.deviceModel} />
-                    <ProfileRow label="OS" value={profile.device.deviceOs} />
-                    <ProfileRow label="Device Tier" value={profile.device.deviceTier} />
-                    <ProfileRow label="Network Carrier" value={profile.device.networkCarrier} />
-                    <ProfileRow label="Connection" value={profile.device.connectionType} />
+                    <ProfileRow label={isRTL ? 'موديل الجهاز' : 'Device Model'} value={profile.device.deviceModel} />
+                    <ProfileRow label={isRTL ? 'نظام التشغيل' : 'OS'} value={profile.device.deviceOs} />
+                    <ProfileRow label={isRTL ? 'فئة الجهاز' : 'Device Tier'} value={profile.device.deviceTier} />
+                    <ProfileRow label={isRTL ? 'شبكة الاتصال' : 'Network Carrier'} value={profile.device.networkCarrier} />
+                    <ProfileRow label={isRTL ? 'نوع الاتصال' : 'Connection'} value={profile.device.connectionType} />
                   </CardContent>
                 </Card>
 
@@ -467,14 +473,14 @@ export default function PrivacyCenter() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Brain className="w-4 h-4 text-orange-500" /> Interests & Preferences
+                      <Brain className="w-4 h-4 text-orange-500" /> {t('privacy.data.interests')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div><p className="text-xs text-muted-foreground mb-1">Interests</p><TagChips tags={profile.psychographic.interests} /></div>
-                    <div><p className="text-xs text-muted-foreground mb-1">Brand Affinity</p><TagChips tags={profile.psychographic.brandAffinity} /></div>
-                    <div><p className="text-xs text-muted-foreground mb-1">Values</p><TagChips tags={profile.psychographic.values} /></div>
-                    <ProfileRow label="Life Stage" value={profile.psychographic.lifeStage} />
+                    <div><p className="text-xs text-muted-foreground mb-1">{t('profileQuestions.interests')}</p><TagChips tags={profile.psychographic.interests} /></div>
+                    <div><p className="text-xs text-muted-foreground mb-1">{isRTL ? 'الانتماء للعلامة التجارية' : 'Brand Affinity'}</p><TagChips tags={profile.psychographic.brandAffinity} /></div>
+                    <div><p className="text-xs text-muted-foreground mb-1">{isRTL ? 'القيم' : 'Values'}</p><TagChips tags={profile.psychographic.values} /></div>
+                    <ProfileRow label={isRTL ? 'مرحلة الحياة' : 'Life Stage'} value={profile.psychographic.lifeStage} />
                   </CardContent>
                 </Card>
 
@@ -482,16 +488,16 @@ export default function PrivacyCenter() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <ShoppingBag className="w-4 h-4 text-pink-500" /> Behavioral Signals
+                      <ShoppingBag className="w-4 h-4 text-pink-500" /> {t('privacy.data.behavioral')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <ProfileRow label="Shopping Frequency" value={profile.behavioral.shoppingFrequency} />
-                    <div><p className="text-xs text-muted-foreground mb-1">Preferred Stores</p><TagChips tags={profile.behavioral.preferredStores} /></div>
-                    <div><p className="text-xs text-muted-foreground mb-1">Next Purchase Intent</p><TagChips tags={profile.behavioral.nextPurchaseIntent} /></div>
-                    <ProfileRow label="Work Type" value={profile.behavioral.workType} />
-                    <ProfileRow label="Home Ownership" value={profile.behavioral.homeOwnership} />
-                    <ProfileRow label="Activity Pattern" value={profile.behavioral.activityPattern} />
+                    <ProfileRow label={isRTL ? 'تكرار التسوق' : 'Shopping Frequency'} value={profile.behavioral.shoppingFrequency} />
+                    <div><p className="text-xs text-muted-foreground mb-1">{isRTL ? 'المتاجر المفضلة' : 'Preferred Stores'}</p><TagChips tags={profile.behavioral.preferredStores} /></div>
+                    <div><p className="text-xs text-muted-foreground mb-1">{isRTL ? 'نية الشراء القادمة' : 'Next Purchase Intent'}</p><TagChips tags={profile.behavioral.nextPurchaseIntent} /></div>
+                    <ProfileRow label={isRTL ? 'نوع العمل' : 'Work Type'} value={profile.behavioral.workType} />
+                    <ProfileRow label={isRTL ? 'ملك المنزل' : 'Home Ownership'} value={profile.behavioral.homeOwnership} />
+                    <ProfileRow label={isRTL ? 'نمط النشاط' : 'Activity Pattern'} value={profile.behavioral.activityPattern} />
                   </CardContent>
                 </Card>
 
@@ -499,14 +505,14 @@ export default function PrivacyCenter() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <BarChart2 className="w-4 h-4 text-cyan-500" /> Engagement Stats
+                      <BarChart2 className="w-4 h-4 text-cyan-500" /> {t('privacy.data.engagement')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1">
-                    <ProfileRow label="Profile Strength" value={`${profile.engagement.profileStrength}%`} />
-                    <ProfileRow label="Completed Tasks" value={profile.engagement.completedTasks} />
-                    <ProfileRow label="Total Earnings" value={profile.engagement.totalEarnings} />
-                    <ProfileRow label="Referral Influence Score" value={profile.engagement.influenceScore} />
+                    <ProfileRow label={t('profileComplete.profileStrength')} value={`${profile.engagement.profileStrength}%`} />
+                    <ProfileRow label={t('editProfile.completedTasks')} value={profile.engagement.completedTasks} />
+                    <ProfileRow label={t('editProfile.totalEarnings')} value={profile.engagement.totalEarnings} />
+                    <ProfileRow label={isRTL ? 'درجة تأثير الإحالة' : 'Referral Influence Score'} value={profile.engagement.influenceScore} />
                   </CardContent>
                 </Card>
               </div>
@@ -519,9 +525,9 @@ export default function PrivacyCenter() {
               <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
                 <Download className="w-7 h-7 text-blue-600" />
               </div>
-              <h3 className="font-semibold">Download Your Data</h3>
+              <h3 className="font-semibold">{t('privacy.export.title')}</h3>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                GDPR Article 20 — You have the right to receive a copy of your data in a machine-readable format.
+                {t('privacy.export.desc')}
               </p>
             </div>
 
@@ -550,12 +556,13 @@ export default function PrivacyCenter() {
             <div className="flex gap-2 p-3 bg-gray-50 border rounded-lg">
               <FileText className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground leading-snug">
-                Your export includes all personal and behavioral data we hold. Identity verification records
-                are retained separately under AML law and are not included in this export.
+                {isRTL 
+                  ? 'يتضمن التصدير جميع البيانات الشخصية والسلوكية التي نحتفظ بها. يتم الاحتفاظ بسجلات التحقق من الهوية بشكل منفصل بموجب القانون ولا يتم تضمينها هنا.'
+                  : 'Your export includes all personal and behavioral data we hold. Identity verification records are retained separately under AML law and are not included in this export.'}
               </p>
             </div>
             <p className="text-center text-xs text-muted-foreground">
-              Limited to 3 downloads per 24 hours for your security.
+              {isRTL ? 'مسموح بـ 3 عمليات تحميل كل 24 ساعة لأمانك.' : 'Limited to 3 downloads per 24 hours for your security.'}
             </p>
           </TabsContent>
 
@@ -565,9 +572,9 @@ export default function PrivacyCenter() {
               <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto">
                 <Trash2 className="w-7 h-7 text-red-500" />
               </div>
-              <h3 className="font-semibold">Delete My Account</h3>
+              <h3 className="font-semibold">{t('privacy.delete.title')}</h3>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                GDPR Article 17 — Right to erasure. Your profile and behavioral data will be permanently deleted within 30 days.
+                {t('privacy.delete.desc')}
               </p>
             </div>
 
@@ -576,10 +583,10 @@ export default function PrivacyCenter() {
                 <div className="flex gap-2 items-start">
                   <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                   <div className="text-xs text-red-800 space-y-1">
-                    <p>• Your profile, preferences, and behavioral data will be deleted within <strong>30 days</strong>.</p>
-                    <p>• Identity verification (KYC) records are retained for <strong>5–7 years</strong> as required by AML law.</p>
-                    <p>• Your wallet balance must be <strong>zero</strong> before deletion can proceed.</p>
-                    <p>• This action <strong>cannot be undone</strong>.</p>
+                    <p dir={isRTL ? 'rtl' : 'ltr'}>• {t('privacy.delete.bullet1')}</p>
+                    <p dir={isRTL ? 'rtl' : 'ltr'}>• {t('privacy.delete.bullet2')}</p>
+                    <p dir={isRTL ? 'rtl' : 'ltr'}>• {t('privacy.delete.bullet3')}</p>
+                    <p dir={isRTL ? 'rtl' : 'ltr'}>• {t('privacy.delete.bullet4')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -591,7 +598,7 @@ export default function PrivacyCenter() {
               onClick={() => setShowDeleteModal(true)}
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              Request Account Deletion
+              {t('privacy.delete.requestDeletion')}
             </Button>
           </TabsContent>
         </Tabs>
@@ -599,10 +606,10 @@ export default function PrivacyCenter() {
         {/* Compliance Footer */}
         <div className="pt-2 pb-2 text-center">
           <p className="text-[10px] text-muted-foreground">
-            TaskKash complies with GDPR, CCPA, and Egypt Data Protection Law 2023/82
+            {t('privacy.footer.compliance')}
           </p>
           <p className="text-[10px] text-muted-foreground mt-0.5">
-            Data Protection Officer: <a href="mailto:dpo@taskkash.com" className="underline">dpo@taskkash.com</a>
+            {t('privacy.footer.dpo')}: <a href="mailto:dpo@taskkash.com" className="underline">dpo@taskkash.com</a>
           </p>
         </div>
       </div>
@@ -613,23 +620,22 @@ export default function PrivacyCenter() {
           <DialogHeader>
             <DialogTitle className="text-red-600 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5" />
-              Confirm Account Deletion
+              {isRTL ? 'تأكيد حذف الحساب' : 'Confirm Account Deletion'}
             </DialogTitle>
             <DialogDescription className="pt-2 space-y-2 text-sm">
-              <p>This will permanently delete your profile, preferences, and behavioral data within <strong>30 days</strong>.</p>
-              <p>Your identity verification records will be retained for 5–7 years as required by AML law.</p>
-              <p className="font-medium text-amber-700">Your wallet balance must be zero before deletion can proceed.</p>
+              <p dir={isRTL ? 'rtl' : 'ltr'}>{isRTL ? 'سيتم حذف بياناتك نهائياً خلال 30 يوماً.' : 'This will permanently delete your data within 30 days.'}</p>
+              <p className="font-medium text-amber-700" dir={isRTL ? 'rtl' : 'ltr'}>{isRTL ? 'يجب أن يكون رصيد محفظتك صفراً.' : 'Your wallet balance must be zero.'}</p>
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-2 space-y-2">
             <Label htmlFor="del-password" className="text-sm font-medium">
-              Enter your password to confirm
+              {isRTL ? 'أدخل كلمة المرور للتأكيد' : 'Enter your password to confirm'}
             </Label>
             <Input
               id="del-password"
               type="password"
-              placeholder="Your account password"
+              placeholder={isRTL ? 'كلمة مرور حسابك' : 'Your account password'}
               value={deletePassword}
               onChange={e => setDeletePassword(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleDeleteRequest()}
@@ -638,14 +644,14 @@ export default function PrivacyCenter() {
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => { setShowDeleteModal(false); setDeletePassword(''); }}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDeleteRequest}
               disabled={!deletePassword || deleteLoading}
             >
-              {deleteLoading ? 'Submitting...' : 'Yes, Request Deletion'}
+              {deleteLoading ? t('loading') : (isRTL ? 'نعم، أطلب الحذف' : 'Yes, Request Deletion')}
             </Button>
           </DialogFooter>
         </DialogContent>

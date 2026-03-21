@@ -84,7 +84,7 @@ export default function Wallet() {
       toast.error(t('wallet.errors.insufficientBalance'));
       return;
     }
-    if (amount < 50) {
+    if (amount < 500) {
       toast.error(t('wallet.errors.minimumAmount'));
       return;
     }

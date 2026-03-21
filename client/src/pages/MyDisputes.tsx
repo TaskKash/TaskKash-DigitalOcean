@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,58 +14,45 @@ import {
 import { useLocation } from 'wouter';
 
 interface Dispute {
-  id: string;
-  taskId: string;
-  taskTitle: string;
+  id: number | string;
+  taskId?: string;
+  taskTitle?: string;
+  campaignName?: string;
+  campaignNameAr?: string;
   reason: string;
-  status: 'pending' | 'under_review' | 'resolved_accepted' | 'resolved_rejected';
+  status: 'open' | 'pending' | 'under_review' | 'resolved' | 'resolved_accepted' | 'rejected' | 'resolved_rejected';
   createdAt: string;
   resolvedAt?: string;
   resolution?: string;
   reviewer?: string;
-  evidence: string[];
+  evidence: string | string[];
 }
-
-// Mock data
-const mockDisputes: Dispute[] = [
-  {
-    id: 'D001',
-    taskId: 'T123',
-    taskTitle: 'استبيان موقع: زيارة ماكدونالدز',
-    reason: 'أكملت المهمة بالكامل لكن تم رفضها بدون سبب واضح. قمت بزيارة الفرع والتقطت الصور المطلوبة.',
-    status: 'resolved_accepted',
-    createdAt: '2025-10-28',
-    resolvedAt: '2025-10-29',
-    resolution: 'تم مراجعة الأدلة المقدمة والتحقق من صحتها. تم قبول المهمة وإضافة المكافأة لحسابك.',
-    reviewer: 'أحمد محمود',
-    evidence: ['evidence_1.jpg', 'evidence_2.jpg']
-  },
-  {
-    id: 'D002',
-    taskId: 'T124',
-    taskTitle: 'تثبيت تطبيق: تطبيق تليجرام',
-    reason: 'قمت بتثبيت التطبيق وتسجيل الدخول لكن المهمة لم تكتمل تلقائياً.',
-    status: 'under_review',
-    createdAt: '2025-10-30',
-    evidence: ['screenshot.png']
-  },
-  {
-    id: 'D003',
-    taskId: 'T125',
-    taskTitle: 'مشاهدة فيديو: إعلان كوكاكولا',
-    reason: 'شاهدت الفيديو بالكامل لكن لم يتم احتساب المهمة.',
-    status: 'pending',
-    createdAt: '2025-10-31',
-    evidence: []
-  }
-];
 
 export default function MyDisputes() {
   const [, setLocation] = useLocation();
-  const [disputes] = useState<Dispute[]>(mockDisputes);
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDisputes = async () => {
+      try {
+        const res = await fetch('/api/disputes');
+        if (res.ok) {
+          const data = await res.json();
+          setDisputes(data.disputes || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch disputes', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDisputes();
+  }, []);
 
   const getStatusBadge = (status: Dispute['status']) => {
     switch (status) {
+      case 'open':
       case 'pending':
         return (
           <Badge variant="secondary" className="gap-1">
@@ -80,6 +67,7 @@ export default function MyDisputes() {
             قيد المراجعة
           </Badge>
         );
+      case 'resolved':
       case 'resolved_accepted':
         return (
           <Badge variant="default" className="gap-1 bg-green-500">
@@ -87,6 +75,7 @@ export default function MyDisputes() {
             تم القبول
           </Badge>
         );
+      case 'rejected':
       case 'resolved_rejected':
         return (
           <Badge variant="destructive" className="gap-1">
@@ -94,28 +83,39 @@ export default function MyDisputes() {
             تم الرفض
           </Badge>
         );
+      default:
+        return (
+          <Badge variant="secondary" className="gap-1">
+            {status}
+          </Badge>
+        );
     }
   };
 
   const getStatusMessage = (status: Dispute['status']) => {
     switch (status) {
+      case 'open':
       case 'pending':
         return 'نزاعك في قائمة الانتظار. سيتم مراجعته قريباً.';
       case 'under_review':
         return 'فريقنا يراجع نزاعك الآن. سنرد عليك خلال 24-48 ساعة.';
+      case 'resolved':
       case 'resolved_accepted':
         return 'تم قبول نزاعك وإضافة المكافأة لحسابك.';
+      case 'rejected':
       case 'resolved_rejected':
         return 'تم رفض نزاعك بعد المراجعة.';
+      default:
+        return 'حالة النزاع الحالية: ' + status;
     }
   };
 
   const activeDisputesCount = disputes.filter(d => 
-    d.status === 'pending' || d.status === 'under_review'
+    d.status === 'pending' || d.status === 'under_review' || d.status === 'open'
   ).length;
 
   const resolvedDisputesCount = disputes.filter(d => 
-    d.status === 'resolved_accepted' || d.status === 'resolved_rejected'
+    d.status === 'resolved_accepted' || d.status === 'resolved_rejected' || d.status === 'resolved' || d.status === 'rejected'
   ).length;
 
   return (
@@ -139,7 +139,13 @@ export default function MyDisputes() {
 
         {/* قائمة النزاعات */}
         <div className="space-y-3">
-          {disputes.map((dispute) => (
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground animate-pulse">جاري تحميل النزاعات...</div>
+          ) : disputes.length === 0 ? (
+            <Card className="p-8 text-center text-muted-foreground">
+              لا توجد لديك أي نزاعات حالياً
+            </Card>
+          ) : (disputes.map((dispute) => (
             <Card key={dispute.id} className="p-4">
               <div className="space-y-3">
                 {/* الرأس */}
@@ -151,7 +157,7 @@ export default function MyDisputes() {
                       </span>
                       {getStatusBadge(dispute.status)}
                     </div>
-                    <h3 className="font-semibold">{dispute.taskTitle}</h3>
+                    <h3 className="font-semibold">{dispute.campaignNameAr || dispute.campaignName || dispute.taskTitle || 'مهمة غير معروفة'}</h3>
                   </div>
                 </div>
 
@@ -162,25 +168,29 @@ export default function MyDisputes() {
                 </div>
 
                 {/* الأدلة */}
-                {dispute.evidence.length > 0 && (
+                {dispute.evidence && dispute.evidence.length > 0 && (
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">
-                      الأدلة المرفقة ({dispute.evidence.length}):
+                      الأدلة المرفقة ({Array.isArray(dispute.evidence) ? dispute.evidence.length : 1}):
                     </div>
                     <div className="flex gap-2 flex-wrap">
-                      {dispute.evidence.map((file, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
+                      {Array.isArray(dispute.evidence) ? dispute.evidence.map((file, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs max-w-xs truncate" title={file}>
                           {file}
                         </Badge>
-                      ))}
+                      )) : (
+                        <Badge variant="outline" className="text-xs max-w-xs truncate" title={dispute.evidence}>
+                          {dispute.evidence}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 )}
 
                 {/* رسالة الحالة */}
                 <div className={`rounded-lg p-3 text-sm ${
-                  dispute.status === 'resolved_accepted' ? 'bg-green-50 text-green-700' :
-                  dispute.status === 'resolved_rejected' ? 'bg-red-50 text-red-700' :
+                  ['resolved_accepted', 'resolved'].includes(dispute.status) ? 'bg-green-50 text-green-700' :
+                  ['resolved_rejected', 'rejected'].includes(dispute.status) ? 'bg-red-50 text-red-700' :
                   dispute.status === 'under_review' ? 'bg-blue-50 text-blue-700' :
                   'bg-gray-50 text-gray-700'
                 }`}>
@@ -202,14 +212,14 @@ export default function MyDisputes() {
 
                 {/* التواريخ */}
                 <div className="flex justify-between text-xs text-muted-foreground border-t pt-2">
-                  <span>تاريخ التقديم: {dispute.createdAt}</span>
+                  <span>تاريخ التقديم: {new Date(dispute.createdAt).toLocaleDateString('ar-EG')}</span>
                   {dispute.resolvedAt && (
-                    <span>تاريخ الحل: {dispute.resolvedAt}</span>
+                    <span>تاريخ الحل: {new Date(dispute.resolvedAt).toLocaleDateString('ar-EG')}</span>
                   )}
                 </div>
               </div>
             </Card>
-          ))}
+          )))}
         </div>
 
         {/* زر العودة */}

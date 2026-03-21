@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation, Link } from 'wouter';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/_core/hooks/useAuth';
 import {
   LayoutDashboard,
@@ -39,62 +40,63 @@ interface MenuSection {
   items: MenuItem[];
 }
 
-const menuSections: MenuSection[] = [
-  {
-    title: 'Overview',
-    items: [
-      { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-    ]
-  },
-  {
-    title: 'Users (B2C)',
-    items: [
-      { icon: Users, label: 'User Management', path: '/admin/users' },
-    ]
-  },
-  {
-    title: 'Advertisers (B2B)',
-    items: [
-      { icon: Building2, label: 'Advertiser Management', path: '/admin/advertisers' },
-    ]
-  },
-  {
-    title: 'Campaigns',
-    items: [
-      { icon: ClipboardCheck, label: 'Campaign Review', path: '/admin/campaign-review' },
-    ]
-  },
-  {
-    title: 'Financial',
-    items: [
-      { icon: Receipt, label: 'Financial Control', path: '/admin/financials' },
-      { icon: Wallet, label: 'Wallet Hub', path: '/admin/wallet-hub' },
-      { icon: DollarSign, label: 'Withdrawals', path: '/admin/withdrawals' },
-      { icon: Globe, label: 'Currency Rates', path: '/admin/currency-rates' },
-    ]
-  },
-  {
-    title: 'Reports',
-    items: [
-      { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
-      { icon: AlertOctagon, label: 'Fraud Detection', path: '/admin/fraud' },
-      { icon: ShieldAlert, label: 'Disputes', path: '/admin/disputes' },
-    ]
-  },
-  {
-    title: 'System',
-    items: [
-      { icon: Globe, label: 'Platform Operations', path: '/admin/operations' },
-      { icon: Settings, label: 'Settings', path: '/admin/settings' },
-    ]
-  }
-];
-
 export default function AdminLayout({ children }: AdminLayoutProps) {
+  const { t } = useTranslation();
   const [location, setLocation] = useLocation();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const logoutMutation = trpc.auth.logout.useMutation();
+
+  const menuSections: MenuSection[] = [
+    {
+      title: t('admin.overview') || 'Overview',
+      items: [
+        { icon: LayoutDashboard, label: t('admin.dashboard') || 'Dashboard', path: '/admin' },
+      ]
+    },
+    {
+      title: t('admin.users') || 'Users (B2C)',
+      items: [
+        { icon: Users, label: t('admin.userManagement') || 'User Management', path: '/admin/users' },
+      ]
+    },
+    {
+      title: t('admin.advertisers') || 'Advertisers (B2B)',
+      items: [
+        { icon: Building2, label: t('admin.advertiserManagement') || 'Advertiser Management', path: '/admin/advertisers' },
+      ]
+    },
+    {
+      title: t('admin.campaigns') || 'Campaigns',
+      items: [
+        { icon: ClipboardCheck, label: t('admin.campaignReview') || 'Campaign Review', path: '/admin/campaign-review' },
+      ]
+    },
+    {
+      title: t('admin.financial') || 'Financial',
+      items: [
+        { icon: Receipt, label: t('admin.financialControl') || 'Financial Control', path: '/admin/financials' },
+        { icon: Wallet, label: t('admin.walletHub') || 'Wallet Hub', path: '/admin/wallet-hub' },
+        { icon: DollarSign, label: t('admin.withdrawals') || 'Withdrawals', path: '/admin/withdrawals' },
+        { icon: Globe, label: t('admin.currencyRates') || 'Currency Rates', path: '/admin/currency-rates' },
+      ]
+    },
+    {
+      title: t('admin.reports') || 'Reports',
+      items: [
+        { icon: BarChart3, label: t('admin.analytics') || 'Analytics', path: '/admin/analytics' },
+        { icon: AlertOctagon, label: t('admin.fraudDetection') || 'Fraud Detection', path: '/admin/fraud' },
+        { icon: ShieldAlert, label: t('admin.disputes') || 'Disputes', path: '/admin/disputes' },
+      ]
+    },
+    {
+      title: t('admin.system') || 'System',
+      items: [
+        { icon: Globe, label: t('admin.operations') || 'Platform Operations', path: '/admin/operations' },
+        { icon: Settings, label: t('admin.settings') || 'Settings', path: '/admin/settings' },
+      ]
+    }
+  ];
 
   const handleLogout = async () => {
     try {
@@ -132,7 +134,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center justify-between px-4">
-        <h1 className="text-xl font-bold">TASKKASH Admin</h1>
+        <h1 className="text-xl font-bold">{t('admin.appTitle') || 'TASKKASH Admin'}</h1>
         <Button
           variant="ghost"
           size="icon"
@@ -150,7 +152,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       >
         <div className="p-5 border-b border-border">
           <h1 className="text-2xl font-bold text-primary">TASKKASH</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Admin Control Panel</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('admin.controlPanel') || 'Admin Control Panel'}</p>
         </div>
 
         <nav className="px-3 py-3 space-y-1">

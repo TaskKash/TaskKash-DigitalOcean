@@ -250,7 +250,7 @@ authRouter.post("/register", async (req, res) => {
           countryId || null,
           'user',
           0,
-          'bronze',
+          'vip',
           0,
           0,
           0,
@@ -286,7 +286,7 @@ authRouter.post("/register", async (req, res) => {
           phone,
           role: 'user',
           balance: 0,
-          tier: 'bronze'
+          tier: 'vip'
         }
       });
     } catch (dbError) {
@@ -296,7 +296,7 @@ authRouter.post("/register", async (req, res) => {
     console.error("[Auth] Register error:", error);
     return res.status(500).json({
       success: false,
-      error: "Internal server error",
+      error: error instanceof Error ? error.message : String(error),
     });
   }
 });

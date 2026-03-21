@@ -23,6 +23,45 @@ import { FraudDetectionService } from '../services/fraud-detection.service';
 const router = Router();
 const dbPath = path.join(process.cwd(), 'server', 'db.sqlite');
 
+// Evaluates and updates the user's tier according to business rules
+async function evaluateUserTier(userId: number) {
+  try {
+    const users = await mysqlQuery(`SELECT completedTasks, isVerified FROM users WHERE id = ?`, [userId]) as any;
+    if (!users || users.length === 0) return;
+    
+    const completedTasks = users[0].completedTasks || 0;
+    
+    // Check KYC Status
+    const kycResult = await mysqlQuery(`
+      SELECT COUNT(*) as count FROM user_verifications 
+      WHERE userId = ? AND verificationType = 'national_id' AND status = 'verified'
+    `, [userId]) as any;
+    const hasKyc = kycResult[0]?.count > 0;
+    
+    // Check Approval Rate
+    const submissions = await mysqlQuery(`
+      SELECT COUNT(*) as total, SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved 
+      FROM task_submissions WHERE userId = ?
+    `, [userId]) as any;
+    
+    const totalSub = submissions[0]?.total || 0;
+    const approvedSub = submissions[0]?.approved || 0;
+    const approvalRate = totalSub > 0 ? (approvedSub / totalSub) : 1;
+    
+    let newTier = 'vip'; // Default level
+    
+    if (completedTasks >= 15 && hasKyc && approvalRate >= 0.9) {
+      newTier = 'elite'; // Level 3
+    } else if (completedTasks >= 5) {
+      newTier = 'prestige'; // Level 2
+    }
+    
+    await mysqlQuery(`UPDATE users SET tier = ? WHERE id = ?`, [newTier, userId]);
+  } catch (error) {
+    console.error('[Tier Evaluation] Error:', error);
+  }
+}
+
 // Helper function to get database connection
 function getDb() {
   const db = new Database(dbPath);
@@ -723,10 +762,13 @@ router.post('/tasks/:id/start', isUser, async (req, res) => {
   const taskId = parseInt(req.params.id);
 
   try {
-    // Check if task exists and is active in MySQL
-    const tasks = await mysqlQuery('SELECT * FROM tasks WHERE id = ? AND status = ?', [taskId, 'active']) as any;
+    // Check if task exists and is active/published/available in MySQL
+    console.log('[DEBUG] Starting task check - taskId:', taskId);
+    const tasks = await mysqlQuery('SELECT * FROM tasks WHERE id = ? AND status IN (?, ?, ?)', [taskId, 'active', 'available', 'published']) as any;
+    console.log('[DEBUG] Task query results count:', tasks?.length || 0);
 
     if (!tasks || tasks.length === 0) {
+      console.log('[DEBUG] Task not found or not active - Query:', 'SELECT * FROM tasks WHERE id = ? AND status IN (?, ?, ?)', 'Params:', [taskId, 'active', 'available', 'published']);
       return res.status(404).json({ error: 'Task not found or not active' });
     }
 
@@ -987,6 +1029,9 @@ router.post('/tasks/:id/submit', isUser, async (req, res) => {
         // Update task completion count in MySQL
         await mysqlQuery('UPDATE tasks SET currentCompletions = currentCompletions + 1 WHERE id = ?', [taskId]);
 
+        // Evauate tier logic to enforce Prestige/Elite KYC constraints
+        await evaluateUserTier(req.userId as number);
+
         console.log(`[WALLET] Successfully credited ${task.reward} EGP to user ${req.userId}`);
       } catch (error) {
         console.error('[WALLET] Error updating user balance:', error);
@@ -1147,6 +1192,9 @@ router.post('/tasks/:id/submit-survey', isUser, async (req, res) => {
       UPDATE tasks SET currentCompletions = currentCompletions + 1 WHERE id = ?
     `, [taskId]);
 
+    // Evauate tier logic to enforce Prestige/Elite KYC constraints
+    await evaluateUserTier(req.userId as number);
+
     console.log('[Submit Survey] Survey completed successfully');
     console.log('[Submit Survey] Reward credited:', task.reward);
 
@@ -1282,10 +1330,10 @@ router.get('/profile/strength', isUser, async (req, res) => {
     let strength = 0;
 
     // Phone verified = 20%
-    if (req.user?.phoneVerified) strength += 20;
+    if (req.user?.isPhoneVerified) strength += 20;
 
     // Email verified = 10%
-    if (req.user?.emailVerified) strength += 10;
+    if (req.user?.email) strength += 10;
 
     // Check KYC verification = 20%
     const kycResult = await mysqlQuery(`
@@ -1322,8 +1370,8 @@ router.get('/profile/strength', isUser, async (req, res) => {
     res.json({
       strength,
       breakdown: {
-        phoneVerified: req.user?.phoneVerified ? 20 : 0,
-        emailVerified: req.user?.emailVerified ? 10 : 0,
+        phoneVerified: req.user?.isPhoneVerified ? 20 : 0,
+        emailVerified: req.user?.email ? 10 : 0,
         kycVerified: kycResult[0]?.count > 0 ? 20 : 0,
         socialConnected: socialResult[0]?.count > 0 ? 10 : 0,
         profileQuestions: Math.min(questionCount * 4, 40)

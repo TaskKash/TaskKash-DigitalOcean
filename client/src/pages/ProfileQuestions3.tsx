@@ -14,10 +14,16 @@ export default function ProfileQuestions3() {
   const [, setLocation] = useLocation();
   const [shopping, setShopping] = useState('');
   const [tech, setTech] = useState('');
-  const [interests, setInterests] = useState('');
+  const [interests, setInterests] = useState<string[]>([]);
+
+  const toggleInterest = (value: string) => {
+    setInterests(prev => 
+      prev.includes(value) ? prev.filter(i => i !== value) : [...prev, value]
+    );
+  };
 
   const handleNext = () => {
-    if (!shopping || !tech || !interests) {
+    if (!shopping || !tech || interests.length === 0) {
       toast.error(t('profileQuestions.fillAllFields'));
       return;
     }
@@ -28,7 +34,7 @@ export default function ProfileQuestions3() {
       ...currentDraft,
       shopping,
       tech,
-      interests: [interests] // backend expects array
+      interests // backend expects array, now it is one
     }));
 
     setLocation('/profile-questions-4');
@@ -99,26 +105,35 @@ export default function ProfileQuestions3() {
 
           {/* Interests */}
           <div className="space-y-3">
-            <Label className="text-base font-semibold">{t('profileQuestions.interests')}</Label>
-            <Select value={interests} onValueChange={setInterests}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('profileQuestions.interests.placeholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tech">{t('profileQuestions.interests.tech')}</SelectItem>
-                <SelectItem value="fashion">{t('profileQuestions.interests.fashion')}</SelectItem>
-                <SelectItem value="sports">{t('profileQuestions.interests.sports')}</SelectItem>
-                <SelectItem value="travel">{t('profileQuestions.interests.travel')}</SelectItem>
-                <SelectItem value="food">{t('profileQuestions.interests.food')}</SelectItem>
-                <SelectItem value="gaming">{t('profileQuestions.interests.gaming')}</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label className="text-base font-semibold">{t('profileQuestions.interests')} <span className="text-sm font-normal text-muted-foreground">({t('selectMultiple') || 'متعدد'})</span></Label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: 'tech', label: t('profileQuestions.interests.tech') },
+                { id: 'fashion', label: t('profileQuestions.interests.fashion') },
+                { id: 'sports', label: t('profileQuestions.interests.sports') },
+                { id: 'travel', label: t('profileQuestions.interests.travel') },
+                { id: 'food', label: t('profileQuestions.interests.food') },
+                { id: 'gaming', label: t('profileQuestions.interests.gaming') }
+              ].map(interest => (
+                <div
+                  key={interest.id}
+                  onClick={() => toggleInterest(interest.id)}
+                  className={`px-4 py-2 rounded-full border cursor-pointer transition-colors text-sm font-medium select-none ${
+                    interests.includes(interest.id) 
+                      ? 'bg-primary text-white border-primary shadow-sm' 
+                      : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                  }`}
+                >
+                  {interest.label}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Next Button */}
           <Button 
             onClick={handleNext}
-            disabled={!shopping || !tech || !interests}
+            disabled={!shopping || !tech || interests.length === 0}
             className="w-full h-12 bg-gradient-primary text-white text-lg"
           >
             {t('next')}

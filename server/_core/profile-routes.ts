@@ -467,7 +467,6 @@ router.post('/answers', async (req, res) => {
        VALUES (?, 'earning', 'EGP', ?, ?, 'completed', NOW())`,
       [userId, section.bonusAmount, `Profile completion bonus: ${section.nameEn}`]
     );
-    // Calculate new tier
     const completedCount = await query(
       'SELECT COUNT(*) as count FROM user_profile_completions WHERE userId = ?',
       [userId]
@@ -479,35 +478,54 @@ router.post('/answers', async (req, res) => {
 
     const completionPercentage = (completedCount[0].count / totalSections[0].count) * 100;
 
-    // Update user tier based on completion
-    let newTier = 'tier1';
-    if (completionPercentage >= 80) {
-      newTier = 'tier7';
-    } else if (completionPercentage >= 70) {
-      newTier = 'tier6';
-    } else if (completionPercentage >= 60) {
-      newTier = 'tier5';
-    } else if (completionPercentage >= 45) {
-      newTier = 'tier4';
-    } else if (completionPercentage >= 30) {
-      newTier = 'tier3';
-    } else if (completionPercentage >= 15) {
-      newTier = 'tier2';
-    }
+    // Calculate current profile strength
+    let strength = 0;
+    const userResult = await query('SELECT * FROM users WHERE id = ?', [userId]) as any;
+    const userData = userResult[0];
 
-    const tierChanged = users[0].tier !== newTier;
+    // Phone verified = 20%
+    if (userData?.isPhoneVerified) strength += 20;
 
-    if (tierChanged) {
-      await query('UPDATE users SET tier = ? WHERE id = ?', [newTier, userId]);
-    }
+    // Email verified = 10% (if email exists)
+    if (userData?.email) strength += 10;
+
+    // Check KYC verification = 20%
+    const kycResult = await query(`
+      SELECT COUNT(*) as count FROM user_verifications 
+      WHERE userId = ? AND verificationType = 'national_id' AND status = 'verified'
+    `, [userId]) as any;
+    if (kycResult[0]?.count > 0) strength += 20;
+
+    // Check specific social profiles = up to 15% (5% each for Facebook, Google, LinkedIn)
+    const socialResult = await query(`
+      SELECT platform FROM user_social_profiles WHERE userId = ?
+    `, [userId]) as any;
+
+    const platforms = socialResult.map((r: any) => r.platform?.toLowerCase() || '');
+    if (platforms.some((p: string) => p.includes('facebook'))) strength += 5;
+    if (platforms.some((p: string) => p.includes('google'))) strength += 5;
+    if (platforms.some((p: string) => p.includes('linkedin'))) strength += 5;
+
+    // Profile questions answered = up to 35% (calculating from user_profile_data)
+    const profileDataResult = await query(`
+      SELECT COUNT(*) as count FROM user_profile_data WHERE userId = ?
+    `, [userId]) as any;
+    const answeredCount = profileDataResult[0]?.count || 0;
+    // Award roughly 3.5% per question up to 35% max
+    strength += Math.min(answeredCount * 3.5, 35);
+
+    // Update user profile strength in DB
+    const finalStrength = Math.min(strength, 100);
+    await query('UPDATE users SET profileStrength = ? WHERE id = ?', [finalStrength, userId]);
 
     res.json({
       success: true,
       bonusAwarded: section.bonusAmount,
       multiplierAwarded: section.multiplierBonus,
-      tierChanged,
-      newTier: tierChanged ? newTier : undefined,
-      completionPercentage: Math.round(completionPercentage)
+      tierChanged: false,
+      newTier: undefined,
+      completionPercentage: Math.round(completionPercentage),
+      profileStrength: finalStrength
     });
   } catch (error) {
     console.error('[Profile Routes] Error submitting answers:', error);
